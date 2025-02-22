@@ -62,7 +62,6 @@ bool Application::Initialize() {
 	if (!InitializeTextures()) return false;
 	if (!InitializeBindGroups()) return false;
 	if (!InitializeGUI()) return false;
-	wgpuPollEvents(device, false);
 
 	return true;
 }
@@ -113,6 +112,7 @@ void Application::MainLoop() {
 	renderPassDesc.colorAttachmentCount = 1;
 	renderPassDesc.colorAttachments = &renderPassColorAttachment;
 
+
 	RenderPassDepthStencilAttachment depthStencilAttachment;
 	renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
 	depthStencilAttachment.view = depthTextureView;
@@ -132,6 +132,8 @@ void Application::MainLoop() {
 	renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
 	renderPassDesc.timestampWrites = nullptr;
 
+	std::vector<CommandBuffer> commands;
+
 	// Create the render pass and end it immediately (we only clear the screen but do not draw anything)
 	RenderPassEncoder renderPass = encoder.beginRenderPass(renderPassDesc);
 
@@ -140,7 +142,6 @@ void Application::MainLoop() {
 	renderPass.setVertexBuffer(0, vertexBuffer, 0, vertexBuffer.getSize());
 	//renderPass.setIndexBuffer(indexBuffer, IndexFormat::Uint16, 0, indexBuffer.getSize());
 	// Draw 1 instance of a 3-vertices shape
-
 
 	renderPass.setBindGroup(0, bindGroup, 0, nullptr);
 	renderPass.draw(vertexCount, 1, 0, 0);
@@ -151,25 +152,56 @@ void Application::MainLoop() {
 	renderPass.drawIndexed(indexCount, 1, 0, 0, 0);
 	*/
 
-	UpdateGUI(renderPass);
-
 	renderPass.end();
 	renderPass.release();
+
 	// Finally encode and submit the render pass
 	CommandBufferDescriptor cmdBufferDescriptor = {};
-	cmdBufferDescriptor.label = "Command buffer";
-	CommandBuffer command = encoder.finish(cmdBufferDescriptor);
+	cmdBufferDescriptor.label = "Scene Draw Command Buffer";
+	commands.emplace_back(encoder.finish(cmdBufferDescriptor));
 
-	queue.submit(1, &command);
+	WGPURenderPassColorAttachment color_attachments = {};
+	color_attachments.loadOp = WGPULoadOp_Load;
+	color_attachments.storeOp = WGPUStoreOp_Store;
+	color_attachments.clearValue = { 0, 0, 0, 0 };
+	color_attachments.view = targetView;
 
-	command.release();
-	encoder.release();
-	targetView.release();
+	WGPURenderPassDescriptor render_pass_desc = {};
+	render_pass_desc.colorAttachmentCount = 1;
+	render_pass_desc.colorAttachments = &color_attachments;
+	render_pass_desc.depthStencilAttachment = nullptr;
 
+	WGPUCommandEncoderDescriptor enc_desc = {};
+	CommandEncoder gui_encoder = wgpuDeviceCreateCommandEncoder(device, &enc_desc);
+
+	RenderPassEncoder pass = gui_encoder.beginRenderPass(render_pass_desc);
+	UpdateGUI(pass);
+	pass.end();
+
+	CommandBufferDescriptor cmd_buffer_desc = {};
+	cmd_buffer_desc.label = "ImGUI Draw Command Buffer";
+	commands.emplace_back(gui_encoder.finish(cmd_buffer_desc));
+
+	queue.submit(commands.size(), commands.data());
+
+	if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+		ImGui::UpdatePlatformWindows();
+		ImGui::RenderPlatformWindowsDefault();
+	}
 
 #ifndef __EMSCRIPTEN__
 	surface.present();
 #endif
+
+
+	for (auto& commandBuffer : commands) {
+		commandBuffer.release();
+	}
+	//renderpass is released earlier
+	pass.release();
+	encoder.release();
+	gui_encoder.release();
+	targetView.release();
 
 	wgpuPollEvents(device, true);
 }
@@ -238,6 +270,7 @@ bool Application::InitializeRenderPipeline() {
 	pipelineDesc.multisample.alphaToCoverageEnabled = false;
 	pipelineDesc.layout = layout;
 
+
 	DepthStencilState depthStencilState = Default;
 	depthStencilState.depthCompare = CompareFunction::Less;
 	depthStencilState.depthWriteEnabled = true;
@@ -248,7 +281,6 @@ bool Application::InitializeRenderPipeline() {
 
 	pipelineDesc.depthStencil = &depthStencilState;
 
-
 	FragmentState fragmentState = {};
 	fragmentState.module = shaderModule;
 	fragmentState.entryPoint = "fs_main";
@@ -256,7 +288,6 @@ bool Application::InitializeRenderPipeline() {
 	fragmentState.constants = nullptr;
 
 	pipelineDesc.fragment = &fragmentState;
-	pipelineDesc.depthStencil = &depthStencilState;
 
 	BlendState blendState;
 	blendState.color.srcFactor = BlendFactor::SrcAlpha;
@@ -459,6 +490,7 @@ bool Application::InitializeWindowAndDevice() {
 		std::cerr << "Could not create window!" << std::endl;
 		return false;
 	}
+
 
 
 	std::cout << "Requesting adapter..." << std::endl;
@@ -687,9 +719,8 @@ bool Application::InitializeGUI() {
 	ImGui_ImplWGPU_InitInfo info;
 	info.Device = device;
 	info.RenderTargetFormat = surfaceFormat;
-	info.DepthStencilFormat = depthTextureFormat;
+	info.DepthStencilFormat = TextureFormat::Undefined;
 	info.NumFramesInFlight = 3;
-	/*
 	info.ViewportPresentMode = PresentMode::Fifo;
 	info.CreateViewportWindowFn = [](ImGuiViewport* viewport) {
 		auto that = reinterpret_cast<Application*>(ImGui::GetIO().UserData);
@@ -701,12 +732,13 @@ bool Application::InitializeGUI() {
 
 		return glfwGetWGPUSurface(that->instance, window);
 	};
-	*/
+
 
 	ImGui_ImplWGPU_Init(&info);
 
 	return true;
 }
+
 
 void Application::UpdateGUI(wgpu::RenderPassEncoder renderPass) {
 	auto& io = ImGui::GetIO();
@@ -747,6 +779,7 @@ void Application::UpdateGUI(wgpu::RenderPassEncoder renderPass) {
 
 	ImGui::EndFrame();
 	ImGui::Render();
+
 	ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), renderPass);
 }
 

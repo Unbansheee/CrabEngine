@@ -12,7 +12,11 @@ add_executable(App
         Application.h
         ResourceManager.h
         ResourceManager.cpp
-        )
+        Model.cpp
+        Model.h
+        Material.cpp
+        Material.h
+)
 
 set_target_properties(App PROPERTIES
     CXX_STANDARD 20
