@@ -71,3 +71,7 @@ include/*
 lib/*
 bin/*
 test/test_runner
+
+
+
+!vendor/webgpu/bin/**/*
