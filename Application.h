@@ -9,6 +9,8 @@
 
 #include "GLFW/glfw3.h"
 #include <glm/glm.hpp>
+
+#include "ApplicationLayer.h"
 #include "Node.h"
 #include "Mesh.h"
 
@@ -38,6 +40,30 @@ public:
     bool IsRunning();
 
     void OnResize();
+
+    template<typename T, typename... Args>
+    T* PushApplicationLayer(Args&&... args) {
+        static_assert(std::is_base_of<ApplicationLayer, T>::value, "T must derive from ApplicationLayer");
+        auto& layer = layers.emplace_back(new T(this, std::forward<Args>(args)...));
+        layer->Begin();
+        return layer->get();
+    }
+
+    template<typename T>
+    T* PushApplicationLayer(std::unique_ptr<T> layer) {
+        static_assert(std::is_base_of<ApplicationLayer, T>::value, "T must derive from ApplicationLayer");
+        auto& l = layers.emplace_back(std::move(layer));
+        l->Begin();
+        return layers.back().get();
+    }
+
+    void PopApplicationLayer(ApplicationLayer* layer) {
+        if (!layer) {std::cerr << "PopApplicationLayer: layer is null" << std::endl; return;}
+        layer->End();
+        layers.erase(std::remove_if(layers.begin(), layers.end(), [layer](const auto& a) {
+            return layer == a.get();
+        }), layers.end());
+    }
 
 private:
     wgpu::TextureView GetNextSurfaceTextureView();
@@ -70,6 +96,7 @@ private:
     void UpdateDragInertia();
     void UpdateLightingUniforms();
     void UpdateNodes();
+    void UpdateLayers(float dt);
 
 private:
     bool InitializeGUI();
@@ -77,6 +104,9 @@ private:
     void TerminateGUI();
 
 private:
+    double previousFrameTime = 0.0;
+    float deltaTime = 0.0f;
+
         // We put here all the variables that are shared between init and main loop
     GLFWwindow *window;
     wgpu::Instance instance = nullptr;
@@ -165,6 +195,8 @@ private:
     DragState dragState{};
 
     std::unique_ptr<Node> rootNode;
+
+    std::vector<std::unique_ptr<ApplicationLayer>> layers;
 
     void onMouseMove(double xpos, double ypos);
     void onMouseButton(int button, int action, [[]] int mods);

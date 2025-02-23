@@ -1,4 +1,5 @@
 // Include the C++ wrapper instead of the raw header(s)
+#include <ranges>
 #include <webgpu/webgpu.hpp>
 
 #include <GLFW/glfw3.h>
@@ -73,10 +74,18 @@ bool Application::Initialize() {
 	if (!InitializeGUI()) return false;
 	if (!InitializeNodes()) return false;
 
+	previousFrameTime = glfwGetTime();
+
 	return true;
 }
 
 void Application::Terminate() {
+
+	// reverse iterate layers
+	for (auto & layer : std::ranges::reverse_view(layers)) {
+		PopApplicationLayer(layer.get());
+	}
+
 	TerminateGUI();
 	TerminateTextures();
 	TerminateDepthBuffer();
@@ -97,6 +106,14 @@ void Application::MainLoop() {
 	MyUniforms t{};
 	t.time = static_cast<float>(glfwGetTime());
 	queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, time), &t.time, sizeof(MyUniforms::time));
+
+	double now = glfwGetTime();
+	deltaTime = static_cast<float>(now - previousFrameTime);
+	previousFrameTime = now;
+
+	for (auto& layer : layers) {
+		layer->Update(deltaTime);
+	}
 
 	UpdateLightingUniforms();
 
@@ -818,6 +835,12 @@ void Application::UpdateLightingUniforms() {
 void Application::UpdateNodes() {
 	if (rootNode) {
 		rootNode->UpdateNodeInternal(1.0f/60.f);
+	}
+}
+
+void Application::UpdateLayers(float dt) {
+	for (auto& layer : layers) {
+		layer->Update(dt);
 	}
 }
 

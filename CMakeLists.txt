@@ -27,6 +27,8 @@ add_executable(App
         GLTFSceneParser.h
         json.hpp
         stb_image_write.h
+        ApplicationLayer.cpp
+        ApplicationLayer.h
 )
 
 set_target_properties(App PROPERTIES
