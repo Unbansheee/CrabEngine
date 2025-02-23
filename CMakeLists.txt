@@ -5,33 +5,18 @@ project(
     LANGUAGES CXX C # programming languages used by the project
 )
 
-add_executable(App
-        implementations.cpp
-        main.cpp
-        Application.cpp
-        Application.h
-        ResourceManager.h
-        ResourceManager.cpp
-        Mesh.cpp
-        Mesh.h
-        Node.cpp
-        Node.h
-        Transform.cpp
-        Transform.h
-        Node3D.cpp
-        Node3D.h
-        NodeMeshInstance3D.cpp
-        NodeMeshInstance3D.h
-        IDrawable.h
-        GLTFSceneParser.cpp
-        GLTFSceneParser.h
-        json.hpp
-        stb_image_write.h
-        ApplicationLayer.cpp
-        ApplicationLayer.h
+file(GLOB SOURCES
+        src/*.h
+        src/*.c
+        src/*.hpp
+        src/*.cpp
 )
 
-set_target_properties(App PROPERTIES
+add_library(CrabEngine SHARED
+        ${SOURCES}
+)
+
+set_target_properties(CrabEngine PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
@@ -39,23 +24,22 @@ set_target_properties(App PROPERTIES
 )
 
 if (MSVC)
-    target_compile_options(App PRIVATE /W4)
+    target_compile_options(CrabEngine PRIVATE /W4)
 else()
-    target_compile_options(App PRIVATE -Wall -Wextra -pedantic)
+    target_compile_options(CrabEngine PRIVATE -Wall -Wextra -pedantic)
 endif()
 
-add_subdirectory(webgpu)
-add_subdirectory(glfw)
-add_subdirectory(glfw3webgpu)
-add_subdirectory(imgui)
-target_link_libraries(App PRIVATE webgpu)
-target_copy_webgpu_binaries(App)
-target_link_libraries(App PRIVATE webgpu glfw)
-target_link_libraries(App PRIVATE glfw webgpu glfw3webgpu)
-target_link_libraries(App PRIVATE glfw webgpu glfw3webgpu imgui)
-target_copy_webgpu_binaries(App)
+add_subdirectory(vendor/webgpu)
+add_subdirectory(vendor/glfw)
+add_subdirectory(vendor/glfw3webgpu)
+add_subdirectory(vendor/imgui)
+target_link_libraries(CrabEngine PRIVATE glfw glfw3webgpu)
+target_link_libraries(CrabEngine PUBLIC webgpu imgui)
+target_copy_webgpu_binaries(CrabEngine)
+set_target_properties(CrabEngine PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
-# We add an option to enable different settings when developing the app than
+
+# We add an option to enable different settings when developing the CrabEngine than
 # when distributing it.
 option(DEV_MODE "Set up development helper settings" ON)
 
@@ -63,25 +47,29 @@ if(DEV_MODE)
     # In dev mode, we load resources from the source tree, so that when we
     # dynamically edit resources (like shaders), these are correctly
     # versionned.
-    target_compile_definitions(App PRIVATE
+    target_compile_definitions(CrabEngine PRIVATE
             RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources"
     )
 else()
     # In release mode, we just load resources relatively to wherever the
     # executable is launched from, so that the binary is portable
-    target_compile_definitions(App PRIVATE
+    target_compile_definitions(CrabEngine PRIVATE
             RESOURCE_DIR="./resources"
     )
 endif()
 
-target_compile_definitions(App PRIVATE GLM_FORCE_DEPTH_ZERO_TO_ONE)
-target_compile_definitions(App PRIVATE GLM_FORCE_LEFT_HANDED)
+target_compile_definitions(CrabEngine PRIVATE GLM_FORCE_DEPTH_ZERO_TO_ONE)
+target_compile_definitions(CrabEngine PRIVATE GLM_FORCE_LEFT_HANDED)
 target_compile_definitions(imgui PRIVATE IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
 
 if (MSVC)
     # Disable warning C4244: conversion from 'int' to 'short', possible loss of data
-    target_compile_options(App PUBLIC /wd4244)
+    target_compile_options(CrabEngine PUBLIC /wd4244)
+    target_compile_options(CrabEngine PUBLIC /MP)
 endif (MSVC)
 
-target_include_directories(App PRIVATE .)
+target_include_directories(CrabEngine PRIVATE .)
+target_include_directories(CrabEngine PUBLIC ./vendor)
+target_include_directories(CrabEngine PUBLIC ./src)
+
 
