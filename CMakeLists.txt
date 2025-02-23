@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0...3.25)
 project(
-    CrabEditor # name of the project, which will also be the name of the visual studio solution if you use it
+    CrabEngine # name of the project, which will also be the name of the visual studio solution if you use it
     VERSION 0.1.0 # any version number
     LANGUAGES CXX C # programming languages used by the project
 )
@@ -37,6 +37,12 @@ target_link_libraries(CrabEngine PRIVATE glfw glfw3webgpu)
 target_link_libraries(CrabEngine PUBLIC webgpu imgui)
 target_copy_webgpu_binaries(CrabEngine)
 set_target_properties(CrabEngine PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+
+set_target_properties(glfw PROPERTIES FOLDER "CrabEngine/Dependencies/GLFW3")
+set_target_properties(glfw3webgpu PROPERTIES FOLDER "CrabEngine/Dependencies/GLFW3")
+set_target_properties(update_mappings PROPERTIES FOLDER "CrabEngine/Dependencies/GLFW3")
+set_target_properties(imgui PROPERTIES FOLDER "CrabEngine/Dependencies")
+set_target_properties(CrabEngine PROPERTIES FOLDER "CrabEngine")
 
 
 # We add an option to enable different settings when developing the CrabEngine than
