@@ -87,7 +87,6 @@ vendor/glfw/src/glfw3.pc
 vendor/glfw/src/glfw3Config.cmake
 vendor/glfw/src/glfw3ConfigVersion.cmake
 
-
 !vendor/webgpu/bin/**/*
 *.log
 *.vcxproj.*

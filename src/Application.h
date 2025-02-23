@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <array>
 #include <webgpu/webgpu.h>
 #include <webgpu/webgpu.hpp>
 
@@ -22,7 +23,7 @@ using glm::vec4;
 
 
 
-class Application {
+class CrabEngineAPI Application {
 public:
     Application(): device(nullptr), queue(nullptr), surface(nullptr), pipeline(nullptr) {
     } ;
