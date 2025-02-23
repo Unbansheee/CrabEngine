@@ -4,9 +4,6 @@
 #pragma once
 #include <memory>
 #include <vector>
-#include <glm/fwd.hpp>
-#include <glm/vec3.hpp>
-#include "CrabTypes.h"
 #include "IDrawable.h"
 #include "Transform.h"
 
@@ -52,7 +49,7 @@ public:
 	//Application* GetApplication();
 
 	// Tells the Draw function to skip this node and its children
-	void SetHidden(bool isHidden);
+	void SetHidden(bool newIsHidden);
 
 	// Is this flagged as Hidden
 	bool IsHidden() { return isHidden; }

@@ -48,8 +48,7 @@ struct DrawCommand
 class IDrawable
 {
 public:
-    // Create a list of DrawCommands to be submitted to the Render Context.
-    // TODO: This should probably pass a vector<DrawCommand>
-    // in as a mutable reference, rather than returning a new one each time this is called recursively
-    virtual void GatherDrawCommands(std::vector<DrawCommand>& Commands) const {};
+    virtual ~IDrawable() = default;
+    virtual void GatherDrawCommands(std::vector<DrawCommand>& Commands) const {}
 };
+

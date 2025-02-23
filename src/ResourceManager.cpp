@@ -3,13 +3,13 @@
 //
 
 #include "ResourceManager.h"
-
 #include "tiny_obj_loader.h"
 #include "stb_image.h"
-
 #include <fstream>
-
 #include "Mesh.h"
+#include "Node3D.h"
+#include "NodeMeshInstance3D.h"
+
 using namespace wgpu;
 
 bool ResourceManager::loadGeometryFromObj(const std::filesystem::path &path, std::vector<VertexData> &vertexData) {

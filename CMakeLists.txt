@@ -12,7 +12,7 @@ file(GLOB SOURCES
         src/*.cpp
 )
 
-add_library(CrabEngine SHARED
+add_library(CrabEngine STATIC
         ${SOURCES}
 )
 
@@ -71,6 +71,11 @@ target_compile_definitions(imgui PRIVATE IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
 if (MSVC)
     # Disable warning C4244: conversion from 'int' to 'short', possible loss of data
     target_compile_options(CrabEngine PUBLIC /wd4244)
+    # Disable 4100 - unreferenced parameter
+    target_compile_options(CrabEngine PUBLIC /wd4100)
+    # Disable 4201 - nameless struct/union (because of GLM)
+    target_compile_options(CrabEngine PUBLIC /wd4201)   
+
     target_compile_options(CrabEngine PUBLIC /MP)
 endif (MSVC)
 

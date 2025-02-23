@@ -83,7 +83,6 @@ Quat Node3D::GetGlobalOrientation() const
     {
         return GetOrientation();
     }
-    return Quat(1.0f, 0.0f, 0.0f, 0.0f);
 }
 
 void Node3D::SetGlobalPosition(const Vector3& NewPosition)

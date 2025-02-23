@@ -58,9 +58,10 @@ public:
         }
     }
 
-    void GatherDrawCommands(std::vector<DrawCommand> &Commands) const override;
-
-    ~Mesh() {
+    virtual void GatherDrawCommands(std::vector<DrawCommand> &Commands) const override;
+    
+    ~Mesh() override
+    {
         wgpuBufferDestroy(vertexBuffer);
         wgpuBufferRelease(vertexBuffer);
         if (indexCount > 0) {

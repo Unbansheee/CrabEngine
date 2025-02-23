@@ -55,11 +55,13 @@ std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std:
 	//std::vector<std::shared_ptr<Material>> parsed_materials;
 	std::vector<Node*> parsed_nodes;
 
-	// parse meshes
+	/*
+	// parse textures
 	for (tinygltf::Texture& texture : model.textures)
 	{
-		//parsed_textures.push_back(ParseTexture(context, model, texture));
+		parsed_textures.push_back(ParseTexture(context, model, texture));
 	}
+	*/
 
 	// parse meshes
 	for (auto& mesh : model.meshes)
@@ -67,11 +69,13 @@ std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std:
 		parsed_meshes.push_back(ParseMesh(device, model, mesh));
 	}
 
+	/*
 	// parse materials
 	for (auto& material : model.materials)
 	{
-		//parsed_materials.push_back(ParseMaterial(context, model, parsed_textures, material));
+		parsed_materials.push_back(ParseMaterial(context, model, parsed_textures, material));
 	}
+	*/
 
 	// Parse node tree
 	for (tinygltf::Node& node : model.nodes)

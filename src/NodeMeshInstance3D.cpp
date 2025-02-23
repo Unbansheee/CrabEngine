@@ -5,8 +5,8 @@
 #include "NodeMeshInstance3D.h"
 
 
-void NodeMeshInstance3D::SetMesh(const std::shared_ptr<Mesh> &mesh) {
-    this->mesh = mesh;
+void NodeMeshInstance3D::SetMesh(const std::shared_ptr<Mesh> &newMesh) {
+    this->mesh = newMesh;
 }
 
 void NodeMeshInstance3D::GatherDrawCommands(std::vector<DrawCommand> &Commands) const {

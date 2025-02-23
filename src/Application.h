@@ -7,13 +7,9 @@
 #include <array>
 #include <webgpu/webgpu.h>
 #include <webgpu/webgpu.hpp>
-
 #include "GLFW/glfw3.h"
 #include <glm/glm.hpp>
-
 #include "ApplicationLayer.h"
-#include "Node.h"
-#include "Mesh.h"
 
 class Node;
 using glm::mat4x4;
@@ -21,9 +17,7 @@ using glm::vec4;
 
 // Avoid the "wgpu::" prefix in front of all WebGPU symbols
 
-
-
-class CrabEngineAPI Application {
+class Application {
 public:
     Application(): device(nullptr), queue(nullptr), surface(nullptr), pipeline(nullptr) {
     } ;

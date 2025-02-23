@@ -10,7 +10,7 @@
 class NodeMeshInstance3D : public Node3D {
 
 public:
-    void SetMesh(const std::shared_ptr<Mesh>& mesh);
+    void SetMesh(const std::shared_ptr<Mesh>& newMesh);
     virtual void GatherDrawCommands(std::vector<DrawCommand> &Commands) const override;
 protected:
     std::shared_ptr<Mesh> mesh;

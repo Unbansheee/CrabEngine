@@ -10,6 +10,7 @@
 #include <webgpu/webgpu.hpp>
 
 #include "Application.h"
+#include "CrabTypes.h"
 
 struct VertexData;
 

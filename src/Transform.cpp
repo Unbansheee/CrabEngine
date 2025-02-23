@@ -28,9 +28,9 @@ Vector3 Transform::LocalToWorldScale(Vector3 in) const
     Vector3 z = Vector3(m[2]);
 
     Vector3 worldScale;
-    worldScale.x = (length(x) * Scale.x);
-    worldScale.y = (length(y) * Scale.y);
-    worldScale.z = (length(z) * Scale.z);
+    worldScale.x = (length(x) * in.x);
+    worldScale.y = (length(y) * in.y);
+    worldScale.z = (length(z) * in.z);
 
     return worldScale;
 }
@@ -45,9 +45,9 @@ Vector3 Transform::WorldToLocalScale(Vector3 in) const
     Vector3 z = Vector3(m[2]);
 
     Vector3 localScale;
-    localScale.x = (length(x) / Scale.x);
-    localScale.y = (length(y) / Scale.y);
-    localScale.z = (length(z) / Scale.z);
+    localScale.x = (length(x) / in.x);
+    localScale.y = (length(y) / in.y);
+    localScale.z = (length(z) / in.z);
 
     return localScale;
 }

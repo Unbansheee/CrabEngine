@@ -15,12 +15,9 @@
 #include <cassert>
 #include <fstream>
 #include <vector>
-
 #include "ResourceManager.h"
-
 #include <glm/ext.hpp>
 
-#include "imgui_internal.h"
 #include "Mesh.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_wgpu.h"

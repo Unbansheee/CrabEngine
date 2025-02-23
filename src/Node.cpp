@@ -78,7 +78,7 @@ Application* Node::GetApplication()
 }
 */
 
-void Node::SetHidden(bool isHidden)
+void Node::SetHidden(bool newIsHidden)
 {
 	this->isHidden = isHidden;
 }
