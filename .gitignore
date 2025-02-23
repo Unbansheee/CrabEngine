@@ -72,6 +72,19 @@ lib/*
 bin/*
 test/test_runner
 
+*.recipe
+*.tlog
+*.pdb
+*.lastbuildstate
+*.vcxproj
+*.sln
+*.vcxproj.filters
+*.ilk
+**/imgui.ini
+*.exp
 
+vendor/glfw/src/glfw3.pc
+vendor/glfw/src/glfw3Config.cmake
+vendor/glfw/src/glfw3ConfigVersion.cmake
 
 !vendor/webgpu/bin/**/*
