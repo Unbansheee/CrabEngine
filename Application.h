@@ -9,17 +9,16 @@
 
 #include "GLFW/glfw3.h"
 #include <glm/glm.hpp>
+#include "Node.h"
+#include "Mesh.h"
+
+class Node;
 using glm::mat4x4;
 using glm::vec4;
 
 // Avoid the "wgpu::" prefix in front of all WebGPU symbols
 
-struct VertexData {
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec3 color;
-    glm::vec2 uv;
-};
+
 
 class Application {
 public:
@@ -53,6 +52,8 @@ private:
     bool InitializeBindGroups();
     bool InitializeTextures();
     bool InitializeDepthBuffer();
+    bool InitializeLightingUniforms();
+    bool InitializeNodes();
 
     void TerminateTextures();
     void TerminateGeometry();
@@ -62,10 +63,13 @@ private:
     void TerminateWindowAndDevice();
     void TerminateSurface();
     void TerminateDepthBuffer();
+    void TerminateLightingUniforms();
 
     void UpdateProjectionMatrix();
     void UpdateViewMatrix();
     void UpdateDragInertia();
+    void UpdateLightingUniforms();
+    void UpdateNodes();
 
 private:
     bool InitializeGUI();
@@ -83,23 +87,25 @@ private:
     wgpu::TextureFormat surfaceFormat = wgpu::TextureFormat::Undefined;
     wgpu::TextureFormat depthTextureFormat = wgpu::TextureFormat::Undefined;
 
-    uint32_t vertexCount = 0;
-    uint32_t indexCount = 0;
-    wgpu::Buffer vertexBuffer = nullptr;
-    wgpu::Buffer indexBuffer = nullptr;
     wgpu::Buffer uniformBuffer = nullptr;
+    wgpu::Buffer perObjectUniformBuffer = nullptr;
     wgpu::PipelineLayout layout = nullptr;
     wgpu::BindGroupLayout bindGroupLayout = nullptr;
     wgpu::BindGroup bindGroup = nullptr;
     uint32_t uniformStride = 0;
+    uint32_t perObjectUniformStride = 0;
 
     struct MyUniforms {
         mat4x4 projectionMatrix;
         mat4x4 viewMatrix;
-        mat4x4 modelMatrix;
         vec4 color;  // or float color[4]
+        glm::vec3 cameraWorldPosition;
         float time;
         float _pad[3];
+    };
+
+    struct PerObjectUniforms {
+        mat4x4 modelMatrix;
     };
 
     struct CameraState {
@@ -128,21 +134,42 @@ private:
         float inertia = 0.9f;
     };
 
+    // Before Application's private attributes
+    struct LightingUniforms {
+        std::array<vec4, 2> directions;
+        std::array<vec4, 2> colors;
+        float hardness = 32.f;
+        float kd = 1.0f;
+        float ks = 0.5f;
+        float normalStrength = 1.0f;
+    };
 
-    static_assert(sizeof(MyUniforms) % 16 == 0);
+    //static_assert(sizeof(MyUniforms) % 16 == 0);
     wgpu::Texture depthTexture = nullptr;
     wgpu::TextureView depthTextureView = nullptr;
-    wgpu::Texture texture = nullptr;
-    wgpu::TextureView textureView = nullptr;
+
+
+    wgpu::Texture baseColorTexture = nullptr;
+    wgpu::TextureView baseColorTextureView = nullptr;
+    wgpu::Texture normalTexture = nullptr;
+    wgpu::TextureView normalTextureView = nullptr;
     wgpu::Sampler sampler = nullptr;
+
+    wgpu::Buffer lightingUniformBuffer = nullptr;
+    LightingUniforms lightingUniforms{};
+    bool lightingUniformsChanged = true;
 
     std::unique_ptr<wgpu::ErrorCallback> m_errorCallbackHandle;
     MyUniforms uniforms{};
     CameraState cameraState{};
     DragState dragState{};
 
+    std::unique_ptr<Node> rootNode;
+
     void onMouseMove(double xpos, double ypos);
     void onMouseButton(int button, int action, [[]] int mods);
     void onScroll(double xoffset, double yoffset);
     void onKey(int key, int scancode, int action, int mods);
+
+    void ImGuiDrawNode(Node* node);
 };

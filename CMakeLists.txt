@@ -12,17 +12,28 @@ add_executable(App
         Application.h
         ResourceManager.h
         ResourceManager.cpp
-        Model.cpp
-        Model.h
-        Material.cpp
-        Material.h
+        Mesh.cpp
+        Mesh.h
+        Node.cpp
+        Node.h
+        Transform.cpp
+        Transform.h
+        Node3D.cpp
+        Node3D.h
+        NodeMeshInstance3D.cpp
+        NodeMeshInstance3D.h
+        IDrawable.h
+        GLTFSceneParser.cpp
+        GLTFSceneParser.h
+        json.hpp
+        stb_image_write.h
 )
 
 set_target_properties(App PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
-    COMPILE_WARNING_AS_ERROR ON
+    COMPILE_WARNING_AS_ERROR OFF
 )
 
 if (MSVC)

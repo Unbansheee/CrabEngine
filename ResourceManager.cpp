@@ -8,6 +8,8 @@
 #include "stb_image.h"
 
 #include <fstream>
+
+#include "Mesh.h"
 using namespace wgpu;
 
 bool ResourceManager::loadGeometryFromObj(const std::filesystem::path &path, std::vector<VertexData> &vertexData) {
@@ -68,6 +70,8 @@ bool ResourceManager::loadGeometryFromObj(const std::filesystem::path &path, std
             };
         }
     }
+
+    populateTextureFrameAttributes(vertexData, std::nullopt);
 
     return true;
 }
@@ -192,4 +196,108 @@ void ResourceManager::writeMipMaps(wgpu::Device device, wgpu::Texture texture, w
     }
 
     queue.release();
+}
+
+glm::mat3x3 ResourceManager::computeTBN(const VertexData corners[3], const glm::vec3& expectedN) {
+    using namespace glm;
+    // What we call e in the figure
+    vec3 ePos1 = corners[1].position - corners[0].position;
+    vec3 ePos2 = corners[2].position - corners[0].position;
+
+    // What we call \bar e in the figure
+    vec2 eUV1 = corners[1].uv - corners[0].uv;
+    vec2 eUV2 = corners[2].uv - corners[0].uv;
+
+    vec3 T = normalize(ePos1 * eUV2.y - ePos2 * eUV1.y);
+    vec3 B = normalize(ePos2 * eUV1.x - ePos1 * eUV2.x);
+    vec3 N = cross(T, B);
+
+    // Fix overall orientation
+    if (dot(N, expectedN) < 0.0) {
+        T = -T;
+        B = -B;
+        N = -N;
+    }
+
+    // Ortho-normalize the (T, B, expectedN) frame
+    // a. "Remove" the part of T that is along expected N
+    N = expectedN;
+    T = normalize(T - dot(T, N) * N);
+    // b. Recompute B from N and T
+    B = cross(N, T);
+
+    return mat3x3(T, B, N);
+}
+
+void ResourceManager::populateTextureFrameAttributes(std::vector<VertexData> &vertexData, optional_ref<const std::vector<uint16_t>> indices) {
+    if (!indices) {
+        using namespace glm;
+        const size_t triangleCount = vertexData.size() / 3;
+        // We compute the local texture frame per triangle
+        for (int t = 0; t < (int)triangleCount; ++t) {
+            VertexData* v = &vertexData[3 * t];
+
+            for (int k = 0; k < 3; ++k) {
+                mat3x3 TBN = computeTBN(v, v[k].normal);
+                v[k].tangent = TBN[0];
+                v[k].bitangent = TBN[1];
+            }
+        }
+        return;
+    }
+
+
+    // Reset tangents and bitangents
+    for (auto& vertex : vertexData) {
+        vertex.tangent = glm::vec3(0.0f);
+        vertex.bitangent = glm::vec3(0.0f);
+    }
+
+    // Iterate over each triangle
+    for (size_t i = 0; i < indices->get().size(); i += 3) {
+        VertexData& v0 = vertexData[indices->get()[i]];
+        VertexData& v1 = vertexData[indices->get()[i + 1]];
+        VertexData& v2 = vertexData[indices->get()[i + 2]];
+
+        // Compute edges
+        glm::vec3 edge1 = v1.position - v0.position;
+        glm::vec3 edge2 = v2.position - v0.position;
+
+        // Compute UV delta
+        glm::vec2 deltaUV1 = v1.uv - v0.uv;
+        glm::vec2 deltaUV2 = v2.uv - v0.uv;
+
+        // Compute tangent and bitangent
+        float det = deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y;
+        if (glm::abs(det) < 1e-6f) {
+            // Prevent division by zero by using a fallback
+            det = 1.0f;
+        } else {
+            det = 1.0f / det;
+        }
+
+        glm::vec3 tangent = det * (deltaUV2.y * edge1 - deltaUV1.y * edge2);
+        glm::vec3 bitangent = det * (-deltaUV2.x * edge1 + deltaUV1.x * edge2);
+
+        // Normalize the vectors
+        tangent = glm::normalize(tangent);
+        bitangent = glm::normalize(bitangent);
+
+        // Accumulate tangent and bitangent for each vertex
+        v0.tangent += tangent;
+        v1.tangent += tangent;
+        v2.tangent += tangent;
+
+        v0.bitangent += bitangent;
+        v1.bitangent += bitangent;
+        v2.bitangent += bitangent;
+    }
+
+    // Normalize the accumulated tangents and bitangents
+    for (auto& vertex : vertexData) {
+        vertex.tangent = glm::normalize(vertex.tangent);
+        vertex.bitangent = glm::normalize(vertex.bitangent);
+    }
+
+
 }

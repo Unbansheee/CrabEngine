@@ -20,17 +20,26 @@
 #include <glm/ext.hpp>
 
 #include "imgui_internal.h"
+#include "Mesh.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_wgpu.h"
+#include <glm/gtx/polar_coordinates.hpp>
 
+#include "GLTFSceneParser.h"
+#include "Node.h"
+#include "NodeMeshInstance3D.h"
 
-constexpr float PI = 3.14159265358979323846f;
 using namespace wgpu;
 using glm::vec3;
 
-constexpr float deg_to_rad(float deg) {
-	return deg * PI / 180.0f;
-}
+namespace ImGui {
+	bool DragDirection(const char* label, vec4& direction) {
+		glm::vec2 angles = glm::degrees(glm::polar(vec3(direction)));
+		bool changed = ImGui::DragFloat2(label, glm::value_ptr(angles));
+		direction = vec4(glm::euclidean(glm::radians(angles)), direction.w);
+		return changed;
+	}
+} // namespace ImGui
 
 // We define a function that hides implementation-specific variants of device polling:
 void wgpuPollEvents([[maybe_unused]] Device device, [[maybe_unused]] bool yieldToWebBrowser) {
@@ -57,11 +66,12 @@ bool Application::Initialize() {
 	if (!InitializeSurface()) return false;
 	if (!InitializeRenderPipeline()) return false;
 	if (!InitializeDepthBuffer()) return false;
-	if (!InitializeGeometry()) return false;
 	if (!InitializeUniformBuffer()) return false;
 	if (!InitializeTextures()) return false;
+	if (!InitializeLightingUniforms()) return false;
 	if (!InitializeBindGroups()) return false;
 	if (!InitializeGUI()) return false;
+	if (!InitializeNodes()) return false;
 
 	return true;
 }
@@ -81,11 +91,14 @@ void Application::Terminate() {
 void Application::MainLoop() {
 	glfwPollEvents();
 
+	UpdateNodes();
 	UpdateDragInertia();
 
 	MyUniforms t{};
 	t.time = static_cast<float>(glfwGetTime());
 	queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, time), &t.time, sizeof(MyUniforms::time));
+
+	UpdateLightingUniforms();
 
 	// Get the next target texture view
 	TextureView targetView = GetNextSurfaceTextureView();
@@ -112,7 +125,6 @@ void Application::MainLoop() {
 	renderPassDesc.colorAttachmentCount = 1;
 	renderPassDesc.colorAttachments = &renderPassColorAttachment;
 
-
 	RenderPassDepthStencilAttachment depthStencilAttachment;
 	renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
 	depthStencilAttachment.view = depthTextureView;
@@ -137,6 +149,32 @@ void Application::MainLoop() {
 	// Create the render pass and end it immediately (we only clear the screen but do not draw anything)
 	RenderPassEncoder renderPass = encoder.beginRenderPass(renderPassDesc);
 
+	std::vector<DrawCommand> drawCommands;
+	if (rootNode) {
+		rootNode->GatherDrawCommands(drawCommands);
+	}
+
+	uint32_t dynamicOffset = 0;
+	int idx = 0;
+	for (auto& drawCommand : drawCommands) {
+		dynamicOffset = idx * perObjectUniformStride;
+
+		renderPass.setPipeline(pipeline);
+		renderPass.setVertexBuffer(0, drawCommand.vertexBuffer, 0, WGPU_WHOLE_SIZE);
+		renderPass.setBindGroup(0, bindGroup, 1, &dynamicOffset);
+		queue.writeBuffer(perObjectUniformBuffer, dynamicOffset + offsetof(PerObjectUniforms, modelMatrix), &drawCommand.modelMatrix, sizeof(mat4x4));
+		if (drawCommand.indexCount > 0) {
+			renderPass.setIndexBuffer(drawCommand.indexBuffer, IndexFormat::Uint16, 0, WGPU_WHOLE_SIZE);
+			renderPass.drawIndexed(drawCommand.indexCount, 1, 0, 0, 0);
+		}
+		else {
+			renderPass.draw(drawCommand.vertexCount, 1, 0, 0);
+		}
+
+		idx++;
+	}
+
+	/*
 	// Select which render pipeline to use
 	renderPass.setPipeline(pipeline);
 	renderPass.setVertexBuffer(0, vertexBuffer, 0, vertexBuffer.getSize());
@@ -145,7 +183,7 @@ void Application::MainLoop() {
 
 	renderPass.setBindGroup(0, bindGroup, 0, nullptr);
 	renderPass.draw(vertexCount, 1, 0, 0);
-
+	*/
 	/*
 	dynamicOffset = 1 * uniformStride;
 	renderPass.setBindGroup(0, bindGroup, 1, &dynamicOffset);
@@ -231,7 +269,7 @@ bool Application::InitializeRenderPipeline() {
 		return false;
 	}
 
-	std::vector<VertexAttribute> vertexAttributes(4);
+	std::vector<VertexAttribute> vertexAttributes(6);
 	vertexAttributes[0].shaderLocation = 0;
 	vertexAttributes[0].format = VertexFormat::Float32x3;
 	vertexAttributes[0].offset = 0;
@@ -247,6 +285,14 @@ bool Application::InitializeRenderPipeline() {
 	vertexAttributes[3].shaderLocation = 3;
 	vertexAttributes[3].format = VertexFormat::Float32x2;
 	vertexAttributes[3].offset = offsetof(VertexData, uv);
+
+	vertexAttributes[4].shaderLocation = 4;
+	vertexAttributes[4].format = VertexFormat::Float32x3;
+	vertexAttributes[4].offset = offsetof(VertexData, tangent);
+
+	vertexAttributes[5].shaderLocation = 5;
+	vertexAttributes[5].format = VertexFormat::Float32x3;
+	vertexAttributes[5].offset = offsetof(VertexData, bitangent);
 
 	VertexBufferLayout vertexBufferLayout;
 	vertexBufferLayout.attributeCount = vertexAttributes.size();
@@ -318,7 +364,7 @@ bool Application::InitializeRenderPipeline() {
 	pipelineDesc.multisample.alphaToCoverageEnabled = false;
 
 	// Define binding layout (don't forget to = Default)
-	std::vector<BindGroupLayoutEntry> bindingLayoutEntries(3, Default);
+	std::vector<BindGroupLayoutEntry> bindingLayoutEntries(6, Default);
 
 	BindGroupLayoutEntry& bindingLayout = bindingLayoutEntries[0];
 	bindingLayout.binding = 0;
@@ -326,16 +372,35 @@ bool Application::InitializeRenderPipeline() {
 	bindingLayout.buffer.type = BufferBindingType::Uniform;
 	bindingLayout.buffer.minBindingSize = sizeof(MyUniforms);
 
-	BindGroupLayoutEntry& textureBindingLayout = bindingLayoutEntries[1];
-	textureBindingLayout.binding = 1;
+	BindGroupLayoutEntry& perObjectBindingLayout = bindingLayoutEntries[1];
+	perObjectBindingLayout.binding = 1;
+	perObjectBindingLayout.visibility = ShaderStage::Vertex | ShaderStage::Fragment;
+	perObjectBindingLayout.buffer.type = BufferBindingType::Uniform;
+	perObjectBindingLayout.buffer.minBindingSize = sizeof(PerObjectUniforms);
+	perObjectBindingLayout.buffer.hasDynamicOffset = true;
+
+	BindGroupLayoutEntry& textureBindingLayout = bindingLayoutEntries[2];
+	textureBindingLayout.binding = 2;
 	textureBindingLayout.visibility = ShaderStage::Fragment;
 	textureBindingLayout.texture.sampleType = TextureSampleType::Float;
 	textureBindingLayout.texture.viewDimension = TextureViewDimension::_2D;
 
-	BindGroupLayoutEntry& samplerBindingLayout = bindingLayoutEntries[2];
-	samplerBindingLayout.binding = 2;
+	BindGroupLayoutEntry& normalTextureBindingLayout = bindingLayoutEntries[3];
+	normalTextureBindingLayout.binding = 3;
+	normalTextureBindingLayout.visibility = ShaderStage::Fragment;
+	normalTextureBindingLayout.texture.sampleType = TextureSampleType::Float;
+	normalTextureBindingLayout.texture.viewDimension = TextureViewDimension::_2D;
+
+	BindGroupLayoutEntry& samplerBindingLayout = bindingLayoutEntries[4];
+	samplerBindingLayout.binding = 4;
 	samplerBindingLayout.visibility = ShaderStage::Fragment;
 	samplerBindingLayout.sampler.type = SamplerBindingType::Filtering;
+
+	BindGroupLayoutEntry& lightingBindingLayout = bindingLayoutEntries[5];
+	lightingBindingLayout.binding = 5;
+	lightingBindingLayout.visibility = ShaderStage::Fragment;
+	lightingBindingLayout.buffer.type = BufferBindingType::Uniform;
+	lightingBindingLayout.buffer.minBindingSize = sizeof(LightingUniforms);
 
 	// Create a bind group layout
 	BindGroupLayoutDescriptor bindGroupLayoutDesc{};
@@ -359,49 +424,14 @@ bool Application::InitializeRenderPipeline() {
 	return pipeline != nullptr;
 }
 
-bool Application::InitializeGeometry() {
-
-	// x0, y0, x1, y1, ...
-	std::vector<VertexData> vertexData = {	};
-
-	bool success = ResourceManager::loadGeometryFromObj(RESOURCE_DIR "/fourareen.obj", vertexData);
-	// Check for errors
-	if (!success) {
-		std::cerr << "Could not load geometry!" << std::endl;
-		return false;
-	}
-
-
-	// We will declare vertexCount as a member of the Application class
-	vertexCount = static_cast<uint32_t>(vertexData.size());
-	//indexCount = static_cast<uint32_t>(indexData.size());
-
-	BufferDescriptor bufferDesc;
-	bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Vertex; // Vertex usage here!
-	bufferDesc.mappedAtCreation = false;
-
-	bufferDesc.label = "Vertex Data";
-	bufferDesc.size = vertexData.size() * sizeof(VertexData);
-	vertexBuffer = device.createBuffer(bufferDesc);
-	queue.writeBuffer(vertexBuffer, 0, vertexData.data(), bufferDesc.size);
-
-	/*
-	bufferDesc.label = "Index Buffer";
-	bufferDesc.size = indexData.size() * sizeof(uint16_t);
-	bufferDesc.size = (bufferDesc.size + 3) & ~3;
-	bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Index;
-	indexBuffer = device.createBuffer(bufferDesc);
-	queue.writeBuffer(indexBuffer, 0, indexData.data(), bufferDesc.size);
-	*/
-
-	return vertexBuffer != nullptr;
-}
 
 bool Application::InitializeUniformBuffer() {
 	SupportedLimits supportedLimits;
 	device.getLimits(&supportedLimits);
 	Limits deviceLimits = supportedLimits.limits;
 	uniformStride = ceilToNextMultiple((uint32_t)sizeof(MyUniforms), (uint32_t)deviceLimits.minUniformBufferOffsetAlignment);
+	perObjectUniformStride = ceilToNextMultiple((uint32_t)sizeof(PerObjectUniforms), (uint32_t)deviceLimits.minUniformBufferOffsetAlignment);
+
 
 	BufferDescriptor bufferDesc;
 	bufferDesc.label = "Uniform Buffer";
@@ -410,10 +440,13 @@ bool Application::InitializeUniformBuffer() {
 	bufferDesc.mappedAtCreation = false;
 	uniformBuffer = device.createBuffer(bufferDesc);
 
+	bufferDesc.label = "Per Object Uniform Buffer";
+	bufferDesc.size = perObjectUniformStride + sizeof(PerObjectUniforms) * 200;
+	perObjectUniformBuffer = device.createBuffer(bufferDesc);
+
 	uniforms.time = 1.0f;
 	uniforms.color = { 0.0f, 1.0f, 0.4f, 1.0f };
 
-	uniforms.modelMatrix = mat4x4(1.0);
 	UpdateViewMatrix();
 	UpdateProjectionMatrix();
 
@@ -423,17 +456,30 @@ bool Application::InitializeUniformBuffer() {
 
 bool Application::InitializeBindGroups() {
 	// Create a binding
-	std::vector<BindGroupEntry> bindings(3);
+	std::vector<BindGroupEntry> bindings(6);
 	bindings[0].binding = 0;
 	bindings[0].buffer = uniformBuffer;
 	bindings[0].offset = 0;
 	bindings[0].size = sizeof(MyUniforms);
 
 	bindings[1].binding = 1;
-	bindings[1].textureView = textureView;
+	bindings[1].buffer = perObjectUniformBuffer;
+	bindings[1].offset = 0;
+	bindings[1].size = sizeof(PerObjectUniforms);
 
 	bindings[2].binding = 2;
-	bindings[2].sampler = sampler;
+	bindings[2].textureView = baseColorTextureView;
+
+	bindings[3].binding = 3;
+	bindings[3].textureView = normalTextureView;
+
+	bindings[4].binding = 4;
+	bindings[4].sampler = sampler;
+
+	bindings[5].binding = 5;
+	bindings[5].buffer = lightingUniformBuffer;
+	bindings[5].offset = 0;
+	bindings[5].size = sizeof(LightingUniforms);
 
 	// A bind group contains one or multiple bindings
 	BindGroupDescriptor bindGroupDesc{};
@@ -447,9 +493,10 @@ bool Application::InitializeBindGroups() {
 
 bool Application::InitializeTextures() {
 
-	texture = ResourceManager::loadTexture(RESOURCE_DIR "/fourareen2K_albedo.jpg", device, &textureView);
-	if (!texture) {
-		std::cerr << "Could not load texture!" << std::endl;
+	baseColorTexture = ResourceManager::loadTexture(RESOURCE_DIR "/cobblestone_floor_08_diff_2k.jpg", device, &baseColorTextureView);
+	normalTexture = ResourceManager::loadTexture(RESOURCE_DIR "/cobblestone_floor_08_nor_gl_2k.png", device, &normalTextureView);
+	if (!baseColorTexture || !normalTexture) {
+		std::cerr << "Could not load textures!" << std::endl;
 		return false;
 	}
 
@@ -466,12 +513,12 @@ bool Application::InitializeTextures() {
 	samplerDesc.maxAnisotropy = 1;
 	sampler = device.createSampler(samplerDesc);
 
-	return texture != nullptr && sampler != nullptr;
+	return baseColorTexture != nullptr && normalTexture != nullptr && sampler != nullptr;
 }
 
 bool Application::InitializeWindowAndDevice() {
-
-	instance = createInstance(InstanceDescriptor{});
+	WGPUInstanceDescriptor instanceDesc{};
+	instance = createInstance(instanceDesc);
 	if (!instance) {
 		std::cerr << "Could not initialize WebGPU!" << std::endl;
 		return false;
@@ -573,7 +620,7 @@ bool Application::InitializeSurface() {
 	config.height = static_cast<uint32_t>(height);
 	config.usage = TextureUsage::RenderAttachment;
 	config.format = surfaceFormat;
-	config.presentMode = PresentMode::Fifo;
+	config.presentMode = PresentMode::Immediate;
 	config.viewFormatCount = 0;
 	config.viewFormats = nullptr;
 	config.device = device;
@@ -612,17 +659,63 @@ bool Application::InitializeDepthBuffer() {
 	return depthTextureView != nullptr;
 }
 
+bool Application::InitializeLightingUniforms() {
+	BufferDescriptor bufferDesc;
+	bufferDesc.size = sizeof(LightingUniforms);
+	bufferDesc.usage = BufferUsage::CopyDst | BufferUsage::Uniform;
+	bufferDesc.mappedAtCreation = false;
+	lightingUniformBuffer = device.createBuffer(bufferDesc);
+
+	// Initial values
+	lightingUniforms.directions[0] = { 0.5f, -0.9f, 0.1f, 0.0f };
+	lightingUniforms.directions[1] = { 0.2f, 0.4f, 0.3f, 0.0f };
+	lightingUniforms.colors[0] = { 1.0f, 0.9f, 0.6f, 1.0f };
+	lightingUniforms.colors[1] = { 0.6f, 0.9f, 1.0f, 1.0f };
+	lightingUniforms.hardness = 32.f;
+	lightingUniforms.kd = 1.0f;
+	lightingUniforms.ks = 0.5f;
+	lightingUniforms.normalStrength = 1.f;
+	lightingUniformsChanged = true;
+
+	UpdateLightingUniforms();
+
+	return lightingUniformBuffer != nullptr;
+}
+
+bool Application::InitializeNodes() {
+	rootNode = std::make_unique<Node3D>();
+	rootNode->SetName("Application");
+
+	GLTFSceneParser parser;
+	auto tree = parser.ParseGLTF(device, RESOURCE_DIR "/Level1.glb");
+	rootNode->AddChild(std::move(tree));
+
+	/*
+	auto mesh = rootNode->AddChild<NodeMeshInstance3D>();
+	mesh->SetMesh(model);
+	mesh->SetPosition({0.0f, 0.0f, -1.f});
+
+	auto mesh2 = rootNode->AddChild<NodeMeshInstance3D>();
+	mesh2->SetMesh(model);
+	mesh2->SetPosition({1.0f, 0.0f, 1.f});
+	mesh2->SetOrientation(Quat(90.f, {0.0f, 0.0f, 1.0f}));
+	*/
+
+	return true;
+}
+
 void Application::TerminateTextures() {
-	textureView.release();
-	texture.destroy();
-	texture.release();
+	normalTextureView.release();
+	baseColorTextureView.release();
+	normalTexture.destroy();
+	normalTexture.release();
+	baseColorTexture.destroy();
+	baseColorTexture.release();
 	sampler.release();
 }
 
 void Application::TerminateGeometry() {
-	vertexBuffer.destroy();
-	vertexBuffer.release();
-	vertexCount = 0;
+
 }
 
 void Application::TerminateBindGroups() {
@@ -661,11 +754,16 @@ void Application::TerminateDepthBuffer() {
 	depthTexture.release();
 }
 
+void Application::TerminateLightingUniforms() {
+	lightingUniformBuffer.destroy();
+	lightingUniformBuffer.release();
+}
+
 void Application::UpdateProjectionMatrix() {
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
 	float ratio = width / (float)height;
-	uniforms.projectionMatrix = glm::perspective(45 * PI / 180, ratio, 0.01f, 100.0f);
+	uniforms.projectionMatrix = glm::perspective(45 * PI / 180, ratio, 0.01f, 1000.0f);
 	queue.writeBuffer(
 		uniformBuffer,
 		offsetof(MyUniforms, projectionMatrix),
@@ -687,6 +785,10 @@ void Application::UpdateViewMatrix() {
 		&uniforms.viewMatrix,
 		sizeof(MyUniforms::viewMatrix)
 	);
+
+	uniforms.cameraWorldPosition = position;
+	queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, cameraWorldPosition), &uniforms.cameraWorldPosition, sizeof(uniforms.cameraWorldPosition));
+
 }
 
 void Application::UpdateDragInertia() {
@@ -703,6 +805,19 @@ void Application::UpdateDragInertia() {
 		// after a few frames.
 		dragState.velocity *= dragState.inertia;
 		UpdateViewMatrix();
+	}
+}
+
+void Application::UpdateLightingUniforms() {
+	if (lightingUniformsChanged) {
+		queue.writeBuffer(lightingUniformBuffer, 0, &lightingUniforms, sizeof(LightingUniforms));
+		lightingUniformsChanged = false;
+	}
+}
+
+void Application::UpdateNodes() {
+	if (rootNode) {
+		rootNode->UpdateNodeInternal(1.0f/60.f);
 	}
 }
 
@@ -748,32 +863,32 @@ void Application::UpdateGUI(wgpu::RenderPassEncoder renderPass) {
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 
-	// Build our UI
-	static float f = 0.0f;
-	static int counter = 0;
-	static bool show_demo_window = true;
-	static bool show_another_window = false;
-	static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 	dockspace_flags |= ImGuiDockNodeFlags_PassthruCentralNode;
 
 
 	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), dockspace_flags);
-	ImGui::Begin("Hello, world!");                                // Create a window called "Hello, world!" and append into it.
+	// In Application::updateGui
 
-	ImGui::Text("This is some useful text.");                     // Display some text (you can use a format strings too)
-	ImGui::Checkbox("Demo Window", &show_demo_window);            // Edit bools storing our window open/close state
-	ImGui::Checkbox("Another Window", &show_another_window);
+	bool changed = false;
+	ImGui::Begin("Lighting");
+	changed = ImGui::ColorEdit3("Color #0", glm::value_ptr(lightingUniforms.colors[0])) || changed;
+	changed = ImGui::DragDirection("Direction #0", lightingUniforms.directions[0]) || changed;
+	changed = ImGui::ColorEdit3("Color #1", glm::value_ptr(lightingUniforms.colors[1])) || changed;
+	changed = ImGui::DragDirection("Direction #1", lightingUniforms.directions[1]) || changed;
+	changed = ImGui::SliderFloat("Hardness", &lightingUniforms.hardness, 1.0f, 100.f) || changed;
+	changed = ImGui::SliderFloat("K Diffuse", &lightingUniforms.kd, 0.0f, 1.0f) || changed;
+	changed = ImGui::SliderFloat("K Specular", &lightingUniforms.ks, 0.0f, 1.0f) || changed;
+	changed = ImGui::SliderFloat("Normal Strength", &lightingUniforms.normalStrength, 0.0f, 1.0f) || changed;
+	ImGui::End();
+	lightingUniformsChanged = changed;
 
-	ImGui::SliderFloat("float", &f, 0.0f, 1.0f);                  // Edit 1 float using a slider from 0.0f to 1.0f
-	ImGui::ColorEdit3("clear color", (float*)&clear_color);       // Edit 3 floats representing a color
+	ImGui::Begin("Scene");
+	ImGuiDrawNode(rootNode.get());
+	ImGui::End();
 
-	if (ImGui::Button("Button"))                                  // Buttons return true when clicked (most widgets return true when edited/activated)
-		counter++;
-	ImGui::SameLine();
-	ImGui::Text("counter = %d", counter);
-
+	ImGui::Begin("Statistics");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 	ImGui::End();
 
@@ -787,6 +902,7 @@ void Application::TerminateGUI() {
 	ImGui_ImplGlfw_Shutdown();
 	ImGui_ImplWGPU_Shutdown();
 }
+
 
 void Application::onMouseMove(double xpos, double ypos) {
 	if (dragState.active) {
@@ -825,11 +941,32 @@ void Application::onMouseButton(int button, int action, [[maybe_unused]] int mod
 
 void Application::onScroll([[maybe_unused]] double xoffset, double yoffset) {
 	cameraState.zoom += dragState.scrollSensitivity * static_cast<float>(yoffset);
-	cameraState.zoom = glm::clamp(cameraState.zoom, -2.0f, 2.0f);
+	cameraState.zoom = glm::clamp(cameraState.zoom, -20.0f, 20.0f);
 	UpdateViewMatrix();
 }
 
 void Application::onKey([[maybe_unused]] int key, [[maybe_unused]] int scancode, [[maybe_unused]] int action, [[maybe_unused]] int mods) {
+}
+
+void Application::ImGuiDrawNode(Node *node) {
+
+	bool bHasChildren = node->Children.size() > 0;
+
+	if (bHasChildren) {
+		if (ImGui::TreeNode((node->Name + "##xx").c_str())) {
+			for (auto& child : node->Children) {
+				ImGuiDrawNode(child.get());
+			}
+			ImGui::TreePop();
+		}
+	}
+	else {
+		if (ImGui::TreeNodeEx((node->Name + "##xx").c_str(), ImGuiTreeNodeFlags_Leaf)) {
+			ImGui::TreePop();
+		}
+	}
+
+
 }
 
 
@@ -882,24 +1019,24 @@ RequiredLimits Application::GetRequiredLimits(wgpu::Adapter adapter) {
 	}
 
 	RequiredLimits requiredLimits = Default;
-	requiredLimits.limits.maxVertexAttributes = 4;
+	requiredLimits.limits.maxVertexAttributes = 6;
 	requiredLimits.limits.maxVertexBuffers = 1;
-	requiredLimits.limits.maxBufferSize = 1000000 * sizeof(VertexData);
+	requiredLimits.limits.maxBufferSize = 10000000 * sizeof(VertexData);
 	requiredLimits.limits.maxVertexBufferArrayStride = sizeof(VertexData);
 	requiredLimits.limits.minUniformBufferOffsetAlignment = supportedLimits.limits.minUniformBufferOffsetAlignment;
 	requiredLimits.limits.minStorageBufferOffsetAlignment = supportedLimits.limits.minStorageBufferOffsetAlignment;
 	requiredLimits.limits.maxTextureDimension2D = supportedLimits.limits.maxTextureDimension2D;
-	requiredLimits.limits.maxInterStageShaderComponents = 8;
+	requiredLimits.limits.maxInterStageShaderComponents = 17;
 	requiredLimits.limits.maxBindGroups = 2;
-	requiredLimits.limits.maxUniformBuffersPerShaderStage = 2;
-	requiredLimits.limits.maxUniformBufferBindingSize = 16 * 4 * sizeof(float);
+	requiredLimits.limits.maxUniformBuffersPerShaderStage = 3;
+	requiredLimits.limits.maxUniformBufferBindingSize = 65536;
 	requiredLimits.limits.maxDynamicUniformBuffersPerPipelineLayout = 1;
 	requiredLimits.limits.maxTextureDimension1D = std::max(largestWidth, largestHeight);
 	requiredLimits.limits.maxTextureDimension2D = std::max(largestWidth, largestHeight);
 	requiredLimits.limits.maxTextureArrayLayers = 1;
 	requiredLimits.limits.maxSampledTexturesPerShaderStage = 4;
 	requiredLimits.limits.maxSamplersPerShaderStage = 4;
-	requiredLimits.limits.maxBindingsPerBindGroup = 4;
+	requiredLimits.limits.maxBindingsPerBindGroup = 5;
 
 
 	return requiredLimits;

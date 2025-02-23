@@ -11,6 +11,8 @@
 
 #include "Application.h"
 
+struct VertexData;
+
 class ResourceManager {
 
 public:
@@ -23,7 +25,7 @@ public:
     const std::filesystem::path& path,
     wgpu::Device device);
 
-
+    static void populateTextureFrameAttributes(std::vector<VertexData> &vertexData, optional_ref<const std::vector<uint16_t>> indices = std::nullopt);
 private:
     static void writeMipMaps(
         wgpu::Device device,
@@ -31,6 +33,10 @@ private:
         wgpu::Extent3D textureSize,
     [[maybe_unused]] uint32_t mipLevelCount, // not used yet
     const unsigned char* pixelData);
+
+    static glm::mat3x3 computeTBN(const VertexData corners[3], const glm::vec3& expectedN);
+
+
 };
 
 
