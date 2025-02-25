@@ -8,25 +8,20 @@
 #include <glm/vec3.hpp>
 #include <webgpu/webgpu.hpp>
 
-#include "IDrawable.h"
+#include "CrabTypes.h"
+#include "Gfx/MeshVertex.h"
+#include "Gfx/Vertex.h"
 
-struct VertexData {
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec3 color;
-    glm::vec2 uv;
-    glm::vec3 tangent;
-    glm::vec3 bitangent;
-};
 
-class Mesh : public IDrawable {
+
+class Mesh {
 public:
-    WGPUBuffer vertexBuffer;
-    WGPUBuffer indexBuffer;
+    WGPUBuffer vertexBuffer = nullptr;
+    WGPUBuffer indexBuffer = nullptr;
     uint32_t indexCount;
     uint32_t vertexCount;
 
-    Mesh(WGPUDevice device, const std::vector<VertexData>& vertices, optional_ref<const std::vector<uint16_t>> indices)
+    Mesh(WGPUDevice device, const std::vector<MeshVertex>& vertices, optional_ref<const std::vector<uint16_t>> indices)
         : indexCount(static_cast<uint32_t>(indices.has_value() ? indices.value().get().size() : 0)),
         vertexCount(static_cast<uint32_t>(vertices.size()))
     {
@@ -35,7 +30,7 @@ public:
             .nextInChain = nullptr,
             .label = "Vertex Buffer",
             .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex,
-            .size = vertices.size() * sizeof(VertexData),
+            .size = vertices.size() * sizeof(MeshVertex),
             .mappedAtCreation = false
         };
         vertexBuffer = wgpuDeviceCreateBuffer(device, &vertexBufferDesc);
@@ -58,9 +53,9 @@ public:
         }
     }
 
-    virtual void GatherDrawCommands(std::vector<DrawCommand> &Commands) const override;
+    //virtual void GatherDrawCommands(std::vector<DrawCommand> &Commands) const override;
     
-    ~Mesh() override
+    ~Mesh()
     {
         wgpuBufferDestroy(vertexBuffer);
         wgpuBufferRelease(vertexBuffer);

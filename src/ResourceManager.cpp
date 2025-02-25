@@ -12,7 +12,7 @@
 
 using namespace wgpu;
 
-bool ResourceManager::loadGeometryFromObj(const std::filesystem::path &path, std::vector<VertexData> &vertexData) {
+bool ResourceManager::loadGeometryFromObj(const std::filesystem::path &path, std::vector<MeshVertex> &vertexData) {
 
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -198,7 +198,7 @@ void ResourceManager::writeMipMaps(wgpu::Device device, wgpu::Texture texture, w
     queue.release();
 }
 
-glm::mat3x3 ResourceManager::computeTBN(const VertexData corners[3], const glm::vec3& expectedN) {
+glm::mat3x3 ResourceManager::computeTBN(const MeshVertex corners[3], const glm::vec3& expectedN) {
     using namespace glm;
     // What we call e in the figure
     vec3 ePos1 = corners[1].position - corners[0].position;
@@ -229,13 +229,13 @@ glm::mat3x3 ResourceManager::computeTBN(const VertexData corners[3], const glm::
     return mat3x3(T, B, N);
 }
 
-void ResourceManager::populateTextureFrameAttributes(std::vector<VertexData> &vertexData, optional_ref<const std::vector<uint16_t>> indices) {
+void ResourceManager::populateTextureFrameAttributes(std::vector<MeshVertex> &vertexData, optional_ref<const std::vector<uint16_t>> indices) {
     if (!indices) {
         using namespace glm;
         const size_t triangleCount = vertexData.size() / 3;
         // We compute the local texture frame per triangle
         for (int t = 0; t < (int)triangleCount; ++t) {
-            VertexData* v = &vertexData[3 * t];
+            MeshVertex* v = &vertexData[3 * t];
 
             for (int k = 0; k < 3; ++k) {
                 mat3x3 TBN = computeTBN(v, v[k].normal);
@@ -255,9 +255,9 @@ void ResourceManager::populateTextureFrameAttributes(std::vector<VertexData> &ve
 
     // Iterate over each triangle
     for (size_t i = 0; i < indices->get().size(); i += 3) {
-        VertexData& v0 = vertexData[indices->get()[i]];
-        VertexData& v1 = vertexData[indices->get()[i + 1]];
-        VertexData& v2 = vertexData[indices->get()[i + 2]];
+        MeshVertex& v0 = vertexData[indices->get()[i]];
+        MeshVertex& v1 = vertexData[indices->get()[i + 1]];
+        MeshVertex& v2 = vertexData[indices->get()[i + 2]];
 
         // Compute edges
         glm::vec3 edge1 = v1.position - v0.position;

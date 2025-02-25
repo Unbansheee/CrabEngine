@@ -5,11 +5,12 @@ project(
     LANGUAGES CXX C # programming languages used by the project
 )
 
-file(GLOB SOURCES
+file(GLOB_RECURSE SOURCES
         src/*.h
         src/*.c
         src/*.hpp
         src/*.cpp
+        resources/*.wgsl
 )
 
 add_library(CrabEngine STATIC
@@ -33,6 +34,7 @@ add_subdirectory(vendor/webgpu)
 add_subdirectory(vendor/glfw)
 add_subdirectory(vendor/glfw3webgpu)
 add_subdirectory(vendor/imgui)
+add_subdirectory(vendor/rocket)
 target_link_libraries(CrabEngine PRIVATE glfw glfw3webgpu)
 target_link_libraries(CrabEngine PUBLIC webgpu imgui)
 target_copy_webgpu_binaries(CrabEngine)
@@ -82,5 +84,8 @@ endif (MSVC)
 target_include_directories(CrabEngine PRIVATE .)
 target_include_directories(CrabEngine PUBLIC ./vendor)
 target_include_directories(CrabEngine PUBLIC ./src)
+target_include_directories(CrabEngine PRIVATE ./src/Nodes)
+target_include_directories(CrabEngine PRIVATE ./src/Renderer)
+target_include_directories(CrabEngine PRIVATE ./src/Utility)
 
 

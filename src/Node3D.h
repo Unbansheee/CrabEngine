@@ -9,6 +9,13 @@
 class Node3D : public Node
 {
 public:
+    Node3D() = default;
+
+    explicit Node3D(const std::string& name)
+        : Node(name)
+    {
+    }
+
     virtual void SetPosition(const Vector3& Pos);
     virtual void SetScale(const Vector3& Scale);
     virtual void SetOrientation(const Quat& Orientation);

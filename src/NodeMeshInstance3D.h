@@ -5,13 +5,26 @@
 #pragma once
 #include "Mesh.h"
 #include "Node3D.h"
+#include "Renderer/Material.h"
 
 
 class NodeMeshInstance3D : public Node3D {
-
 public:
+    NodeMeshInstance3D() = default;
+
+    explicit NodeMeshInstance3D(const std::string& name)
+        : Node3D(name)
+    {
+    }
+
     void SetMesh(const std::shared_ptr<Mesh>& newMesh);
-    virtual void GatherDrawCommands(std::vector<DrawCommand> &Commands) const override;
+    const std::shared_ptr<Mesh>& GetMesh() const {return mesh;}
+
+    void SetMaterial(const std::shared_ptr<Material>& newMaterial) {material = newMaterial;}
+    const std::shared_ptr<Material>& GetMaterial() const {return material;}
+
+    virtual void Render(RenderVisitor& Visitor) override;
 protected:
     std::shared_ptr<Mesh> mesh;
+    std::shared_ptr<Material> material;
 };

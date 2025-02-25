@@ -241,7 +241,7 @@ std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std:
 
 std::shared_ptr<Mesh> GLTFSceneParser::ParseMesh(WGPUDevice device, tinygltf::Model& model, tinygltf::Mesh& mesh)
 {
-	std::vector<VertexData> vertices;
+	std::vector<MeshVertex> vertices;
 	std::vector<uint16_t> indices;
 
 	for (tinygltf::Primitive& primitive : mesh.primitives)
@@ -281,7 +281,7 @@ std::shared_ptr<Mesh> GLTFSceneParser::ParseMesh(WGPUDevice device, tinygltf::Mo
 
 		for (size_t i = 0; i < positionAccessor.count; ++i) {
 
-			VertexData v{};
+			MeshVertex v{};
 
 			// swizzled to enforce Z up
 			v.position.x = positions[i * 3 + 0];

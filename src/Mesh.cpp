@@ -4,6 +4,7 @@
 
 #include "Mesh.h"
 
+/*
 void Mesh::GatherDrawCommands(std::vector<DrawCommand> &Commands) const {
     IDrawable::GatherDrawCommands(Commands);
     DrawCommand& command = Commands.emplace_back();
@@ -12,3 +13,4 @@ void Mesh::GatherDrawCommands(std::vector<DrawCommand> &Commands) const {
     command.indexBuffer = indexBuffer;
     command.indexCount = indexCount;
 }
+*/

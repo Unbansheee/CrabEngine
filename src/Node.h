@@ -3,14 +3,20 @@
 
 #pragma once
 #include <memory>
+#include <string>
 #include <vector>
-#include "IDrawable.h"
+
+#include "Utility/ObservableDtor.h"
 #include "Transform.h"
 
-class Node : public IDrawable {
+class RenderVisitor;
+
+class Node : public observable_dtor {
 
 protected:
 	friend class Application;
+	friend class NodeWindow;
+	friend class NodeImGUIContextWindow;
 
 	// Runs when this node is instantiated
 	virtual void Begin() {}
@@ -21,10 +27,20 @@ protected:
 	// Runs every frame
 	virtual void Update(float dt) {}
 
+	virtual void DrawGUI() {};
+
 public:
-	virtual ~Node()
+	virtual ~Node() override
 	{
-	};
+	}
+
+	Node() : Name("Node")
+	{
+	}
+
+	Node(const std::string& name): Name(name)
+	{
+	}
 
 	// Returns the Transform data of this Node
 	virtual Transform GetTransform() const;
@@ -36,7 +52,7 @@ public:
 	virtual void UpdateTransform();
 
 	// IDrawable
-	virtual void GatherDrawCommands(std::vector<DrawCommand>& Commands) const override;
+	virtual void Render(RenderVisitor& Visitor);
 	// ~IDrawable
 
 	// Walk the tree to the root node, and retrieve its Context
@@ -44,7 +60,20 @@ public:
 
 	// Walk the tree to find the outermost Node (Generally the SceneRoot)
 	Node* GetRootNode();
+	template<typename T>
+	T* GetRootNode();
 
+	Node* GetParent() { return Parent; }
+
+	template<typename T>
+	T* GetAncestorOfType();
+
+	template<typename T>
+	bool IsA();
+
+	bool IsDescendantOf(Node* otherNode);
+	bool IsAncestorOf(Node* otherNode);
+	
 	// Walk the tree to the root node, and retrieve its Application
 	//Application* GetApplication();
 
@@ -56,6 +85,8 @@ public:
 
 	std::unique_ptr<Node> RemoveFromParent();
 
+	virtual void DrawInspectorWidget(); 
+	
 	// Instantiate a node and add it to the list of children
 	template<typename T, typename... TArgs>
 	T* AddChild(const TArgs&... args)
@@ -79,7 +110,7 @@ public:
 		return n.get();
 	}
 
-	template<typename T>
+	template<typename T = Node>
 	std::vector<T*> GetChildren() const
 	{
 		std::vector<T*> children;
@@ -121,6 +152,9 @@ protected:
 
 	// Call Update() and update children
 	void UpdateNodeInternal(float dt);
+	
+	virtual void DrawGUIInternal();
+
 
 	// Call ProcessInput() and update children inputs
 	//void ProcessInputInternal(const Controller::Input::ControllerContext& PadData, int padIndex);
@@ -136,5 +170,53 @@ private:
 	//Context* OwningContext = nullptr;
 	//Application* ApplicationContext = nullptr;
 };
+
+inline bool Node::IsDescendantOf(Node* otherNode)
+{
+	if (!otherNode) return false;
+	return (otherNode->IsAncestorOf(this));
+}
+
+inline bool Node::IsAncestorOf(Node* otherNode)
+{
+	if (!otherNode) return false;
+	Node* parent = otherNode->GetParent();
+	while (parent != nullptr)
+	{
+		if (parent == this)
+		{
+			return true;
+		}
+		parent = parent->GetParent();
+	}
+	return false;
+}
+
+template <typename T>
+T* Node::GetRootNode()
+{
+	auto root = GetRootNode();
+	return dynamic_cast<T*>(root);
+}
+
+template <typename T>
+T* Node::GetAncestorOfType()
+{
+	if (Parent)
+	{
+		if (T* ancestor = dynamic_cast<T*>(Parent))
+		{
+			return ancestor;
+		}
+		return Parent->GetAncestorOfType<T>();
+	}
+	return nullptr;
+}
+
+template <typename T>
+bool Node::IsA()
+{
+	return dynamic_cast<T*>(this) != nullptr;
+}
 
 

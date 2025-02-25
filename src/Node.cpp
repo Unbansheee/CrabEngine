@@ -3,6 +3,14 @@
 //
 
 #include "Node.h"
+#include "imgui/imgui.h"
+#include "imgui/misc/cpp/imgui_stdlib.h"
+
+void Node::DrawInspectorWidget()
+{
+	char namebuf[64];
+	ImGui::InputText("Name", &Name);
+}
 
 Transform Node::GetTransform() const
 {
@@ -29,6 +37,17 @@ void Node::UpdateTransform()
 	}
 }
 
+void Node::Render(RenderVisitor& Visitor)
+{
+	// Depth first walk
+	for (const auto& i : Children)
+	{
+		if (!i) continue;
+		i->Render(Visitor);
+	}
+}
+
+/*
 void Node::GatherDrawCommands(std::vector<DrawCommand> &Commands) const {
 	for (auto& child : Children)
 	{
@@ -37,7 +56,7 @@ void Node::GatherDrawCommands(std::vector<DrawCommand> &Commands) const {
 		child->GatherDrawCommands(Commands);
 	}
 }
-
+*/
 
 /*
 std::vector<DrawCommand> Node::CreateDrawCommand(Context& context) const
@@ -88,6 +107,19 @@ std::unique_ptr<Node> Node::RemoveFromParent()
 	if (!Parent) return nullptr;
 
 	int i = 0;
+	auto it = std::find_if(Parent->Children.begin(), Parent->Children.end(), [this](auto& a)
+	{
+		return a.get() == this;
+	});
+	if (it != Parent->Children.end())
+	{
+		std::unique_ptr<Node> n = std::move(*it);
+		Parent->Children.erase(it);
+		return n;
+	}
+
+	return nullptr;
+	/*
 	for (std::unique_ptr<Node>& item : Parent->Children)
 	{
 		if (item.get() == this)
@@ -100,6 +132,7 @@ std::unique_ptr<Node> Node::RemoveFromParent()
 	std::unique_ptr<Node> n = std::move(Parent->Children.at(i));
 	Parent->Children.erase(Parent->Children.begin() + i);
 	return n;
+	*/
 }
 
 void Node::UpdateNodeInternal(float dt)
@@ -113,7 +146,18 @@ void Node::UpdateNodeInternal(float dt)
 	}
 
 	Update(dt);
+}
 
+void Node::DrawGUIInternal()
+{
+	DrawGUI();
+
+	// Depth first walk
+	for (const auto& i : Children)
+	{
+		if (!i) continue;
+		i->DrawGUIInternal();
+	}
 }
 
 /*

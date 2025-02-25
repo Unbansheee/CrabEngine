@@ -10,18 +10,19 @@
 #include "GLFW/glfw3.h"
 #include <glm/glm.hpp>
 #include "ApplicationLayer.h"
+#include "imgui_multicontext_compositor.h"
+#include "Node.h"
 
-class Node;
+struct ImGuiContext;
 using glm::mat4x4;
 using glm::vec4;
 
-// Avoid the "wgpu::" prefix in front of all WebGPU symbols
 
+// Avoid the "wgpu::" prefix in front of all WebGPU symbols
+/*
 class Application {
 public:
-    Application(): device(nullptr), queue(nullptr), surface(nullptr), pipeline(nullptr) {
-    } ;
-
+    
     // Initialize everything and return true if it went all right
     bool Initialize();
 
@@ -36,30 +37,19 @@ public:
 
     void OnResize();
 
-    template<typename T, typename... Args>
-    T* PushApplicationLayer(Args&&... args) {
-        static_assert(std::is_base_of<ApplicationLayer, T>::value, "T must derive from ApplicationLayer");
-        auto& layer = layers.emplace_back(new T(this, std::forward<Args>(args)...));
-        layer->Begin();
-        return layer->get();
-    }
+public:
+    wgpu::Instance GetInstance() const { return instance; }
+    wgpu::Device GetDevice() const { return device; }
+    wgpu::Queue GetQueue() const { return queue; }
 
-    template<typename T>
-    T* PushApplicationLayer(std::unique_ptr<T> layer) {
-        static_assert(std::is_base_of<ApplicationLayer, T>::value, "T must derive from ApplicationLayer");
-        auto& l = layers.emplace_back(std::move(layer));
-        l->Begin();
-        return layers.back().get();
-    }
-
-    void PopApplicationLayer(ApplicationLayer* layer) {
-        if (!layer) {std::cerr << "PopApplicationLayer: layer is null" << std::endl; return;}
-        layer->End();
-        layers.erase(std::remove_if(layers.begin(), layers.end(), [layer](const auto& a) {
-            return layer == a.get();
-        }), layers.end());
-    }
-
+    struct MyUniforms {
+        mat4x4 projectionMatrix;
+        mat4x4 viewMatrix;
+        vec4 color;  // or float color[4]
+        glm::vec3 cameraWorldPosition;
+        float time;
+        float _pad[3];
+    };
 private:
     wgpu::TextureView GetNextSurfaceTextureView();
     static wgpu::RequiredLimits GetRequiredLimits(wgpu::Adapter adapter);
@@ -67,8 +57,7 @@ private:
 private:
     bool InitializeWindowAndDevice();
     bool InitializeSurface();
-    bool InitializeRenderPipeline();
-    bool InitializeGeometry();
+    //bool InitializeRenderPipeline();
     bool InitializeUniformBuffer();
     bool InitializeBindGroups();
     bool InitializeTextures();
@@ -80,7 +69,7 @@ private:
     void TerminateGeometry();
     void TerminateBindGroups();
     void TerminateUniformBuffer();
-    void TerminateRenderPipeline();
+    //void TerminateRenderPipeline();
     void TerminateWindowAndDevice();
     void TerminateSurface();
     void TerminateDepthBuffer();
@@ -91,7 +80,6 @@ private:
     void UpdateDragInertia();
     void UpdateLightingUniforms();
     void UpdateNodes();
-    void UpdateLayers(float dt);
 
 private:
     bool InitializeGUI();
@@ -105,10 +93,10 @@ private:
         // We put here all the variables that are shared between init and main loop
     GLFWwindow *window;
     wgpu::Instance instance = nullptr;
-    wgpu::Device device;
-    wgpu::Queue queue;
-    wgpu::Surface surface;
-    wgpu::RenderPipeline pipeline = nullptr;
+    wgpu::Device device = nullptr;
+    wgpu::Queue queue = nullptr;
+    wgpu::Surface surface = nullptr;
+    //wgpu::RenderPipeline pipeline = nullptr;
     wgpu::TextureFormat surfaceFormat = wgpu::TextureFormat::Undefined;
     wgpu::TextureFormat depthTextureFormat = wgpu::TextureFormat::Undefined;
 
@@ -120,14 +108,7 @@ private:
     uint32_t uniformStride = 0;
     uint32_t perObjectUniformStride = 0;
 
-    struct MyUniforms {
-        mat4x4 projectionMatrix;
-        mat4x4 viewMatrix;
-        vec4 color;  // or float color[4]
-        glm::vec3 cameraWorldPosition;
-        float time;
-        float _pad[3];
-    };
+    std::unique_ptr<Node> rootNode;
 
     struct PerObjectUniforms {
         mat4x4 modelMatrix;
@@ -172,8 +153,7 @@ private:
     //static_assert(sizeof(MyUniforms) % 16 == 0);
     wgpu::Texture depthTexture = nullptr;
     wgpu::TextureView depthTextureView = nullptr;
-
-
+    
     wgpu::Texture baseColorTexture = nullptr;
     wgpu::TextureView baseColorTextureView = nullptr;
     wgpu::Texture normalTexture = nullptr;
@@ -188,11 +168,7 @@ private:
     MyUniforms uniforms{};
     CameraState cameraState{};
     DragState dragState{};
-
-    std::unique_ptr<Node> rootNode;
-
-    std::vector<std::unique_ptr<ApplicationLayer>> layers;
-
+    
     void onMouseMove(double xpos, double ypos);
     void onMouseButton(int button, int action, [[]] int mods);
     void onScroll(double xoffset, double yoffset);
@@ -200,3 +176,74 @@ private:
 
     void ImGuiDrawNode(Node* node);
 };
+*/
+
+struct DeltaTicker
+{
+public:
+    float Tick(float newTime)
+    {
+        float delta = newTime - previousTime;
+        previousTime = newTime;
+        return delta;
+    }
+
+private:
+    float previousTime = 0.0f;
+};
+
+class Application
+{
+public:
+    static Application& Get()
+    {
+        static Application s;
+        return s;
+    }
+
+    void Begin();
+    template<typename T>
+    T* SetRootNode(std::unique_ptr<T> newRoot);
+    Node* GetRootNode();
+    void Update();
+    bool ShouldClose() const;
+    void Close();
+
+    wgpu::Instance GetInstance() const { return wgpuInstance; }
+    wgpu::Device GetDevice() const { return wgpuDevice; }
+    wgpu::Queue GetQueue() const { return wgpuDeviceGetQueue(wgpuDevice); }
+
+    static wgpu::RequiredLimits GetRequiredLimits(wgpu::Adapter adapter);
+    
+    struct MyUniforms {
+        mat4x4 projectionMatrix;
+        mat4x4 viewMatrix;
+        vec4 color;  // or float color[4]
+        glm::vec3 cameraWorldPosition;
+        float time;
+        float _pad[3];
+    };
+    
+protected:
+    std::unique_ptr<Node> rootNode;
+    DeltaTicker deltaTime;
+    
+    wgpu::Instance wgpuInstance = nullptr;
+    wgpu::Device wgpuDevice = nullptr;
+
+    std::unique_ptr<wgpu::ErrorCallback> errorCallbackHandle;
+
+    Application(const Application &) = delete;
+    Application & operator = (const Application &) = delete;
+private:
+    Application();
+    ~Application();
+};
+
+template <typename T>
+T* Application::SetRootNode(std::unique_ptr<T> newRoot)
+{
+    T* ptr = newRoot.get();
+    rootNode = std::move(newRoot);
+    return ptr;
+}

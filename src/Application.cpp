@@ -26,7 +26,10 @@
 #include "GLTFSceneParser.h"
 #include "Node.h"
 #include "NodeMeshInstance3D.h"
+#include "NodeWindow.h"
+#include "Gfx/MeshVertex.h"
 
+/*
 using namespace wgpu;
 using glm::vec3;
 
@@ -62,44 +65,42 @@ bool Application::Initialize() {
 
 	if (!InitializeWindowAndDevice()) return false;
 	if (!InitializeSurface()) return false;
-	if (!InitializeRenderPipeline()) return false;
+	//if (!InitializeRenderPipeline()) return false;
 	if (!InitializeDepthBuffer()) return false;
 	if (!InitializeUniformBuffer()) return false;
 	if (!InitializeTextures()) return false;
 	if (!InitializeLightingUniforms()) return false;
-	if (!InitializeBindGroups()) return false;
+	//if (!InitializeBindGroups()) return false;
 	if (!InitializeGUI()) return false;
 	if (!InitializeNodes()) return false;
 
 	previousFrameTime = glfwGetTime();
-
+	
 	return true;
 }
 
 void Application::Terminate() {
-
-	// reverse iterate layers
-	for (auto & layer : std::ranges::reverse_view(layers)) {
-		PopApplicationLayer(layer.get());
-	}
-
 	TerminateGUI();
 	TerminateTextures();
 	TerminateDepthBuffer();
-	TerminateBindGroups();
+	//TerminateBindGroups();
 
 	TerminateUniformBuffer();
-	TerminateRenderPipeline();
+	//TerminateRenderPipeline();
 	TerminateSurface();
 	TerminateWindowAndDevice();
 }
 
 void Application::MainLoop() {
+	glfwMakeContextCurrent(window);
 	glfwPollEvents();
 
 	UpdateNodes();
 	UpdateDragInertia();
-
+	TextureView targetView = GetNextSurfaceTextureView();
+	std::vector<CommandBuffer> commands;
+	*/
+	/*
 	MyUniforms t{};
 	t.time = static_cast<float>(glfwGetTime());
 	queue.writeBuffer(uniformBuffer, offsetof(MyUniforms, time), &t.time, sizeof(MyUniforms::time));
@@ -107,15 +108,12 @@ void Application::MainLoop() {
 	double now = glfwGetTime();
 	deltaTime = static_cast<float>(now - previousFrameTime);
 	previousFrameTime = now;
-
-	for (auto& layer : layers) {
-		layer->Update(deltaTime);
-	}
+	
 
 	UpdateLightingUniforms();
 
 	// Get the next target texture view
-	TextureView targetView = GetNextSurfaceTextureView();
+	
 
 	// Create a command encoder for the draw call
 	CommandEncoderDescriptor encoderDesc = {};
@@ -158,16 +156,15 @@ void Application::MainLoop() {
 	renderPassDesc.depthStencilAttachment = &depthStencilAttachment;
 	renderPassDesc.timestampWrites = nullptr;
 
-	std::vector<CommandBuffer> commands;
+	
 
 	// Create the render pass and end it immediately (we only clear the screen but do not draw anything)
 	RenderPassEncoder renderPass = encoder.beginRenderPass(renderPassDesc);
+	*/
+	//std::vector<DrawCommand> drawCommands;
+	//GatherDrawCommands(drawCommands);
 
-	std::vector<DrawCommand> drawCommands;
-	if (rootNode) {
-		rootNode->GatherDrawCommands(drawCommands);
-	}
-
+	/*
 	uint32_t dynamicOffset = 0;
 	int idx = 0;
 	for (auto& drawCommand : drawCommands) {
@@ -187,6 +184,7 @@ void Application::MainLoop() {
 
 		idx++;
 	}
+	*/
 
 	/*
 	// Select which render pipeline to use
@@ -204,6 +202,7 @@ void Application::MainLoop() {
 	renderPass.drawIndexed(indexCount, 1, 0, 0, 0);
 	*/
 
+	/*
 	renderPass.end();
 	renderPass.release();
 
@@ -211,21 +210,23 @@ void Application::MainLoop() {
 	CommandBufferDescriptor cmdBufferDescriptor = {};
 	cmdBufferDescriptor.label = "Scene Draw Command Buffer";
 	commands.emplace_back(encoder.finish(cmdBufferDescriptor));
+	*/
 
+/*
 	WGPURenderPassColorAttachment color_attachments = {};
 	color_attachments.loadOp = WGPULoadOp_Load;
 	color_attachments.storeOp = WGPUStoreOp_Store;
 	color_attachments.clearValue = { 0, 0, 0, 0 };
 	color_attachments.view = targetView;
-
+	
 	WGPURenderPassDescriptor render_pass_desc = {};
 	render_pass_desc.colorAttachmentCount = 1;
 	render_pass_desc.colorAttachments = &color_attachments;
 	render_pass_desc.depthStencilAttachment = nullptr;
-
+	
 	WGPUCommandEncoderDescriptor enc_desc = {};
 	CommandEncoder gui_encoder = wgpuDeviceCreateCommandEncoder(device, &enc_desc);
-
+	
 	RenderPassEncoder pass = gui_encoder.beginRenderPass(render_pass_desc);
 	UpdateGUI(pass);
 	pass.end();
@@ -251,9 +252,10 @@ void Application::MainLoop() {
 	}
 	//renderpass is released earlier
 	pass.release();
-	encoder.release();
+	//encoder.release();
 	gui_encoder.release();
 	targetView.release();
+	
 
 	wgpuPollEvents(device, true);
 }
@@ -270,7 +272,9 @@ void Application::OnResize() {
 
 	UpdateProjectionMatrix();
 }
+*/
 
+/*
 bool Application::InitializeRenderPipeline() {
 
 	std::cout << "Creating shader module..." << std::endl;
@@ -282,37 +286,8 @@ bool Application::InitializeRenderPipeline() {
 		std::cerr << "Could not load shader!" << std::endl;
 		return false;
 	}
-
-	std::vector<VertexAttribute> vertexAttributes(6);
-	vertexAttributes[0].shaderLocation = 0;
-	vertexAttributes[0].format = VertexFormat::Float32x3;
-	vertexAttributes[0].offset = 0;
-
-	vertexAttributes[1].shaderLocation = 1;
-	vertexAttributes[1].format = VertexFormat::Float32x3;
-	vertexAttributes[1].offset = offsetof(VertexData, normal);
-
-	vertexAttributes[2].shaderLocation = 2;
-	vertexAttributes[2].format = VertexFormat::Float32x3;
-	vertexAttributes[2].offset = offsetof(VertexData, color);
-
-	vertexAttributes[3].shaderLocation = 3;
-	vertexAttributes[3].format = VertexFormat::Float32x2;
-	vertexAttributes[3].offset = offsetof(VertexData, uv);
-
-	vertexAttributes[4].shaderLocation = 4;
-	vertexAttributes[4].format = VertexFormat::Float32x3;
-	vertexAttributes[4].offset = offsetof(VertexData, tangent);
-
-	vertexAttributes[5].shaderLocation = 5;
-	vertexAttributes[5].format = VertexFormat::Float32x3;
-	vertexAttributes[5].offset = offsetof(VertexData, bitangent);
-
-	VertexBufferLayout vertexBufferLayout;
-	vertexBufferLayout.attributeCount = vertexAttributes.size();
-	vertexBufferLayout.attributes = vertexAttributes.data();
-	vertexBufferLayout.arrayStride = sizeof(VertexData);
-	vertexBufferLayout.stepMode = VertexStepMode::Vertex;
+	
+	VertexBufferLayout vertexBufferLayout = Vertex::CreateVertexBufferLayout<MeshVertex>();
 
 	RenderPipelineDescriptor pipelineDesc = {};
 	pipelineDesc.vertex.bufferCount = 1;
@@ -329,8 +304,7 @@ bool Application::InitializeRenderPipeline() {
 	pipelineDesc.multisample.mask = ~0u;
 	pipelineDesc.multisample.alphaToCoverageEnabled = false;
 	pipelineDesc.layout = layout;
-
-
+	
 	DepthStencilState depthStencilState = Default;
 	depthStencilState.depthCompare = CompareFunction::Less;
 	depthStencilState.depthWriteEnabled = true;
@@ -353,6 +327,7 @@ bool Application::InitializeRenderPipeline() {
 	blendState.color.srcFactor = BlendFactor::SrcAlpha;
 	blendState.color.dstFactor = BlendFactor::OneMinusSrcAlpha;
 	blendState.color.operation = BlendOperation::Add;
+	
 	blendState.alpha.srcFactor = BlendFactor::Zero;
 	blendState.alpha.dstFactor = BlendFactor::One;
 	blendState.alpha.operation = BlendOperation::Add;
@@ -437,16 +412,16 @@ bool Application::InitializeRenderPipeline() {
 
 	return pipeline != nullptr;
 }
+*/
 
-
+/*
 bool Application::InitializeUniformBuffer() {
 	SupportedLimits supportedLimits;
 	device.getLimits(&supportedLimits);
 	Limits deviceLimits = supportedLimits.limits;
 	uniformStride = ceilToNextMultiple((uint32_t)sizeof(MyUniforms), (uint32_t)deviceLimits.minUniformBufferOffsetAlignment);
 	perObjectUniformStride = ceilToNextMultiple((uint32_t)sizeof(PerObjectUniforms), (uint32_t)deviceLimits.minUniformBufferOffsetAlignment);
-
-
+	
 	BufferDescriptor bufferDesc;
 	bufferDesc.label = "Uniform Buffer";
 	bufferDesc.size = uniformStride + sizeof(MyUniforms);
@@ -569,7 +544,7 @@ bool Application::InitializeWindowAndDevice() {
 	deviceDesc.requiredLimits = &requiredLimits;
 	deviceDesc.defaultQueue.nextInChain = nullptr;
 	deviceDesc.defaultQueue.label = "The default queue";
-	deviceDesc.deviceLostCallback = [](WGPUDeviceLostReason reason, char const* message, void* /* pUserData */) {
+	deviceDesc.deviceLostCallback = [](WGPUDeviceLostReason reason, char const* message, void*) {
 		std::cout << "Device lost: reason " << reason;
 		if (message) std::cout << " (" << message << ")";
 		std::cout << std::endl;
@@ -622,7 +597,6 @@ bool Application::InitializeWindowAndDevice() {
 	return device != nullptr;
 }
 
-
 bool Application::InitializeSurface() {
 	// Get the current size of the window's framebuffer:
 	int width, height;
@@ -634,21 +608,20 @@ bool Application::InitializeSurface() {
 	config.height = static_cast<uint32_t>(height);
 	config.usage = TextureUsage::RenderAttachment;
 	config.format = surfaceFormat;
-	config.presentMode = PresentMode::Immediate;
+	config.presentMode = PresentMode::Fifo;
 	config.viewFormatCount = 0;
 	config.viewFormats = nullptr;
 	config.device = device;
 	surface.configure(config);
 	std::cout << "Surface: " << surface << std::endl;
 	return surface != nullptr;
-
 }
 
 bool Application::InitializeDepthBuffer() {
 	// Get the current size of the window's framebuffer:
 	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
-
+	depthTextureFormat = TextureFormat::Depth24Plus;
 	TextureDescriptor depthTextureDesc;
 	depthTextureDesc.dimension = TextureDimension::_2D;
 	depthTextureDesc.format = depthTextureFormat;
@@ -697,24 +670,14 @@ bool Application::InitializeLightingUniforms() {
 }
 
 bool Application::InitializeNodes() {
-	rootNode = std::make_unique<Node3D>();
-	rootNode->SetName("Application");
 
-	GLTFSceneParser parser;
-	auto tree = parser.ParseGLTF(device, RESOURCE_DIR "/Level1.glb");
-	rootNode->AddChild(std::move(tree));
 
-	/*
-	auto mesh = rootNode->AddChild<NodeMeshInstance3D>();
-	mesh->SetMesh(model);
-	mesh->SetPosition({0.0f, 0.0f, -1.f});
-
-	auto mesh2 = rootNode->AddChild<NodeMeshInstance3D>();
-	mesh2->SetMesh(model);
-	mesh2->SetPosition({1.0f, 0.0f, 1.f});
-	mesh2->SetOrientation(Quat(90.f, {0.0f, 0.0f, 1.0f}));
-	*/
-
+	//GLTFSceneParser parser;
+	//auto tree = parser.ParseGLTF(device, RESOURCE_DIR "/Level1.glb");
+	//AddChild(std::move(tree));
+	
+	//return true;
+	rootNode = std::make_unique<Node>("Root");
 	return true;
 }
 
@@ -740,13 +703,15 @@ void Application::TerminateUniformBuffer() {
 	uniformBuffer.destroy();
 	uniformBuffer.release();
 }
-
+*/
+/*
 void Application::TerminateRenderPipeline() {
 	pipeline.release();
 	layout.release();
 	bindGroupLayout.release();
 }
-
+*/
+/*
 void Application::TerminateWindowAndDevice() {
 	queue.release();
 	device.release();
@@ -829,17 +794,8 @@ void Application::UpdateLightingUniforms() {
 	}
 }
 
-void Application::UpdateNodes() {
-	if (rootNode) {
-		rootNode->UpdateNodeInternal(1.0f/60.f);
-	}
-}
 
-void Application::UpdateLayers(float dt) {
-	for (auto& layer : layers) {
-		layer->Update(dt);
-	}
-}
+
 
 bool Application::InitializeGUI() {
 	// Setup Dear ImGui context
@@ -887,7 +843,7 @@ void Application::UpdateGUI(wgpu::RenderPassEncoder renderPass) {
 	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 	dockspace_flags |= ImGuiDockNodeFlags_PassthruCentralNode;
 
-
+	
 	ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), dockspace_flags);
 	// In Application::updateGui
 
@@ -914,7 +870,7 @@ void Application::UpdateGUI(wgpu::RenderPassEncoder renderPass) {
 
 	ImGui::EndFrame();
 	ImGui::Render();
-
+	
 	ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), renderPass);
 }
 
@@ -985,8 +941,6 @@ void Application::ImGuiDrawNode(Node *node) {
 			ImGui::TreePop();
 		}
 	}
-
-
 }
 
 
@@ -1041,8 +995,130 @@ RequiredLimits Application::GetRequiredLimits(wgpu::Adapter adapter) {
 	RequiredLimits requiredLimits = Default;
 	requiredLimits.limits.maxVertexAttributes = 6;
 	requiredLimits.limits.maxVertexBuffers = 1;
-	requiredLimits.limits.maxBufferSize = 10000000 * sizeof(VertexData);
-	requiredLimits.limits.maxVertexBufferArrayStride = sizeof(VertexData);
+	requiredLimits.limits.maxBufferSize = 10000000 * sizeof(MeshVertex);
+	requiredLimits.limits.maxVertexBufferArrayStride = sizeof(MeshVertex);
+	requiredLimits.limits.minUniformBufferOffsetAlignment = supportedLimits.limits.minUniformBufferOffsetAlignment;
+	requiredLimits.limits.minStorageBufferOffsetAlignment = supportedLimits.limits.minStorageBufferOffsetAlignment;
+	requiredLimits.limits.maxTextureDimension2D = supportedLimits.limits.maxTextureDimension2D;
+	requiredLimits.limits.maxInterStageShaderComponents = 17;
+	requiredLimits.limits.maxBindGroups = 2;
+	requiredLimits.limits.maxUniformBuffersPerShaderStage = 3;
+	requiredLimits.limits.maxUniformBufferBindingSize = 65536;
+	requiredLimits.limits.maxDynamicUniformBuffersPerPipelineLayout = 1;
+	requiredLimits.limits.maxTextureDimension1D = std::max(largestWidth, largestHeight);
+	requiredLimits.limits.maxTextureDimension2D = std::max(largestWidth, largestHeight);
+	requiredLimits.limits.maxTextureArrayLayers = 1;
+	requiredLimits.limits.maxSampledTexturesPerShaderStage = 4;
+	requiredLimits.limits.maxSamplersPerShaderStage = 4;
+	requiredLimits.limits.maxBindingsPerBindGroup = 5;
+
+
+	return requiredLimits;
+}
+*/
+
+Application::Application()
+{
+	WGPUInstanceDescriptor instanceDesc{};
+	wgpuInstance = wgpu::createInstance(instanceDesc);
+	if (!wgpuInstance) {
+		std::cerr << "Could not initialize WebGPU!" << std::endl;
+	}
+
+	if (!glfwInit()) {
+		std::cerr << "Could not initialize GLFW!" << std::endl;
+	}
+
+	std::cout << "Requesting adapter..." << std::endl;
+	wgpu::RequestAdapterOptions adapterOpts = {};
+	//surface = glfwGetWGPUSurface(wgpuInstance, window);
+	//adapterOpts.compatibleSurface = surface;
+	wgpu::Adapter adapter = wgpuInstance.requestAdapter(adapterOpts);
+	std::cout << "Got adapter: " << adapter << std::endl;
+
+	std::cout << "Requesting device..." << std::endl;
+	wgpu::RequiredLimits requiredLimits = GetRequiredLimits(adapter);
+	wgpu::DeviceDescriptor deviceDesc = {};
+	deviceDesc.label = "My Device";
+	deviceDesc.requiredFeatureCount = 0;
+	deviceDesc.requiredLimits = &requiredLimits;
+	deviceDesc.defaultQueue.nextInChain = nullptr;
+	deviceDesc.defaultQueue.label = "The default queue";
+	deviceDesc.deviceLostCallback = [](WGPUDeviceLostReason reason, char const* message, void*) {
+		std::cout << "Device lost: reason " << reason;
+		if (message) std::cout << " (" << message << ")";
+		std::cout << std::endl;
+	};
+	wgpuDevice = adapter.requestDevice(deviceDesc);
+	std::cout << "Got device: " << wgpuDevice << std::endl;
+
+	errorCallbackHandle = wgpuDevice.setUncapturedErrorCallback([](wgpu::ErrorType type, char const* message) {
+		std::cout << "Uncaptured device error: type " << type;
+		if (message) std::cout << " (" << message << ")";
+		std::cout << std::endl;
+	});
+
+	
+	rootNode = std::make_unique<Node>();
+}
+
+Application::~Application()
+{
+	glfwTerminate();
+}
+
+void Application::Begin()
+{
+	rootNode->BeginInternal();
+}
+
+bool Application::ShouldClose() const
+{
+	return rootNode == nullptr;
+}
+
+void Application::Update()
+{
+	float dt = deltaTime.Tick((float)glfwGetTime());
+	rootNode->DrawGUIInternal();
+	rootNode->UpdateNodeInternal(dt);
+
+}
+
+Node* Application::GetRootNode()
+{
+	return rootNode.get();
+}
+
+void Application::Close()
+{
+	rootNode = nullptr;
+}
+
+wgpu::RequiredLimits Application::GetRequiredLimits(wgpu::Adapter adapter)
+{
+	wgpu::SupportedLimits supportedLimits;
+	adapter.getLimits(&supportedLimits);
+
+	int monitorCount;
+	GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
+	int largestWidth = 0;
+	int largestHeight = 0;
+	for (int i = 0; i < monitorCount; i++) {
+		int xpos;
+		int ypos;
+		int width;
+		int height;
+		glfwGetMonitorWorkarea(monitors[i], &xpos, &ypos, &width, &height);
+		largestWidth += width;
+		largestHeight += height;
+	}
+
+	wgpu::RequiredLimits requiredLimits = wgpu::Default;
+	requiredLimits.limits.maxVertexAttributes = 6;
+	requiredLimits.limits.maxVertexBuffers = 1;
+	requiredLimits.limits.maxBufferSize = 10000000 * sizeof(MeshVertex);
+	requiredLimits.limits.maxVertexBufferArrayStride = sizeof(MeshVertex);
 	requiredLimits.limits.minUniformBufferOffsetAlignment = supportedLimits.limits.minUniformBufferOffsetAlignment;
 	requiredLimits.limits.minStorageBufferOffsetAlignment = supportedLimits.limits.minStorageBufferOffsetAlignment;
 	requiredLimits.limits.maxTextureDimension2D = supportedLimits.limits.maxTextureDimension2D;

@@ -12,13 +12,13 @@
 #include "Application.h"
 #include "CrabTypes.h"
 
-struct VertexData;
+struct MeshVertex;
 
 class ResourceManager {
 
 public:
     static bool loadGeometryFromObj(const std::filesystem::path& path,
-        std::vector<VertexData> &vertexData);
+        std::vector<MeshVertex> &vertexData);
 
     static wgpu::Texture loadTexture(const std::filesystem::path& path, wgpu::Device device, wgpu::TextureView* pTextureView);
 
@@ -26,7 +26,7 @@ public:
     const std::filesystem::path& path,
     wgpu::Device device);
 
-    static void populateTextureFrameAttributes(std::vector<VertexData> &vertexData, optional_ref<const std::vector<uint16_t>> indices = std::nullopt);
+    static void populateTextureFrameAttributes(std::vector<MeshVertex> &vertexData, optional_ref<const std::vector<uint16_t>> indices = std::nullopt);
 private:
     static void writeMipMaps(
         wgpu::Device device,
@@ -35,7 +35,7 @@ private:
     [[maybe_unused]] uint32_t mipLevelCount, // not used yet
     const unsigned char* pixelData);
 
-    static glm::mat3x3 computeTBN(const VertexData corners[3], const glm::vec3& expectedN);
+    static glm::mat3x3 computeTBN(const MeshVertex corners[3], const glm::vec3& expectedN);
 
 
 };
