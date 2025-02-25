@@ -1,3 +1,0 @@
-[submodule "vendor/rocket"]
-	path = vendor/rocket
-	url = https://github.com/tripleslash/rocket.git
