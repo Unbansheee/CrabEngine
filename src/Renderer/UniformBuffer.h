@@ -6,16 +6,26 @@ class UniformBuffer {
 public:
     static_assert(std::is_trivially_copyable_v<T>, "UniformBuffer only supports trivially copyable types.");
 
+    UniformBuffer() = default;
+
     UniformBuffer(WGPUDevice device)
     {
-        InternalBuffer = new DynamicUniformBuffer(device, sizeof(T));
+        Initialize(device);
     }
 
     ~UniformBuffer() {
         delete InternalBuffer;
     }
 
-    void SetData(const T& data) {
+    void Initialize(WGPUDevice device)
+    {
+        InternalBuffer = new DynamicUniformBuffer(device, sizeof(T));
+        bInitialized = true;
+        SetData(Data);
+    }
+    
+    void SetData(T data) {
+        assert(bInitialized);
         Data = data;
         InternalBuffer->Write(0, &data, sizeof(T));
         InternalBuffer->Upload(InternalBuffer->GetDevice().getQueue());
@@ -23,8 +33,13 @@ public:
 
     const T& GetData() { return Data; }
     
-    wgpu::Buffer GetBuffer() const { return InternalBuffer->GetBuffer(); }
+    wgpu::Buffer GetBuffer() const
+    {
+        assert(bInitialized);
+        return InternalBuffer->GetBuffer();
+    }
 private:
     T Data;
-    DynamicUniformBuffer* InternalBuffer;
+    DynamicUniformBuffer* InternalBuffer = nullptr;
+    bool bInitialized = false;
 };

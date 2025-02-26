@@ -1,6 +1,7 @@
 #pragma once
 #include <optional>
 #include <glm/glm.hpp>
+#include <memory>
 #include "CrabEngineAPI.h"
 
 typedef glm::vec2 Vector2;
@@ -13,3 +14,12 @@ typedef glm::quat Quat;
 template <typename T> using optional_ref = std::optional<std::reference_wrapper<T>>;
 
 constexpr float PI = 3.14159265358979323846f;
+
+template<typename T>
+using SharedRef = std::shared_ptr<T>;
+
+template<typename T, typename... Args>
+SharedRef<T> MakeShared(Args&&... args)
+{
+    return std::make_shared<T>(std::forward<Args>(args)...);
+}

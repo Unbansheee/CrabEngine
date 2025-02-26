@@ -4,6 +4,14 @@
 
 class NodeWindow : public Node
 {
+    struct ResizeRequest
+    {
+        bool active = false;
+        uint32_t width = 0;
+        uint32_t height = 0;
+    };
+
+    
 public:
     NodeWindow() : Node() {};
     NodeWindow(const std::string& name) : Node(name) {}
@@ -15,12 +23,17 @@ public:
 
     wgpu::TextureFormat GetSurfaceFormat() const { return surfaceFormat; }
 
+    Renderer& GetRenderer() {return renderer;}
+    wgpu::Surface& GetSurface() {return surface;}
+    wgpu::SurfaceTexture GetSurfaceTexture() const;
+
+    void SetSurfaceDrawEnabled(bool enabled) {bShouldRenderNodesToSurface = enabled;}
+    float GetAspectRatio() const;
 protected:
     void InitializeRenderer();
-    void ClearWindow(const glm::vec4& color);
     void TerminateSurface();
     
-    virtual void OnResize();
+    virtual void RequestResize();
     virtual void OnKey(int key, int scancode, int action, int mods)
     {}
     virtual void OnScroll(double xoffset, double yoffset)
@@ -30,13 +43,28 @@ protected:
     virtual void OnMouseButton(int button, int action, int mods)
     {}
 
+    wgpu::TextureView GetCurrentTextureView();
+    wgpu::TextureView GetNextSurfaceTextureView() const;
+    wgpu::TextureView GetDepthTextureView() const;
     Vector2 GetWindowSize() const;
+
+    void CreateSwapChain(uint32_t width, uint32_t height);
+    void CreateDepthTexture(uint32_t width, uint32_t height);
 protected:
+    void ExecuteResize();
+
+    bool bShouldRenderNodesToSurface = true;
     Renderer renderer;
-    glm::vec4 clearColor = glm::vec4(1.f, 0.1f, 0.1f, 1.0f);
     struct GLFWwindow* window = nullptr;
     wgpu::Surface surface = nullptr;
-    wgpu::TextureFormat surfaceFormat = wgpu::TextureFormat::Undefined;
     bool bCloseRequested = false;
+    
+    wgpu::TextureFormat surfaceFormat = wgpu::TextureFormat::Undefined;
+    wgpu::TextureFormat depthFormat = wgpu::TextureFormat::Depth24Plus;
+    wgpu::Texture m_depthTexture = nullptr;
+    wgpu::TextureView m_currentSurfaceView = nullptr;
 
+    mutable wgpu::SurfaceTexture m_surfaceTexture;
+
+    ResizeRequest resizeRequest;
 };

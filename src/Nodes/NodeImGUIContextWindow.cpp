@@ -39,29 +39,11 @@ void NodeImGUIContextWindow::Begin()
 
 void NodeImGUIContextWindow::Update(float dt)
 {
-    NodeWindow::Update(dt);
-    
-    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-    }
-}
-
-void NodeImGUIContextWindow::DrawGUI()
-{
-    NodeWindow::DrawGUI();
-    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
-    dockspace_flags |= ImGuiDockNodeFlags_PassthruCentralNode;
-    ImGui::DockSpaceOverViewport(0, ImGui::FindViewportByPlatformHandle(window), dockspace_flags);
-}
-
-void NodeImGUIContextWindow::DrawGUIInternal()
-{
     WGPURenderPassColorAttachment color_attachments = {};
     color_attachments.loadOp = WGPULoadOp_Load;
     color_attachments.storeOp = WGPUStoreOp_Store;
     color_attachments.clearValue = { 0, 0, 0, 0 };
-    color_attachments.view = renderer.GetCurrentTextureView();
+    color_attachments.view = GetCurrentTextureView();
 	
     WGPURenderPassDescriptor render_pass_desc = {};
     render_pass_desc.colorAttachmentCount = 1;
@@ -99,4 +81,20 @@ void NodeImGUIContextWindow::DrawGUIInternal()
 
     pass.release();
     gui_encoder.release();
+
+    NodeWindow::Update(dt);
+    
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
 }
+
+void NodeImGUIContextWindow::DrawGUI()
+{
+    NodeWindow::DrawGUI();
+    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+    dockspace_flags |= ImGuiDockNodeFlags_PassthruCentralNode;
+    ImGui::DockSpaceOverViewport(0, ImGui::FindViewportByPlatformHandle(window), dockspace_flags);
+}
+

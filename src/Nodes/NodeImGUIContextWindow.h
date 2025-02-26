@@ -14,7 +14,6 @@ public:
     void Begin() override;
     void Update(float dt) override;
     void DrawGUI() override;
-    void DrawGUIInternal() override;
 
 protected:
     ImGuiContext* imguiContext = nullptr;

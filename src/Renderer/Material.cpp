@@ -5,6 +5,16 @@
 void Material::Apply(wgpu::RenderPassEncoder renderPass)
 {
     renderPass.setPipeline(GetPipeline());
+    if (bBindGroupsDirty)
+    {
+        for (auto grp : m_bindGroups)
+        {
+            grp.BindGroup.release();
+        }
+        
+        m_bindGroups = CreateMaterialBindGroups();
+        bBindGroupsDirty = false;
+    }
     for (auto& grp : m_bindGroups)
     {
         renderPass.setBindGroup(grp.BindGroupIndex, grp.BindGroup, 0, nullptr);

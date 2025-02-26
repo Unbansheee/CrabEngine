@@ -14,11 +14,13 @@ namespace Vertex
 
 class Material
 {
+public:
     enum ENamedBindGroup
     {
         GLOBAL = 0,
-        MATERIAL = 1,
+        RENDERER = 1,
         OBJECT = 2,
+        MATERIAL = 3,
         Count
     };
     
@@ -51,18 +53,23 @@ public:
     wgpu::TextureFormat TargetTextureFormat = wgpu::TextureFormat::Undefined;
     wgpu::TextureFormat DepthTextureFormat = wgpu::TextureFormat::Depth24Plus;
     MaterialSettings m_settings;
+    bool bBindGroupsDirty = false;
+
     
     Material(wgpu::Device device, const std::filesystem::path& shaderPath, MaterialSettings settings = MaterialSettings()) : m_device(device), m_settings(settings)
     {
         m_shaderModule = ResourceManager::loadShaderModule(shaderPath, device);
     }
 
-    void Initialize()
+    virtual void Initialize()
     {
         assert(TargetTextureFormat != wgpu::TextureFormat::Undefined);
         m_pipeline = CreateRenderPipeline();
         m_bindGroups = CreateMaterialBindGroups();
     }
+
+    void MarkBindGroupsDirty() { bBindGroupsDirty = true;}
+
     
     wgpu::RenderPipeline GetPipeline() const { return m_pipeline; }
     virtual wgpu::RenderPipeline CreateRenderPipeline();

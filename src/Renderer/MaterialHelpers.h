@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include <webgpu/webgpu.hpp>
-#include "UniformBuffer.h"
 
 enum EShaderStageVisibility : uint8_t
 {
@@ -9,8 +8,6 @@ enum EShaderStageVisibility : uint8_t
     FRAGMENT = wgpu::ShaderStage::Fragment,
     COMPUTE = wgpu::ShaderStage::Compute,
 };
-
-
 
 namespace MaterialHelpers
 {
@@ -33,7 +30,6 @@ namespace MaterialHelpers
         }
     };
     
-    
     template <uint32_t Binding, uint8_t Visibility>
     struct TextureEntry {
         static wgpu::BindGroupLayoutEntry LayoutEntry() {
@@ -47,6 +43,19 @@ namespace MaterialHelpers
             return entry;
         }
     };
+
+    template <uint32_t Binding, uint8_t Visibility>
+    struct SamplerEntry {
+            static wgpu::BindGroupLayoutEntry LayoutEntry() {
+                wgpu::SamplerBindingLayout samp = wgpu::Default;
+                samp.type = wgpu::SamplerBindingType::Filtering;
+                wgpu::BindGroupLayoutEntry entry;
+                entry.visibility = Visibility;
+                entry.binding = Binding;
+                entry.sampler = samp;
+                return entry;
+            }
+        };
     
 
     template <typename... Entries>
@@ -76,13 +85,7 @@ namespace MaterialHelpers
 
         template <uint32_t Binding, typename T>
         BindGroupCreator& Set(const T& resource) {
-            if constexpr (std::is_same_v<T, DynamicUniformBuffer*>) {
-                wgpu::BindGroupEntry entry = wgpu::Default;
-                entry.binding = Binding;
-                entry.buffer = resource->GetBuffer();
-                entry.size = resource->GetBuffer().getSize();
-                m_entries[Binding] = entry;
-            } else if constexpr (std::is_same_v<T, WGPUTextureView> || std::is_same_v<T, wgpu::TextureView>) {
+            if constexpr (std::is_same_v<T, WGPUTextureView>) {
                 wgpu::BindGroupEntry entry = wgpu::Default;
                 entry.binding = Binding;
                 entry.textureView = resource;
@@ -96,15 +99,17 @@ namespace MaterialHelpers
                 entry.size = wgpuBufferGetSize(resource);
                 m_entries[Binding] = entry;
             }
-            else if constexpr (std::is_same_v<T, wgpu::Buffer>)
+            else if constexpr (std::is_same_v<T, WGPUSampler>)
             {
                 wgpu::BindGroupEntry entry = wgpu::Default;
                 entry.binding = Binding;
-                entry.buffer = resource;
-                entry.size = resource.getSize();
+                entry.sampler = resource;
                 m_entries[Binding] = entry;
             }
-            
+            else
+            {
+                //static_assert(false);
+            }
             /*
             else if constexpr (std::is_same_v<T, UniformBuffer<typename T::ValueType>>) {
                 m_entries[Binding] = {

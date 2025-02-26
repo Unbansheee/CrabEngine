@@ -1,7 +1,5 @@
 // Include the C++ wrapper instead of the raw header(s)
-#include <ranges>
 #include <webgpu/webgpu.hpp>
-
 #include <GLFW/glfw3.h>
 #include <glfw3webgpu.h>
 #include <filesystem>
@@ -12,21 +10,9 @@
 #include "Application.h"
 
 #include <iostream>
-#include <cassert>
 #include <fstream>
-#include <vector>
-#include "ResourceManager.h"
-#include <glm/ext.hpp>
-
-#include "Mesh.h"
-#include "backends/imgui_impl_glfw.h"
-#include "backends/imgui_impl_wgpu.h"
-#include <glm/gtx/polar_coordinates.hpp>
-
 #include "GLTFSceneParser.h"
 #include "Node.h"
-#include "NodeMeshInstance3D.h"
-#include "NodeWindow.h"
 #include "Gfx/MeshVertex.h"
 
 /*
@@ -1080,9 +1066,7 @@ bool Application::ShouldClose() const
 void Application::Update()
 {
 	float dt = deltaTime.Tick((float)glfwGetTime());
-	rootNode->DrawGUIInternal();
 	rootNode->UpdateNodeInternal(dt);
-
 }
 
 Node* Application::GetRootNode()
@@ -1123,7 +1107,7 @@ wgpu::RequiredLimits Application::GetRequiredLimits(wgpu::Adapter adapter)
 	requiredLimits.limits.minStorageBufferOffsetAlignment = supportedLimits.limits.minStorageBufferOffsetAlignment;
 	requiredLimits.limits.maxTextureDimension2D = supportedLimits.limits.maxTextureDimension2D;
 	requiredLimits.limits.maxInterStageShaderComponents = 17;
-	requiredLimits.limits.maxBindGroups = 2;
+	requiredLimits.limits.maxBindGroups = 4;
 	requiredLimits.limits.maxUniformBuffersPerShaderStage = 3;
 	requiredLimits.limits.maxUniformBufferBindingSize = 65536;
 	requiredLimits.limits.maxDynamicUniformBuffersPerPipelineLayout = 1;

@@ -56,13 +56,13 @@ if(DEV_MODE)
     # dynamically edit resources (like shaders), these are correctly
     # versionned.
     target_compile_definitions(CrabEngine PRIVATE
-            RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources"
+            ENGINE_RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources"
     )
 else()
     # In release mode, we just load resources relatively to wherever the
     # executable is launched from, so that the binary is portable
     target_compile_definitions(CrabEngine PRIVATE
-            RESOURCE_DIR="./resources"
+            ENGINE_RESOURCE_DIR="./resources"
     )
 endif()
 
