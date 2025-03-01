@@ -10,7 +10,7 @@ void Renderer::Initialize(wgpu::Device device)
     m_globalUniformBuffer.Initialize(device);
     m_cameraUniformBuffer.Initialize(device);
     m_lightingUniformBuffer.Initialize(device);
-    m_objectUniformBuffer.Initialize(device);
+    m_objectUniformBuffer.Initialize(device, 512);
     
     // Create bind group for model buffer (created once during init)
     //m_modelBindGroup = CreateModelBindGroup(m_dynamicModelBuffer);
@@ -40,12 +40,14 @@ void Renderer::RenderNodeTree(Node* rootNode, const Camera& camera, wgpu::Textur
     
     if (rootNode)
     {
-        RenderVisitor visitor(m_device, *m_dynamicModelBuffer);
+        RenderVisitor visitor(m_device, m_objectUniformBuffer);
         rootNode->Render(visitor);
         // 3. Build and sort batches
         auto batches = visitor.BuildBatches();
         SortBatches(batches);
-    
+
+        m_objectUniformBuffer.Upload(m_queue);
+        
         // 4. Execute rendering
         ExecuteBatches(batches, colorAttachment, depthAttachment);
     }
@@ -66,7 +68,7 @@ void Renderer::CreateBindGroups()
     {
         MaterialHelpers::BindGroupCreator<Uniforms::PerObjectUniformsLayout> BindCreator(device);
         m_objectUniformBindGroup = BindCreator
-            .Set<0, WGPUBuffer>(m_objectUniformBuffer.GetBuffer())
+            .SetDynamicBuffer<0>(m_objectUniformBuffer.GetInternalBuffer(), m_objectUniformBuffer.GetBindingSize())
             .Build();
     }
 
@@ -156,16 +158,13 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
 
         // Bind global bind groups
         pass.setBindGroup(Material::ENamedBindGroup::GLOBAL, m_globalBindGroup, 0, nullptr);
-        pass.setBindGroup(Material::ENamedBindGroup::OBJECT, m_objectUniformBindGroup, 0, nullptr);
         pass.setBindGroup(Material::ENamedBindGroup::RENDERER, m_rendererUniformBindGroup, 0, nullptr);
-        Uniforms::UObjectData objectData;
-        objectData.ModelMatrix = Matrix4(1.0);
-        m_objectUniformBuffer.SetData(objectData);
         
         // Execute draw calls
         for (const auto& item : batch.drawItems) {
             uint32_t dynamicOffset = item.dynamicOffset;
-                
+
+            pass.setBindGroup(Material::ENamedBindGroup::OBJECT, m_objectUniformBindGroup, 1, &dynamicOffset);
             pass.setVertexBuffer(0, item.vertexBuffer, 0, WGPU_WHOLE_SIZE);
             
             // Model bind group

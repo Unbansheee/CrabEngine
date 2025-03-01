@@ -6,13 +6,16 @@
 #include <string>
 #include <vector>
 
+#include "Utility/Property.h"
 #include "Utility/ObservableDtor.h"
 #include "Transform.h"
 
 class RenderVisitor;
 
-class Node : public observable_dtor {
 
+
+class Node : public observable_dtor, public PropertySupplier {
+	//PROPERTY_SUPPLIER_DECL
 protected:
 	friend class Application;
 	friend class NodeWindow;
@@ -85,7 +88,8 @@ public:
 
 	std::unique_ptr<Node> RemoveFromParent();
 
-	virtual void DrawInspectorWidget(); 
+	virtual void DrawInspectorWidget();
+	std::vector<Property> GetProperties() override;
 	
 	// Instantiate a node and add it to the list of children
 	template<typename T, typename... TArgs>
@@ -141,8 +145,13 @@ public:
 
 	void SetName(const std::string& name) { Name = name; }
 	const std::string& GetName() const { return Name; }
-protected:
+
 	std::string Name = "Node";
+	bool isHidden = false;
+
+protected:
+	
+	// Hidden flag
 
 	// Child nodes
 	std::vector<std::unique_ptr<Node>> Children;
@@ -161,8 +170,7 @@ protected:
 
 	void BeginInternal();
 
-	// Hidden flag
-	bool isHidden = false;
+
 
 	bool hasBegun = false;
 private:
@@ -218,5 +226,4 @@ bool Node::IsA()
 {
 	return dynamic_cast<T*>(this) != nullptr;
 }
-
 

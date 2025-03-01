@@ -9,8 +9,6 @@ constexpr inline uint32_t Align(uint32_t value, uint32_t step) {
 
 class DynamicUniformBuffer {
 public:
-    // TODO: RAII this
-    
     DynamicUniformBuffer(wgpu::Device device, uint32_t size) : internalDevice(device)
     {
         Init(device, size);

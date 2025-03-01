@@ -1,9 +1,10 @@
 ﻿#include "NodeImGUIContextWindow.h"
 
 #include <glfw3webgpu.h>
-
-#include "backends/imgui_impl_glfw.h"
-#include "backends/imgui_impl_wgpu.h"
+#include "imgui/imgui.h"
+#include "imgui/backends/imgui_impl_glfw.h"
+#include "imgui/backends/imgui_impl_wgpu.h"
+#include "ImGuizmo/ImGuizmo.h"
 
 void NodeImGUIContextWindow::Begin()
 {
@@ -14,6 +15,7 @@ void NodeImGUIContextWindow::Begin()
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.UserData = this;
+    io.ConfigWindowsMoveFromTitleBarOnly = true;
     ImGui_ImplGlfw_InitForOther(window, true);
 
     auto& app = Application::Get();
@@ -58,6 +60,7 @@ void NodeImGUIContextWindow::Update(float dt)
     ImGui_ImplWGPU_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+    ImGuizmo::BeginFrame();
 
     DrawGUI();
 

@@ -14,6 +14,14 @@ void Node3D::UpdateTransform()
     Node::UpdateTransform();
 }
 
+std::vector<Property> Node3D::GetProperties()
+{
+    auto props = Node::GetProperties();
+    props.emplace_back(this, "Transform", &transform);
+
+    return props;
+}
+
 void Node3D::SetPosition(const Vector3& Pos)
 {
     transform.Position = Pos;

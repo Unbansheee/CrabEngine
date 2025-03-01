@@ -16,6 +16,8 @@ public:
     {
     }
 
+    std::vector<Property> GetProperties() override;
+    
     virtual void SetPosition(const Vector3& Pos);
     virtual void SetScale(const Vector3& Scale);
     virtual void SetOrientation(const Quat& Orientation);
@@ -38,9 +40,11 @@ public:
 
     Transform GetTransform() const override;
     void UpdateTransform() override;
-protected:
 
     Transform transform;
+
+protected:
+
 
 private:
 

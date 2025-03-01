@@ -79,6 +79,7 @@ struct Transform
 private:
 	// Legacy, needs deprecating
 	inline static Transform* identityTransform;
+	
 public:
 	static const Transform& identity() {
 		if (identityTransform)

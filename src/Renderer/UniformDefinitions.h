@@ -28,7 +28,7 @@ namespace Uniforms
     };
 
     using PerObjectUniformsLayout = MaterialHelpers::BindGroupLayoutBuilder<
-    MaterialHelpers::UniformBufferEntry<0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>>; // ObjectData
+    MaterialHelpers::DynamicOffsetUniformBufferEntry<0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>>; // ObjectData
 
     struct UGlobalData
     {

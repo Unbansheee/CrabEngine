@@ -3,8 +3,10 @@
 #include <vector>
 
 #include "DrawCommand.h"
+#include "DynamicOffsetUniformBuffer.h"
 #include "DynamicUniformBuffer.h"
 #include "NodeMeshInstance3D.h"
+#include "UniformDefinitions.h"
 
 class Node;
 
@@ -24,7 +26,7 @@ struct DrawBatch {
 class RenderVisitor
 {
 public:
-    RenderVisitor(wgpu::Device device, DynamicUniformBuffer& dynamic_uniform_buffer) : dynamicUniforms(dynamic_uniform_buffer)
+    RenderVisitor(wgpu::Device device, DynamicOffsetUniformBuffer<Uniforms::UObjectData>& dynamic_uniform_buffer) : dynamicUniforms(dynamic_uniform_buffer)
     {
     }
     
@@ -32,9 +34,10 @@ public:
         if (node.GetMaterial() == nullptr) return;
         
         // Get model matrix offset in the dynamic buffer
-        //uint32_t offset = dynamicUniforms.Allocate(1);
-        //glm::mat4 t = node.GetTransform().GetWorldModelMatrix();
-        //dynamicUniforms.Write(offset, &t, 1);
+        Uniforms::UObjectData data;
+        data.LocalMatrix = node.GetTransform().GetLocalModelMatrix();
+        data.ModelMatrix = node.GetTransform().GetWorldModelMatrix();
+        uint32_t offset = dynamicUniforms.Write(data);
         
         // Create a DrawCommand with dynamic offset
         DrawCommand cmd = {
@@ -43,7 +46,7 @@ public:
             .vertexCount = node.GetMesh()->vertexCount,
             .indexBuffer = node.GetMesh()->indexBuffer,
             .indexCount = node.GetMesh()->indexCount,
-            .dynamicOffset = 0
+            .dynamicOffset = offset
         };
         commands.push_back(cmd);
     }
@@ -84,5 +87,5 @@ public:
 
 private:
     std::vector<DrawCommand> commands;
-    DynamicUniformBuffer& dynamicUniforms;
+    DynamicOffsetUniformBuffer<Uniforms::UObjectData>& dynamicUniforms;
 };

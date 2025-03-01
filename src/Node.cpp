@@ -8,8 +8,18 @@
 
 void Node::DrawInspectorWidget()
 {
-	char namebuf[64];
-	ImGui::InputText("Name", &Name);
+	for (auto& prop : GetProperties())
+	{
+		prop.DrawProperty();		
+	}
+}
+
+std::vector<Property> Node::GetProperties()
+{
+	return {
+	Property(this, "Name", &Name),
+	Property(this, "Hidden", &isHidden)
+	};
 }
 
 Transform Node::GetTransform() const
@@ -43,6 +53,7 @@ void Node::Render(RenderVisitor& Visitor)
 	for (const auto& i : Children)
 	{
 		if (!i) continue;
+		if (i->IsHidden()) return;
 		i->Render(Visitor);
 	}
 }

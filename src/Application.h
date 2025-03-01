@@ -10,7 +10,6 @@
 #include "GLFW/glfw3.h"
 #include <glm/glm.hpp>
 #include "ApplicationLayer.h"
-#include "imgui_multicontext_compositor.h"
 #include "Node.h"
 
 struct ImGuiContext;

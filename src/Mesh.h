@@ -35,7 +35,7 @@ public:
         };
         vertexBuffer = wgpuDeviceCreateBuffer(device, &vertexBufferDesc);
         wgpuQueueWriteBuffer(wgpuDeviceGetQueue(device), vertexBuffer, 0, vertices.data(), vertexBufferDesc.size);
-
+        
         if (indexCount > 0) {
             // Create index buffer
             uint64_t indexBufferSize = indexCount * sizeof(uint16_t);

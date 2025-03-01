@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include <webgpu/webgpu.hpp>
 #include <vector>
+
+#include "DynamicOffsetUniformBuffer.h"
 #include "RenderVisitor.h"
 #include "UniformBuffer.h"
 #include "UniformDefinitions.h"
@@ -45,10 +47,9 @@ private:
 
     UniformBuffer<Uniforms::UGlobalData> m_globalUniformBuffer;
     UniformBuffer<Uniforms::ULightingData> m_lightingUniformBuffer;
-    UniformBuffer<Uniforms::UObjectData> m_objectUniformBuffer;
+    DynamicOffsetUniformBuffer<Uniforms::UObjectData> m_objectUniformBuffer;
     UniformBuffer<Uniforms::UCameraData> m_cameraUniformBuffer;
     
-    std::unique_ptr<DynamicUniformBuffer> m_dynamicModelBuffer = nullptr;
     //wgpu::BindGroup m_modelBindGroup = nullptr;
     
 

@@ -29,6 +29,20 @@ namespace MaterialHelpers
             return entry;
         }
     };
+
+    template <uint32_t Binding, WGPUShaderStageFlags Visibility>
+    struct DynamicOffsetUniformBufferEntry {
+        static wgpu::BindGroupLayoutEntry LayoutEntry() {
+            wgpu::BufferBindingLayout buf = wgpu::Default;
+            buf.type = wgpu::BufferBindingType::Uniform;
+            buf.hasDynamicOffset = true;
+            wgpu::BindGroupLayoutEntry entry = wgpu::Default;
+            entry.visibility = Visibility;
+            entry.binding = Binding;
+            entry.buffer = buf;
+            return entry;
+        }
+    };
     
     template <uint32_t Binding, uint8_t Visibility>
     struct TextureEntry {
@@ -106,18 +120,20 @@ namespace MaterialHelpers
                 entry.sampler = resource;
                 m_entries[Binding] = entry;
             }
-            else
-            {
-                //static_assert(false);
-            }
-            /*
-            else if constexpr (std::is_same_v<T, UniformBuffer<typename T::ValueType>>) {
-                m_entries[Binding] = {
-                    .binding = Binding,
-                    .buffer = resource.GetBuffer()
-                };
-            }
-            */
+            
+            return *this;
+        }
+
+        
+        template <uint32_t Binding>
+        BindGroupCreator& SetDynamicBuffer(const WGPUBuffer& resource, uint32_t bindingSize)
+        {
+            wgpu::BindGroupEntry entry = wgpu::Default;
+            entry.binding = Binding;
+            entry.buffer = resource;
+            entry.size = bindingSize;
+            m_entries[Binding] = entry;
+
             return *this;
         }
 

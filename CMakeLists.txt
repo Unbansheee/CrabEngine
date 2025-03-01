@@ -11,6 +11,8 @@ file(GLOB_RECURSE SOURCES
         src/*.hpp
         src/*.cpp
         resources/*.wgsl
+        vendor/ImGuizmo/ImGuizmo.cpp
+        vendor/ImGuizmo/ImGuizmo.h
 )
 
 add_library(CrabEngine STATIC
@@ -83,9 +85,10 @@ endif (MSVC)
 
 target_include_directories(CrabEngine PRIVATE .)
 target_include_directories(CrabEngine PUBLIC ./vendor)
+target_include_directories(CrabEngine PUBLIC ./vendor/imgui)
 target_include_directories(CrabEngine PUBLIC ./src)
 target_include_directories(CrabEngine PRIVATE ./src/Nodes)
 target_include_directories(CrabEngine PRIVATE ./src/Renderer)
-target_include_directories(CrabEngine PRIVATE ./src/Utility)
+target_include_directories(CrabEngine PUBLIC ./src/Utility)
 
 

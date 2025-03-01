@@ -1,5 +1,8 @@
 ﻿#pragma once
 #include <cstdint>
+#include <glm/glm.hpp>
+
+#include "CrabTypes.h"
 
 namespace MathUtils
 {
@@ -7,4 +10,6 @@ namespace MathUtils
         uint32_t divide_and_ceil = value / step + (value % step == 0 ? 0 : 1);
         return step * divide_and_ceil;
     }
+
+    bool DecomposeTransform(const Matrix4& transform, Vector3& outTranslation, Quat& outRotation, Vector3& outScale);
 }
