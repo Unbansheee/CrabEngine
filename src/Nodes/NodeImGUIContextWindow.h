@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include "NodeWindow.h"
+#include "Core/ClassDB.h"
+
 
 class NodeImGUIContextWindow : public NodeWindow
 {

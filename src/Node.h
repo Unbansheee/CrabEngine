@@ -6,15 +6,13 @@
 #include <string>
 #include <vector>
 
-#include "Utility/Property.h"
 #include "Utility/ObservableDtor.h"
 #include "Transform.h"
+#include "Core/Object.h"
 
 class RenderVisitor;
 
-
-
-class Node : public observable_dtor, public PropertySupplier {
+class Node : public Object, public observable_dtor {
 	//PROPERTY_SUPPLIER_DECL
 protected:
 	friend class Application;
@@ -31,6 +29,12 @@ protected:
 	virtual void Update(float dt) {}
 
 	virtual void DrawGUI() {};
+
+public:
+	BEGIN_PROPERTIES(Object)
+		ADD_PROPERTY(Node, "Name", Name)
+		ADD_PROPERTY_FLAGS(Node, "Hidden", isHidden, Property::Flags::Transient)
+	END_PROPERTIES
 
 public:
 	virtual ~Node() override
@@ -89,7 +93,6 @@ public:
 	std::unique_ptr<Node> RemoveFromParent();
 
 	virtual void DrawInspectorWidget();
-	std::vector<Property> GetProperties() override;
 	
 	// Instantiate a node and add it to the list of children
 	template<typename T, typename... TArgs>

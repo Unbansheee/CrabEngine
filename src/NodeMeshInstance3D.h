@@ -17,6 +17,10 @@ public:
     {
     }
 
+    BEGIN_PROPERTIES(Node3D)
+        ADD_PROPERTY(NodeMeshInstance3D, "Funny Number", FunnyNumber)
+    END_PROPERTIES
+
     void SetMesh(const std::shared_ptr<Mesh>& newMesh);
     const std::shared_ptr<Mesh>& GetMesh() const {return mesh;}
 
@@ -27,4 +31,5 @@ public:
 protected:
     std::shared_ptr<Mesh> mesh;
     std::shared_ptr<Material> material;
+    int FunnyNumber = 0;
 };

@@ -3,23 +3,19 @@
 //
 
 #include "Node.h"
+
+#include "Core/ClassDB.h"
 #include "imgui/imgui.h"
 #include "imgui/misc/cpp/imgui_stdlib.h"
 
+REGISTER_CLASS(Node)
+
 void Node::DrawInspectorWidget()
 {
-	for (auto& prop : GetProperties())
+	//for (auto& prop : GetProperties())
 	{
-		prop.DrawProperty();		
+		//prop.DrawProperty();		
 	}
-}
-
-std::vector<Property> Node::GetProperties()
-{
-	return {
-	Property(this, "Name", &Name),
-	Property(this, "Hidden", &isHidden)
-	};
 }
 
 Transform Node::GetTransform() const

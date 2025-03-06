@@ -4,8 +4,11 @@
 
 #include "GLFW/glfw3.h"
 #include "Application.h"
+#include "Core/ClassDB.h"
 
 using namespace wgpu;
+
+REGISTER_CLASS(NodeWindow)
 
 void NodeWindow::Begin()
 {
@@ -203,11 +206,11 @@ void NodeWindow::CreateSwapChain(uint32_t width, uint32_t height)
     if (m_currentSurfaceView) m_currentSurfaceView.release();
     m_currentSurfaceView = nullptr;
     wgpu::SurfaceConfiguration desc;
-    desc.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::CopySrc;
+    desc.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::CopySrc | wgpu::TextureUsage::TextureBinding;
     desc.format = surfaceFormat;
     desc.width = width;
     desc.height = height;
-    desc.presentMode = wgpu::PresentMode::Fifo;
+    desc.presentMode = wgpu::PresentMode::Immediate;
     desc.viewFormats = nullptr;
     desc.viewFormatCount = 0;
     desc.device = Application::Get().GetDevice();

@@ -5,7 +5,9 @@
 #include "NodeMeshInstance3D.h"
 
 #include "RenderVisitor.h"
+#include "Core/ClassDB.h"
 
+REGISTER_CLASS(NodeMeshInstance3D)
 
 void NodeMeshInstance3D::SetMesh(const std::shared_ptr<Mesh> &newMesh) {
     this->mesh = newMesh;

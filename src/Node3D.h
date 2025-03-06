@@ -1,6 +1,7 @@
 #pragma once
 #include "Node.h"
 #include "Transform.h"
+#include "Core/Object.h"
 
 // 3D version of a Node
 // Contains a Transform
@@ -16,7 +17,9 @@ public:
     {
     }
 
-    std::vector<Property> GetProperties() override;
+    BEGIN_PROPERTIES(Node)
+        ADD_PROPERTY(Node3D, "Transform", transform)
+    END_PROPERTIES
     
     virtual void SetPosition(const Vector3& Pos);
     virtual void SetScale(const Vector3& Scale);
@@ -42,10 +45,5 @@ public:
     void UpdateTransform() override;
 
     Transform transform;
-
-protected:
-
-
-private:
 
 };

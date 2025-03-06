@@ -6,6 +6,9 @@
 #include "imgui/backends/imgui_impl_wgpu.h"
 #include "ImGuizmo/ImGuizmo.h"
 
+REGISTER_CLASS(NodeImGUIContextWindow)
+
+
 void NodeImGUIContextWindow::Begin()
 {
     NodeWindow::Begin();
