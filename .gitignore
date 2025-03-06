@@ -90,3 +90,4 @@ vendor/glfw/src/glfw3ConfigVersion.cmake
 !vendor/webgpu/bin/**/*
 *.log
 *.vcxproj.*
+vendor/flecs/.github
