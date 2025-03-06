@@ -2,6 +2,7 @@
 
 #include "MathUtils.h"
 #include "Gfx/Materials/StandardMaterial.h"
+#include "GLFW/glfw3.h"
 
 void Renderer::Initialize(wgpu::Device device)
 {
@@ -119,7 +120,7 @@ void Renderer::SortBatches(std::vector<DrawBatch>& batches)
 void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::TextureView& colorAttachmentView, wgpu::TextureView& depthAttachmentView)
 {
     // 1. Begin frame
-    // Color attachment
+    // Color attachments
     wgpu::RenderPassColorAttachment colorAttachment;
     colorAttachment.view = colorAttachmentView;
     colorAttachment.loadOp = wgpu::LoadOp::Clear;

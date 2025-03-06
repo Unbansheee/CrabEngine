@@ -1,8 +1,10 @@
 ﻿#pragma once
 #include "Utility/ObservableDtor.h"
+#include "Core/Object.h"
+#include "Core/UID.h"
 
 
-class Resource : public observable_dtor
+class Resource : public Object, public observable_dtor
 {
 public:
     Resource() = default;
@@ -10,4 +12,6 @@ public:
     
     Resource (const Resource&) = delete;
     Resource& operator= (const Resource&) = delete;
+
+    UID id;
 };

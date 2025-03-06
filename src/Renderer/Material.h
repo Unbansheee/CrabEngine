@@ -1,8 +1,7 @@
 ﻿#pragma once
 #include <filesystem>
 #include <webgpu/webgpu.hpp>
-#include "MaterialHelpers.h"
-#include "ResourceManager.h"
+#include "Resource/ResourceManager.h"
 
 
 namespace Vertex

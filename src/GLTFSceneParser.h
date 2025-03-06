@@ -6,7 +6,7 @@
 #include <memory>
 #include <string>
 
-#include "Mesh.h"
+#include "Resource/Mesh.h"
 //#include "Texture.h"
 #include "tiny_gltf.h"
 

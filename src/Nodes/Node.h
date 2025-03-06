@@ -9,18 +9,17 @@
 #include "Utility/ObservableDtor.h"
 #include "Transform.h"
 #include "Core/Object.h"
+#include "Core/SceneTree.h"
+#include "Core/UID.h"
 
 class RenderVisitor;
 
 class Node : public Object, public observable_dtor {
-	//PROPERTY_SUPPLIER_DECL
 protected:
 	friend class Application;
 	friend class NodeWindow;
 	friend class NodeImGUIContextWindow;
-
-	// Runs when this node is instantiated
-	virtual void Begin() {}
+	friend class SceneTree;
 
 	// Runs every frame before the Update function, with the latest controller input data
 	//virtual void ProcessInput(const Controller::Input::ControllerContext& PadData, int padIndex) {};
@@ -37,18 +36,24 @@ public:
 	END_PROPERTIES
 
 public:
-	virtual ~Node() override
-	{
-	}
+	virtual ~Node() override;
 
-	Node() : Name("Node")
-	{
-	}
+protected:
+	Node() {}
 
-	Node(const std::string& name): Name(name)
-	{
-	}
+public:
+	template<typename T = Node>
+	static std::unique_ptr<T> NewNode(const std::string& name = "Node");
 
+	// Called when the node enters the SceneTree
+	virtual void EnterTree() {};
+	// Called when the node exits the SceneTree
+	virtual void ExitTree() {};
+	// Called when all of the child nodes are ready
+	virtual void Ready() {};
+	// Called upon initialization
+	virtual void Init() {};
+	
 	// Returns the Transform data of this Node
 	virtual Transform GetTransform() const;
 
@@ -91,31 +96,15 @@ public:
 	bool IsHidden() { return isHidden; }
 
 	std::unique_ptr<Node> RemoveFromParent();
+	void Reparent(Node* newParent);
 
 	virtual void DrawInspectorWidget();
 	
 	// Instantiate a node and add it to the list of children
 	template<typename T, typename... TArgs>
-	T* AddChild(const TArgs&... args)
-	{
-		T* created = static_cast<T*>(Children.emplace_back(std::make_unique<T>(args...)).get());
-		created->Parent = this;
-		UpdateTransform();
-		if (hasBegun == true)
-			created->BeginInternal();
-		return created;
-	}
+	T* AddChild(const TArgs&... args);
 
-	Node* AddChild(std::unique_ptr<Node> node, bool skipBegin = false)
-	{
-		Children.emplace_back(std::move(node));
-		auto& n = Children.back();
-		n->Parent = this;
-		UpdateTransform();
-		if (n->hasBegun == false && skipBegin == false && hasBegun == true)
-			n->BeginInternal();
-		return n.get();
-	}
+	Node* AddChild(std::unique_ptr<Node> node);
 
 	template<typename T = Node>
 	std::vector<T*> GetChildren() const
@@ -162,21 +151,17 @@ protected:
 	// Parent node. If nullptr, assume this is SceneRoot
 	Node* Parent = nullptr;
 
-	// Call Update() and update children
-	void UpdateNodeInternal(float dt);
+	UID id ;
 	
 	virtual void DrawGUIInternal();
-
-
+	
 	// Call ProcessInput() and update children inputs
 	//void ProcessInputInternal(const Controller::Input::ControllerContext& PadData, int padIndex);
-
-	void BeginInternal();
-
-
-
-	bool hasBegun = false;
+	
+	bool isInTree = false;
+	bool isReady = false;
 private:
+	SceneTree* tree;
 	// RenderContext that 'owns' this. Only valid if this is the Root node. Should work on a better way to do this
 	//Context* OwningContext = nullptr;
 	//Application* ApplicationContext = nullptr;
@@ -201,6 +186,18 @@ inline bool Node::IsAncestorOf(Node* otherNode)
 		parent = parent->GetParent();
 	}
 	return false;
+}
+
+template <typename T>
+std::unique_ptr<T> Node::NewNode(const std::string& name)
+{
+	T* node = new T();
+	node->SetName(name);
+	node->Init();
+
+	std::unique_ptr<T> ptr;
+	ptr.reset(node);
+	return ptr;
 }
 
 template <typename T>
@@ -230,3 +227,16 @@ bool Node::IsA()
 	return dynamic_cast<T*>(this) != nullptr;
 }
 
+template <typename T, typename ... TArgs>
+T* Node::AddChild(const TArgs&... args)
+{
+	T* created = static_cast<T*>(Children.emplace_back(NewNode<T>(args...)).get());
+	created->Parent = this;
+	if (tree)
+	{
+		tree->RegisterNode(created);
+		if (isReady) tree->ReadyNode(created);
+	}
+	UpdateTransform();
+	return created;
+}

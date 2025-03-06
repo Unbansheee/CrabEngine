@@ -13,13 +13,10 @@ class NodeWindow : public Node
 
     
 public:
-    NodeWindow() : Node() {};
-    NodeWindow(const std::string& name) : Node(name) {}
-    
-    void Begin() override;
+    void EnterTree() override;
     void Update(float dt) override;
     bool WantsToClose() const { return bCloseRequested; }
-    ~NodeWindow() override;
+    void ExitTree() override;
 
     wgpu::TextureFormat GetSurfaceFormat() const { return surfaceFormat; }
 

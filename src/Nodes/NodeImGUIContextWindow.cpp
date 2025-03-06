@@ -9,9 +9,9 @@
 REGISTER_CLASS(NodeImGUIContextWindow)
 
 
-void NodeImGUIContextWindow::Begin()
+void NodeImGUIContextWindow::EnterTree()
 {
-    NodeWindow::Begin();
+    NodeWindow::EnterTree();
     imguiContext = ImGui::CreateContext();
     ImGui::SetCurrentContext(imguiContext);
     auto& io = ImGui::GetIO();

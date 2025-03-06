@@ -5,7 +5,7 @@
 #include "DrawCommand.h"
 #include "DynamicOffsetUniformBuffer.h"
 #include "DynamicUniformBuffer.h"
-#include "NodeMeshInstance3D.h"
+#include "Nodes/NodeMeshInstance3D.h"
 #include "UniformDefinitions.h"
 
 class Node;

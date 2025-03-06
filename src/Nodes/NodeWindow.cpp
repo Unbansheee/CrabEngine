@@ -10,9 +10,9 @@ using namespace wgpu;
 
 REGISTER_CLASS(NodeWindow)
 
-void NodeWindow::Begin()
+void NodeWindow::EnterTree()
 {
-    Node::Begin();
+    Node::Init();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     window = glfwCreateWindow(640, 480, Name.c_str(), nullptr, nullptr);
@@ -103,10 +103,12 @@ void NodeWindow::Update(float dt)
 }
 
 
-NodeWindow::~NodeWindow()
+void NodeWindow::ExitTree()
 {
     glfwDestroyWindow(window);
+    window = nullptr;
 }
+
 
 float NodeWindow::GetAspectRatio() const
 {

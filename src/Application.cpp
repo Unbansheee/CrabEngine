@@ -1045,7 +1045,7 @@ Application::Application()
 	});
 
 	
-	rootNode = std::make_unique<Node>();
+	sceneTree.SetRoot(Node::NewNode());
 }
 
 Application::~Application()
@@ -1055,28 +1055,23 @@ Application::~Application()
 
 void Application::Begin()
 {
-	rootNode->BeginInternal();
+	sceneTree.Begin();
 }
 
 bool Application::ShouldClose() const
 {
-	return rootNode == nullptr;
+	return bShouldClose;
 }
 
 void Application::Update()
 {
 	float dt = deltaTime.Tick((float)glfwGetTime());
-	rootNode->UpdateNodeInternal(dt);
-}
-
-Node* Application::GetRootNode()
-{
-	return rootNode.get();
+	sceneTree.Update(dt);
 }
 
 void Application::Close()
 {
-	rootNode = nullptr;
+	bShouldClose = true; 
 }
 
 wgpu::RequiredLimits Application::GetRequiredLimits(wgpu::Adapter adapter)

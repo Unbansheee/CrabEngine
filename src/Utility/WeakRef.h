@@ -4,7 +4,7 @@
 #include <iostream>
 #include <ostream>
 
-#include "Node.h"
+#include "Nodes/Node.h"
 #include "ObservableDtor.h"
 #include "rocket/rocket.hpp"
 

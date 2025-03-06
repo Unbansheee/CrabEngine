@@ -5,6 +5,7 @@
 #include "Node.h"
 
 #include "Core/ClassDB.h"
+#include "Core/SceneTree.h"
 #include "imgui/imgui.h"
 #include "imgui/misc/cpp/imgui_stdlib.h"
 
@@ -16,6 +17,35 @@ void Node::DrawInspectorWidget()
 	{
 		//prop.DrawProperty();		
 	}
+}
+
+Node* Node::AddChild(std::unique_ptr<Node> node)
+{
+	Children.emplace_back(std::move(node));
+	auto& n = Children.back();
+	n->Parent = this;
+
+	// if node is not already in the tree but we are, register it to the tree
+	if (tree)
+	{
+		if (!n->tree)
+		{
+			tree->RegisterNode(n.get());
+		}
+			
+		if (!n->isReady && isReady) tree->ReadyNode(n.get());
+	}
+		
+	UpdateTransform();
+	return n.get();
+}
+
+
+
+
+Node::~Node()
+{
+	//if (tree) tree->UnregisterNode(this);
 }
 
 Transform Node::GetTransform() const
@@ -49,7 +79,7 @@ void Node::Render(RenderVisitor& Visitor)
 	for (const auto& i : Children)
 	{
 		if (!i) continue;
-		if (i->IsHidden()) return;
+		if (i->IsHidden()) continue;
 		i->Render(Visitor);
 	}
 }
@@ -113,7 +143,6 @@ std::unique_ptr<Node> Node::RemoveFromParent()
 {
 	if (!Parent) return nullptr;
 
-	int i = 0;
 	auto it = std::find_if(Parent->Children.begin(), Parent->Children.end(), [this](auto& a)
 	{
 		return a.get() == this;
@@ -122,37 +151,38 @@ std::unique_ptr<Node> Node::RemoveFromParent()
 	{
 		std::unique_ptr<Node> n = std::move(*it);
 		Parent->Children.erase(it);
+		
+		if (n->tree) n->tree->UnregisterNode(n.get());
+		
 		return n;
 	}
-
+	
 	return nullptr;
-	/*
-	for (std::unique_ptr<Node>& item : Parent->Children)
-	{
-		if (item.get() == this)
-		{
-			break;
-		}
-		i++;
-	}
-
-	std::unique_ptr<Node> n = std::move(Parent->Children.at(i));
-	Parent->Children.erase(Parent->Children.begin() + i);
-	return n;
-	*/
 }
 
-void Node::UpdateNodeInternal(float dt)
+void Node::Reparent(Node* newParent)
 {
+	if (!Parent) return;
+	assert(newParent);
 
-	// Depth first walk
-	for (const auto& i : Children)
+	auto it = std::find_if(Parent->Children.begin(), Parent->Children.end(), [this](auto& a)
 	{
-		if (!i) continue;
-		i->UpdateNodeInternal(dt);
-	}
+		return a.get() == this;
+	});
+	
+	if (it != Parent->Children.end())
+	{
+		std::unique_ptr<Node> n = std::move(*it);
+		Parent->Children.erase(it);
+		auto t = n.get();
+		newParent->Children.push_back(std::move(n));
 
-	Update(dt);
+		// Moving to a node thats not in the tree, unregister
+		if (t->tree && !newParent->tree) t->tree->UnregisterNode(t);
+
+		// Moving to a node thats in the tree, register
+		if (!t->tree && newParent->tree) newParent->tree->RegisterNode(t);
+	}
 }
 
 void Node::DrawGUIInternal()
@@ -181,21 +211,3 @@ void Node::ProcessInputInternal(const Controller::Input::ControllerContext& PadD
 }
 */
 
-void Node::BeginInternal()
-{
-	UpdateTransform();
-
-	// Depth first walk
-	for (const auto& i : Children)
-	{
-		if (!i) continue;
-		if (i->hasBegun) continue;
-
-		i->BeginInternal();
-	}
-
-	if (hasBegun) return;
-
-	hasBegun = true;
-	Begin();
-}

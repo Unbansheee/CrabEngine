@@ -11,7 +11,8 @@
 #include <memory>
 
 #include "NodeMeshInstance3D.h"
-#include "ResourceManager.h"
+#include "Gfx/Materials/StandardMaterial.h"
+#include "Resource/ResourceManager.h"
 
 /*
 #include "MaterialStandard.h"
@@ -26,7 +27,7 @@
 
 std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std::string& path)
 {
-	std::unique_ptr<Node3D> root = std::make_unique<Node3D>();
+	std::unique_ptr<Node3D> root = Node::NewNode<Node3D>();
 	root->SetName(path.substr(path.find_last_of('/') + 1).substr( 0, path.find_last_of('.')));
 
 	tinygltf::Model model;
@@ -78,6 +79,9 @@ std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std:
 	*/
 
 	// Parse node tree
+	SharedRef<StandardMaterial> mat = MakeShared<StandardMaterial>(device, ENGINE_RESOURCE_DIR"/standard_material.wgsl");
+	mat->TargetTextureFormat = wgpu::TextureFormat::BGRA8UnormSrgb;
+	mat->Initialize();
 	for (tinygltf::Node& node : model.nodes)
 	{
 		std::unique_ptr<Node3D> createdNode = nullptr;
@@ -85,7 +89,7 @@ std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std:
 			//if (node.name.find(" -colonly") == std::string::npos)
 			//{
 			// Create mesh node
-			NodeMeshInstance3D* m = new NodeMeshInstance3D();
+			auto m = Node::NewNode<NodeMeshInstance3D>();
 			m->SetMesh(parsed_meshes.at(node.mesh));
 
 			// Does the mesh have primitives that have a material assigned?
@@ -94,9 +98,10 @@ std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std:
 			if (prim.material >= 0)
 			{
 				//m->SetMaterial(parsed_materials.at(prim.material));
+				m->SetMaterial(mat);
 			}
 
-			createdNode.reset(m);
+			createdNode = std::move(m);
 		}
 			//}
 
@@ -181,8 +186,7 @@ std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std:
 
 		else
 		{
-			Node3D* m = new Node3D();
-			createdNode.reset(m);
+			createdNode = Node::NewNode<Node3D>();
 		}
 
 
@@ -209,7 +213,7 @@ std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std:
 
 		createdNode->SetName(node.name);
 		parsed_nodes.push_back(createdNode.get());
-		root->AddChild(std::move(createdNode), true);
+		root->AddChild(std::move(createdNode));
 	}
 
 
@@ -231,7 +235,7 @@ std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std:
 				childMapping.reset(parsed_nodes.at(child));
 			}
 
-			currentNode->AddChild(std::move(childMapping), true);
+			currentNode->AddChild(std::move(childMapping));
 		}
 	}
 

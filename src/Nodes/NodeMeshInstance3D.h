@@ -3,19 +3,13 @@
 //
 
 #pragma once
-#include "Mesh.h"
+#include "Resource/Mesh.h"
 #include "Node3D.h"
 #include "Renderer/Material.h"
 
 
 class NodeMeshInstance3D : public Node3D {
 public:
-    NodeMeshInstance3D() = default;
-
-    explicit NodeMeshInstance3D(const std::string& name)
-        : Node3D(name)
-    {
-    }
 
     BEGIN_PROPERTIES(Node3D)
         ADD_PROPERTY(NodeMeshInstance3D, "Funny Number", FunnyNumber)

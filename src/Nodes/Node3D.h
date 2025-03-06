@@ -10,13 +10,7 @@
 class Node3D : public Node
 {
 public:
-    Node3D() = default;
-
-    explicit Node3D(const std::string& name)
-        : Node(name)
-    {
-    }
-
+    
     BEGIN_PROPERTIES(Node)
         ADD_PROPERTY(Node3D, "Transform", transform)
     END_PROPERTIES
