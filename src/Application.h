@@ -11,6 +11,8 @@
 #include <glm/glm.hpp>
 #include "ApplicationLayer.h"
 #include "Node.h"
+#include "flecs.h"
+
 
 struct ImGuiContext;
 using glm::mat4x4;
@@ -208,6 +210,8 @@ public:
     bool ShouldClose() const;
     void Close();
 
+    flecs::world& GetWorld() {return ecs_world;};
+
     wgpu::Instance GetInstance() const { return wgpuInstance; }
     wgpu::Device GetDevice() const { return wgpuDevice; }
     wgpu::Queue GetQueue() const { return wgpuDeviceGetQueue(wgpuDevice); }
@@ -222,15 +226,17 @@ public:
         float time;
         float _pad[3];
     };
-    
+    wgpu::Instance wgpuInstance = nullptr;
+    wgpu::Device wgpuDevice = nullptr;
+
 protected:
     std::unique_ptr<Node> rootNode;
     DeltaTicker deltaTime;
     
-    wgpu::Instance wgpuInstance = nullptr;
-    wgpu::Device wgpuDevice = nullptr;
 
     std::unique_ptr<wgpu::ErrorCallback> errorCallbackHandle;
+
+    flecs::world ecs_world;
 
     Application(const Application &) = delete;
     Application & operator = (const Application &) = delete;

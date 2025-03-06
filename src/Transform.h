@@ -30,6 +30,8 @@ inline constexpr Vector3 vec3_rad_to_deg(Vector3 rad)
 // A Transform represents a position in space, and contains a world-space model matrix
 struct Transform
 {
+	Transform() = default;
+	
 	// Local position
 	Vector3 Position = { 0.0f, 0.0f, 0.0f };
 
@@ -75,19 +77,11 @@ struct Transform
 
 	// Convert a direction vector in World Space to Local Space (this might be broken)
 	Quat WorldToLocalRotation(const Quat& in) const;
-
-private:
-	// Legacy, needs deprecating
-	inline static Transform* identityTransform;
 	
 public:
 	static const Transform& identity() {
-		if (identityTransform)
-		{
-			return *identityTransform;
-		}
-		identityTransform = new Transform();
-		return *identityTransform;
+		static Transform t;
+		return t;
 	}
 
 };

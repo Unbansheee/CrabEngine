@@ -24,6 +24,11 @@ public:
     void Flush();
 
     void RenderNodeTree(Node* rootNode, const Camera& camera, wgpu::TextureView& colorAttachment, wgpu::TextureView& depthAttachment);
+
+    
+    void ECSRenderBegin(Camera& cam);
+    void ECSRender(DrawCommand command);
+    void ECSRenderEnd();
     
     void AddCommand(wgpu::CommandBuffer command)
     {
@@ -32,7 +37,8 @@ public:
 
     virtual void CreateBindGroups();
     virtual void UpdateUniforms();
-    
+
+    std::unique_ptr<RenderVisitor> rv;
     rocket::signal<void(Vector2)> OnResized;
 private:
     // Core WebGPU objects

@@ -37,15 +37,29 @@ add_subdirectory(vendor/glfw)
 add_subdirectory(vendor/glfw3webgpu)
 add_subdirectory(vendor/imgui)
 add_subdirectory(vendor/rocket)
-target_link_libraries(CrabEngine PRIVATE glfw glfw3webgpu)
-target_link_libraries(CrabEngine PUBLIC webgpu imgui)
+add_subdirectory(vendor/flecs)
+
+
+target_link_libraries(CrabEngine PRIVATE 
+    glfw 
+    glfw3webgpu
+)
+
+target_link_libraries(CrabEngine PUBLIC 
+    webgpu 
+    imgui 
+    flecs::flecs_static
+)
+
+
 target_copy_webgpu_binaries(CrabEngine)
 set_target_properties(CrabEngine PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
-
 set_target_properties(glfw PROPERTIES FOLDER "CrabEngine/Dependencies/GLFW3")
 set_target_properties(glfw3webgpu PROPERTIES FOLDER "CrabEngine/Dependencies/GLFW3")
 set_target_properties(update_mappings PROPERTIES FOLDER "CrabEngine/Dependencies/GLFW3")
 set_target_properties(imgui PROPERTIES FOLDER "CrabEngine/Dependencies")
+set_target_properties(flecs PROPERTIES FOLDER "CrabEngine/Dependencies/flecs")
+set_target_properties(flecs_static PROPERTIES FOLDER "CrabEngine/Dependencies/flecs")
 set_target_properties(CrabEngine PROPERTIES FOLDER "CrabEngine")
 
 

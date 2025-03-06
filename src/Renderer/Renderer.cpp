@@ -37,7 +37,7 @@ void Renderer::RenderNodeTree(Node* rootNode, const Camera& camera, wgpu::Textur
         Vector4{0.2f, 0.4f, 0.3f, 0.0f}
     };
     m_lightingUniformBuffer.SetData(lightingData);
-    
+
     if (rootNode)
     {
         RenderVisitor visitor(m_device, m_objectUniformBuffer);
@@ -52,6 +52,43 @@ void Renderer::RenderNodeTree(Node* rootNode, const Camera& camera, wgpu::Textur
         ExecuteBatches(batches, colorAttachment, depthAttachment);
     }
 }
+
+
+void Renderer::ECSRenderBegin(Camera& cam)
+{
+    CreateBindGroups();
+    Uniforms::UCameraData cameraData;
+    cameraData.cameraPosition = cam.Position;
+    cameraData.projectionMatrix = cam.ProjectionMatrix;
+    cameraData.viewMatrix = cam.ViewMatrix;
+    m_cameraUniformBuffer.SetData(cameraData);
+
+    Uniforms::ULightingData lightingData;
+    lightingData.LightColors = {
+        Vector4{ 1.0f, 0.9f, 0.6f, 1.0f },
+        Vector4{ 0.6f, 0.9f, 1.0f, 1.0f }
+    };
+    lightingData.LightDirections = {
+        Vector4{0.5f, -0.9f, 0.1f, 0.0f},
+        Vector4{0.2f, 0.4f, 0.3f, 0.0f}
+    };
+    m_lightingUniformBuffer.SetData(lightingData);
+    
+    rv.reset(new RenderVisitor(m_device, m_objectUniformBuffer));
+
+}
+
+void Renderer::ECSRender(DrawCommand command)
+{
+}
+
+void Renderer::ECSRenderEnd()
+{
+    auto batches = rv->BuildBatches();
+    m_objectUniformBuffer.Upload(m_queue);
+    //ExecuteBatches(batches, colorAttachment, depthAttachment);
+}
+
 
 void Renderer::CreateBindGroups()
 {

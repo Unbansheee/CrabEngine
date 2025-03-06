@@ -77,6 +77,7 @@ void NodeWindow::Update(float dt)
     cam.ProjectionMatrix = glm::perspective(45 * PI / 180, GetAspectRatio(), 0.01f, 1000.0f);
     cam.ViewMatrix = glm::lookAt(glm::vec3(4.0f, 0.f, 0.0f), glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
     cam.Position = Vector3(4, 0, 0);
+    
     if (bShouldRenderNodesToSurface)
     {
         renderer.RenderNodeTree(this, cam, SurfaceView, DepthView);

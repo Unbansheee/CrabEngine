@@ -15,6 +15,20 @@
 #include "Node.h"
 #include "Gfx/MeshVertex.h"
 
+
+void wgpuPollEvents([[maybe_unused]] wgpu::Device device, [[maybe_unused]] bool yieldToWebBrowser) {
+#if defined(WEBGPU_BACKEND_DAWN)
+	device.tick();
+#elif defined(WEBGPU_BACKEND_WGPU)
+	wgpuDevicePoll(device, false, nullptr);
+#elif defined(WEBGPU_BACKEND_EMSCRIPTEN)
+	if (yieldToWebBrowser) {
+		emscripten_sleep(100);
+	}
+#endif
+}
+
+
 /*
 using namespace wgpu;
 using glm::vec3;
@@ -1006,19 +1020,20 @@ RequiredLimits Application::GetRequiredLimits(wgpu::Adapter adapter) {
 Application::Application()
 {
 	WGPUInstanceDescriptor instanceDesc{};
-	wgpuInstance = wgpu::createInstance(instanceDesc);
-	if (!wgpuInstance) {
-		std::cerr << "Could not initialize WebGPU!" << std::endl;
-	}
+	//wgpuInstance = wgpu::createInstance(instanceDesc);
+	//if (!wgpuInstance) {
+	//	std::cerr << "Could not initialize WebGPU!" << std::endl;
+	//}
 
-	if (!glfwInit()) {
-		std::cerr << "Could not initialize GLFW!" << std::endl;
-	}
+	//if (!glfwInit()) {
+	//	std::cerr << "Could not initialize GLFW!" << std::endl;
+	//}
 
-	std::cout << "Requesting adapter..." << std::endl;
-	wgpu::RequestAdapterOptions adapterOpts = {};
+	//std::cout << "Requesting adapter..." << std::endl;
+	//wgpu::RequestAdapterOptions adapterOpts = {};
 	//surface = glfwGetWGPUSurface(wgpuInstance, window);
 	//adapterOpts.compatibleSurface = surface;
+	/*
 	wgpu::Adapter adapter = wgpuInstance.requestAdapter(adapterOpts);
 	std::cout << "Got adapter: " << adapter << std::endl;
 
@@ -1043,6 +1058,7 @@ Application::Application()
 		if (message) std::cout << " (" << message << ")";
 		std::cout << std::endl;
 	});
+	*/
 
 	
 	rootNode = std::make_unique<Node>();
@@ -1056,6 +1072,12 @@ Application::~Application()
 void Application::Begin()
 {
 	rootNode->BeginInternal();
+	flecs::entity e = ecs_world.entity();
+
+	std::cout << "ENTITY IS ALIVE? " << e.is_alive();
+	e.destruct();
+	std::cout << "ENTITY IS ALIVE? " << e.is_alive();
+
 }
 
 bool Application::ShouldClose() const
@@ -1066,7 +1088,13 @@ bool Application::ShouldClose() const
 void Application::Update()
 {
 	float dt = deltaTime.Tick((float)glfwGetTime());
-	rootNode->UpdateNodeInternal(dt);
+	//rootNode->UpdateNodeInternal(dt);
+	
+	glfwPollEvents();
+
+	std::cout << dt << "\n";
+	ecs_world.progress(0);
+	wgpuPollEvents(wgpuDevice, true);
 }
 
 Node* Application::GetRootNode()
