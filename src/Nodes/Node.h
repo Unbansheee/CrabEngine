@@ -20,6 +20,7 @@ protected:
 	friend class NodeWindow;
 	friend class NodeImGUIContextWindow;
 	friend class SceneTree;
+	friend class Object;
 
 	// Runs every frame before the Update function, with the latest controller input data
 	//virtual void ProcessInput(const Controller::Input::ControllerContext& PadData, int padIndex) {};
@@ -44,6 +45,9 @@ protected:
 public:
 	template<typename T = Node>
 	static std::unique_ptr<T> NewNode(const std::string& name = "Node");
+	//static std::unique_ptr<Node> NewNode(Node* raw, const std::string& name);
+	//static std::unique_ptr<Node> MakeNode()
+	static std::unique_ptr<Node> InitializeNode(Node* raw, const std::string& name);
 
 	// Called when the node enters the SceneTree
 	virtual void EnterTree() {};
@@ -106,12 +110,15 @@ public:
 
 	Node* AddChild(std::unique_ptr<Node> node);
 
+	// Gets a snapshot of the node's children. These pointers could be invalidated at any time
+	// For iteration, prefer to use ForEachChild()
 	template<typename T = Node>
-	std::vector<T*> GetChildren() const
+	std::vector<T*> GetChildrenOfType() const
 	{
 		std::vector<T*> children;
 		for (auto& child : Children)
 		{
+			if (child == nullptr) continue;
 			T* childNode = dynamic_cast<T*>(child.get());
 			if (childNode)
 			{
@@ -122,16 +129,49 @@ public:
 		return children;
 	}
 
+	// Gets a snapshot of the node's children. These pointers could be invalidated at any time
+	// For iteration, prefer to use ForEachChild()
+	std::vector<Node*> GetChildren() const
+	{
+		std::vector<Node*> children;
+		for (auto& child : Children)
+		{
+			if (child == nullptr) continue;
+			children.push_back(child.get());
+		}
+		return children;
+	}
+
+	template<typename Functor>
+	void ForEachChild(Functor functor)
+	{
+		for (int i = 0; i < Children.size(); i++)
+		{
+			if (Children.at(i) == nullptr) continue;
+			functor(Children.at(i).get());
+		}
+	}
+
+	template<typename NodeType, typename Functor>
+	void ForEachChildOfType(Functor functor)
+	{
+		for (int i = 0; i < Children.size(); i++)
+		{
+			if (Children.at(i) == nullptr) continue;
+			NodeType* n = dynamic_cast<NodeType*>(Children[i].get());
+			if (n)
+			{
+				functor(n);
+			}
+		}
+	}
+
 	template<typename T>
 	T* GetChild() const
 	{
-		for (auto& child : Children)
-		{
-			if (T* childNode = static_cast<T*>(child.get()))
-			{
-				return childNode;
-			}
-		}
+		auto children = GetChildrenOfType<T>();
+		if (!children.empty())
+			return children.front();
 		return nullptr;
 	}
 
@@ -141,17 +181,21 @@ public:
 	std::string Name = "Node";
 	bool isHidden = false;
 
+	virtual void Serialize(nlohmann::json& archive) override;
+	virtual void Deserialize(nlohmann::json& archive) override;
+	
 protected:
 	
 	// Hidden flag
 
 	// Child nodes
+private:
 	std::vector<std::unique_ptr<Node>> Children;
 
+protected:
 	// Parent node. If nullptr, assume this is SceneRoot
 	Node* Parent = nullptr;
 
-	UID id ;
 	
 	virtual void DrawGUIInternal();
 	
@@ -195,9 +239,9 @@ std::unique_ptr<T> Node::NewNode(const std::string& name)
 	node->SetName(name);
 	node->Init();
 
-	std::unique_ptr<T> ptr;
-	ptr.reset(node);
-	return ptr;
+	std::unique_ptr<T> n;
+	n.reset(node);
+	return n;
 }
 
 template <typename T>

@@ -2,6 +2,8 @@
 
 #include <vector>
 #include "Reflection.h"
+#include "json.hpp"
+#include "UID.h"
 
 class Object;
 class Node;
@@ -9,6 +11,12 @@ class Node;
 class Object
 {
 public:
+    template<typename T>
+    static Object* Create()
+    {
+        return new T();
+    };
+    
     virtual ~Object() = default;
 
     // Returns the class properties from an object instance. This indirection is required otherwise if getting properties for a
@@ -27,4 +35,9 @@ public:
     static const std::vector<Property>& GetPropertiesFromType() {
         return T::GetClassProperties();
     }
+
+    UID id ;
+    
+    virtual void Serialize(nlohmann::json& archive);
+    virtual void Deserialize(nlohmann::json& archive);
 };

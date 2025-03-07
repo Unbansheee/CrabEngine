@@ -1,7 +1,12 @@
 ﻿#include "ClassDB.h"
 #include "Node.h"
-#include "Node3D.h"
-#include "NodeWindow.h"
-#include "NodeImGUIContextWindow.h"
 
-REGISTER_CLASS(NodeImGUIContextWindow)
+std::vector<ClassType> ClassDB::GetClasses()
+{
+    std::vector<ClassType> types;
+    for (auto i : classTypes)
+    {
+        types.push_back(i.second);
+    }
+    return types;
+}

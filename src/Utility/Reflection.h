@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include <functional>
+#include <iostream>
+#include <json.hpp>
 #include <memory>
 #include <string>
 #include <ranges>
@@ -14,81 +16,6 @@ class Property;
 class PropertySupplier;
 struct PropertyView;
 class Object;
-
-namespace ImGui
-{
-    void DrawImGuiStringControl(PropertyView& property, std::string* value);
-    void DrawImGuiCheckboxControl(PropertyView& property, bool* value);
-    void DrawImGuiTransformControl(PropertyView& property, Transform* value);
-    void DrawImGuiVector3Control(PropertyView& property, Vector3* value);
-    void DrawImGuiVector2Control(PropertyView& property, Vector2* value);
-    void DrawImGuiVector4Control(PropertyView& property, Vector4* value);
-    void DrawImGuiFloatControl(PropertyView& property, float* value);
-    void DrawImGuiIntControl(PropertyView& property, int* value);
-}
-
-/*
-class PropertySupplier
-{
-public:
-    virtual std::vector<Property> GetProperties() = 0;
-};
-
-
-struct Property
-{
-    using PropertyType = std::variant<bool*, std::string*, Transform*, Vector4*, Vector3*, Vector2*, int*, float*>;
-
-
-
-    
-    Property(PropertySupplier* property_owner, const std::string& property_name, PropertyType property_ref, PropertyFlags flags = PropertyFlags(0))
-        : owner(property_owner), name(property_name), value(property_ref), propertyFlags(flags) {}
-
-    PropertySupplier* owner;
-    std::string name;
-    PropertyType value;
-    std::function<void(Property)> customDrawFunction;
-    PropertyFlags propertyFlags;
-
-    template<class... Ts>
-    struct overload : Ts... {
-        using Ts::operator()...;
-    };
-
-    template<class... Ts>
-    overload(Ts...) -> overload<Ts...>;
-    
-    void DrawProperty()
-    {
-        if (customDrawFunction) customDrawFunction(*this);
-        else
-        {
-            const auto visitor = overload
-            {
-                [this](Transform* v){ ImGui::DrawImGuiTransformControl(*this, v); },
-                [this](std::string* v){ ImGui::DrawImGuiStringControl(*this, v); },
-                [this](bool* v){ ImGui::DrawImGuiCheckboxControl(*this, v); },
-                [this](Vector4* v){ ImGui::DrawImGuiVector4Control(*this, v); },
-                [this](Vector3* v){ ImGui::DrawImGuiVector3Control(*this, v); },
-                [this](Vector2* v){ ImGui::DrawImGuiVector2Control(*this, v); },
-                [this](float* v){ ImGui::DrawImGuiFloatControl(*this, v); },
-                [this](int* v){ ImGui::DrawImGuiIntControl(*this, v); },
-            };
-            
-            std::visit(visitor, value);
-        }
-    };
-};
-
-
-*/
-
-struct PropertyVisitor;
-
-
-
-
 
 class Property {
 public:
@@ -138,15 +65,12 @@ public:
         if (!is<T>()) throw std::bad_variant_access{};
         setter(obj, value);
     }
-/*
-    template <typename Visitor>
-    auto visit(Visitor&& vis, Object* obj) const {
-
-    }
-*/
     
     template <typename Visitor>
     void visit(Visitor&& vis, Object* obj) const;
+
+    template <typename Visitor>
+    void visit(Visitor&& vis, nlohmann::json& archive, Object* obj) const;
 
     std::string name;
     std::type_index type;
@@ -161,8 +85,6 @@ private:
     }
 
 };
-
-
 
 
 // Concept for auto-detecting reflected classes
@@ -189,16 +111,22 @@ struct PropertyView {
 template <typename Visitor>
 void Property::visit(Visitor&& vis, Object* obj) const
 {
-    /*
-    auto value = getVariant(obj);  // Get the value variant
-    PropertyView view{*this, value, obj};  // Create view pair
-    vis(view);  // Pass to visitor
-    */
     auto value = getVariant(obj);
     PropertyView v = {.property= *this, .value= value, .object= obj};
     std::variant<PropertyView> p = v;
     return std::visit(std::forward<Visitor>(vis), p, value);
 }
+
+template <typename Visitor>
+void Property::visit(Visitor&& vis, nlohmann::json& archive, Object* obj) const
+{
+    auto value = getVariant(obj);
+    PropertyView v = {.property= *this, .value= value, .object= obj};
+    std::variant<PropertyView> p = v;
+    std::variant<nlohmann::json*> j = &archive;
+    return std::visit(std::forward<Visitor>(vis), p, j, value);
+}
+
 
 #define BEGIN_PROPERTIES(ParentType) \
 virtual const std::vector<Property>& GetPropertiesFromThis() override { return GetClassProperties(); }\

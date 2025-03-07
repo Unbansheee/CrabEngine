@@ -48,6 +48,18 @@ Node::~Node()
 	//if (tree) tree->UnregisterNode(this);
 }
 
+
+
+std::unique_ptr<Node> Node::InitializeNode(Node* raw, const std::string& name)
+{
+	raw->SetName(name);
+	raw->Init();
+
+	std::unique_ptr<Node> n;
+	n.reset(raw);
+	return n;
+}
+
 Transform Node::GetTransform() const
 {
 	return Transform::identity();
@@ -67,21 +79,20 @@ Transform Node::GetParentTransform() const
 
 void Node::UpdateTransform()
 {
-	for (auto& child : Children)
+	ForEachChild([](Node* child)
 	{
 		child->UpdateTransform();
-	}
+	});
 }
 
 void Node::Render(RenderVisitor& Visitor)
 {
 	// Depth first walk
-	for (const auto& i : Children)
+	ForEachChild([&Visitor](Node* child)
 	{
-		if (!i) continue;
-		if (i->IsHidden()) continue;
-		i->Render(Visitor);
-	}
+		if (child->IsHidden()) return;
+		child->Render(Visitor);
+	});
 }
 
 /*
@@ -150,7 +161,7 @@ std::unique_ptr<Node> Node::RemoveFromParent()
 	if (it != Parent->Children.end())
 	{
 		std::unique_ptr<Node> n = std::move(*it);
-		Parent->Children.erase(it);
+		std::erase_if(Parent->Children, [](std::unique_ptr<Node>& n){ return n == nullptr; });
 		
 		if (n->tree) n->tree->UnregisterNode(n.get());
 		
@@ -185,16 +196,31 @@ void Node::Reparent(Node* newParent)
 	}
 }
 
+void Node::Serialize(nlohmann::json& archive)
+{
+	Object::Serialize(archive);
+	auto& object_data = archive[id.to_string()];
+	auto& childrenData = object_data["Children"];
+	ForEachChild([&childrenData](Node* child)
+	{
+		child->Serialize(childrenData);
+	});
+}
+
+void Node::Deserialize(nlohmann::json& archive)
+{
+	Object::Deserialize(archive);
+
+}
+
 void Node::DrawGUIInternal()
 {
 	DrawGUI();
 
-	// Depth first walk
-	for (const auto& i : Children)
+	ForEachChild([](Node* Child)
 	{
-		if (!i) continue;
-		i->DrawGUIInternal();
-	}
+		Child->DrawGUIInternal();
+	});
 }
 
 /*

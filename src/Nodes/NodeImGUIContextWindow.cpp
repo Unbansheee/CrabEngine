@@ -68,11 +68,10 @@ void NodeImGUIContextWindow::Update(float dt)
     DrawGUI();
 
     // Depth first walk
-    for (const auto& i : Children)
+    ForEachChild([](Node* child)
     {
-        if (!i) continue;
-        i->DrawGUIInternal();
-    }
+        child->DrawGUIInternal();
+    });
     
     ImGui::EndFrame();
     ImGui::Render();

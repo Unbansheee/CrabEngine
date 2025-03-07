@@ -32,11 +32,11 @@ void SceneTree::RegisterNode(Node* node)
     {
         nodeMap[node->id] = node;
         node->tree = this;
-        for (auto child : node->GetChildren<Node>())
+        node->ForEachChild([this](Node* child)
         {
             RegisterNode(child);
-        }
-        
+        });
+
         node->EnterTree();
     }
 }
@@ -47,10 +47,11 @@ void SceneTree::UnregisterNode(Node* node)
     {
         nodeMap.erase(node->id);
         node->tree = nullptr;
-        for (auto child : node->GetChildren<Node>())
+        node->ForEachChild([this](Node* child)
         {
             UnregisterNode(child);
-        }
+        });
+
         node->ExitTree();
     }
 }
@@ -61,19 +62,19 @@ void SceneTree::UpdateNode(Node* n, float dt, bool recursive)
     
     if (recursive)
     {
-        for (auto child : n->GetChildren())
+        n->ForEachChild([this, dt, recursive](Node* child)
         {
             UpdateNode(child, dt, recursive);
-        }
+        });
     }
 }
 
 void SceneTree::ReadyNode(Node* n)
 {
-    for (auto child : n->GetChildren())
+    n->ForEachChild([this](Node* child)
     {
         ReadyNode(child);
-    }
+    });
 
     if (!n->isReady)
     {
