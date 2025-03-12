@@ -76,13 +76,16 @@ void NodeWindow::Update(float dt)
     auto DepthView = GetDepthTextureView();
     auto SurfaceView = GetCurrentTextureView();
     
-    Camera cam;
-    cam.ProjectionMatrix = glm::perspective(45 * PI / 180, GetAspectRatio(), 0.01f, 1000.0f);
-    cam.ViewMatrix = glm::lookAt(glm::vec3(4.0f, 0.f, 0.0f), glm::vec3(0, 0, 0), glm::vec3(0, 0, 1));
-    cam.Position = Vector3(4, 0, 0);
     if (bShouldRenderNodesToSurface)
     {
-        renderer.RenderNodeTree(this, cam, SurfaceView, DepthView);
+        View viewData;
+        if (ActiveCamera)
+        {
+            viewData.Position = ActiveCamera->GetGlobalPosition();
+            viewData.ViewMatrix = ActiveCamera->GetViewMatrix();
+            viewData.ProjectionMatrix = glm::perspectiveRH(ActiveCamera->FOV, GetAspectRatio(), ActiveCamera->NearClippingPlane, ActiveCamera->FarClippingPlane);
+        }
+        renderer.RenderNodeTree(this, viewData, SurfaceView, DepthView);
     }
     renderer.Flush();
     

@@ -20,8 +20,8 @@ void StandardMaterial::Initialize()
     TextureSampler = m_device.createSampler(samplerDesc);
 
     WGPUTextureViewDescriptor d;
-    if (!BaseColorTextureView) BaseColorTextureView = MakeShared<TextureResource>();
-    if (!NormalTextureView) NormalTextureView = MakeShared<TextureResource>();
+    if (!BaseColorTextureView) BaseColorTextureView = Resource::CreateResource<TextureResource>(ENGINE_RESOURCE_DIR"/null_texture_black.png");
+    if (!NormalTextureView) NormalTextureView = Resource::CreateResource<TextureResource>(ENGINE_RESOURCE_DIR"/null_texture_black.png");
     
     Material::Initialize();
 }

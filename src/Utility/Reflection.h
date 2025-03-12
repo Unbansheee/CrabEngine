@@ -10,12 +10,15 @@
 
 #include "CrabTypes.h"
 #include "Transform.h"
+#include "Resource/ResourceHandle.h"
 
-
+struct ResourceHandle;
+class Mesh;
 class Property;
 class PropertySupplier;
 struct PropertyView;
 class Object;
+class Resource;
 
 class Property {
 public:
@@ -24,7 +27,7 @@ public:
         int, float, bool, 
         std::string, Vector3, Vector2,
         Quat,
-        Vector4, Transform
+        Vector4, Transform, ResourceHandle
         // Add other types as needed
     >;
 
@@ -142,10 +145,10 @@ Name, \
 Flags \
 ));
 
-#define ADD_PROPERTY(Type, Name, Member) \
+#define ADD_PROPERTY(OwningClass, Name, Member) \
 custom.push_back(Property( \
 Name, \
-&Type::Member, \
+&OwningClass::Member, \
 Property::Flags::None \
 ));
 
@@ -155,3 +158,5 @@ return base; \
 }(); \
 return props; \
 }\
+
+

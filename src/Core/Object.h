@@ -15,7 +15,7 @@ public:
     static Object* Create()
     {
         return new T();
-    };
+    }
     
     virtual ~Object() = default;
 
@@ -36,8 +36,11 @@ public:
         return T::GetClassProperties();
     }
 
-    UID id ;
+    const UID& GetID() const;
     
     virtual void Serialize(nlohmann::json& archive);
     virtual void Deserialize(nlohmann::json& archive);
+
+protected:
+    UID id ;
 };

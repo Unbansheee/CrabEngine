@@ -52,8 +52,6 @@ public:
             wgpuQueueWriteBuffer(wgpuDeviceGetQueue(device), indexBuffer, 0, indices.value().get().data(), indexBufferDesc.size);
         }
     }
-
-    //virtual void GatherDrawCommands(std::vector<DrawCommand> &Commands) const override;
     
     ~Mesh()
     {

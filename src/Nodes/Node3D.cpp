@@ -129,17 +129,17 @@ void Node3D::SetGlobalOrientation(const Quat& NewOrientation)
 
 Vector3 Node3D::GetForwardVector() const
 {
-    return transform.LocalToWorldDirection({ 0, 0, -1 });
+    return transform.LocalToWorldDirection({ 1, 0, 0 });
 }
 
 Vector3 Node3D::GetUpVector() const
 {
-    return transform.LocalToWorldDirection({ 0, 1, 0 });
+    return transform.LocalToWorldDirection({ 0, 0, 1 });
 }
 
 Vector3 Node3D::GetRightVector() const
 {
-    return transform.LocalToWorldDirection({ 1, 0, 0 });
+    return transform.LocalToWorldDirection({ 0, 1, 0 });
 }
 
 Transform Node3D::GetTransform() const

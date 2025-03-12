@@ -10,6 +10,8 @@
 //#include "Texture.h"
 #include "tiny_gltf.h"
 
+class Material;
+class TextureResource;
 class Node3D;
 
 class GLTFSceneParser
@@ -19,7 +21,8 @@ public:
 
 private:
     std::shared_ptr<Mesh> ParseMesh(WGPUDevice device, tinygltf::Model& model, tinygltf::Mesh& mesh);
-    //std::shared_ptr<Material> ParseMaterial(Context& context, tinygltf::Model& model, const std::vector<std::shared_ptr<Texture>>& textures, tinygltf::Material& material);
-    //std::shared_ptr<Texture> ParseTexture(Context& context, tinygltf::Model& model, tinygltf::Texture& material);
+    std::shared_ptr<Material> ParseMaterial(WGPUDevice& context, tinygltf::Model& model, const std::vector<std::shared_ptr<TextureResource>>& textures, tinygltf::Material& material);
+    std::shared_ptr<TextureResource> ParseTexture(WGPUDevice& context, tinygltf::Model& model,
+    tinygltf::Texture& texture);
 
 };

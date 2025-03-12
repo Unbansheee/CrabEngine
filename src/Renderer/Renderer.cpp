@@ -18,15 +18,11 @@ void Renderer::Initialize(wgpu::Device device)
 }
 
 
-void Renderer::RenderNodeTree(Node* rootNode, const Camera& camera, wgpu::TextureView& colorAttachment,
+void Renderer::RenderNodeTree(Node* rootNode, View& view, wgpu::TextureView& colorAttachment,
                               wgpu::TextureView& depthAttachment)
 {
     CreateBindGroups();
-    Uniforms::UCameraData cameraData;
-    cameraData.cameraPosition = camera.Position;
-    cameraData.projectionMatrix = camera.ProjectionMatrix;
-    cameraData.viewMatrix = camera.ViewMatrix;
-    m_cameraUniformBuffer.SetData(cameraData);
+
 
     Uniforms::ULightingData lightingData;
     lightingData.LightColors = {
@@ -48,6 +44,12 @@ void Renderer::RenderNodeTree(Node* rootNode, const Camera& camera, wgpu::Textur
         SortBatches(batches);
 
         m_objectUniformBuffer.Upload(m_queue);
+
+        Uniforms::UCameraData cameraData;
+        cameraData.cameraPosition = view.Position;
+        cameraData.projectionMatrix = view.ProjectionMatrix;
+        cameraData.viewMatrix = view.ViewMatrix;
+        m_cameraUniformBuffer.SetData(cameraData);
         
         // 4. Execute rendering
         ExecuteBatches(batches, colorAttachment, depthAttachment);

@@ -46,7 +46,12 @@ struct UID
     {
         return uuids::to_string(id);
     }
-    
+
+    static UID empty()
+    {
+        static UID id = (uuids::uuid());
+        return id;
+    }
     
 private:
     friend struct std::hash<UID>;

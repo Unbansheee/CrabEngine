@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Node.h"
+#include "WeakRef.h"
 #include "Renderer/Renderer.h"
 
 class NodeWindow : public Node
@@ -26,6 +27,9 @@ public:
 
     void SetSurfaceDrawEnabled(bool enabled) {bShouldRenderNodesToSurface = enabled;}
     float GetAspectRatio() const;
+
+    WeakRef<NodeCamera3D> ActiveCamera;
+    
 protected:
     void InitializeRenderer();
     void TerminateSurface();
@@ -47,6 +51,8 @@ protected:
 
     void CreateSwapChain(uint32_t width, uint32_t height);
     void CreateDepthTexture(uint32_t width, uint32_t height);
+
+
 protected:
     void ExecuteResize();
 
@@ -63,5 +69,6 @@ protected:
 
     mutable wgpu::SurfaceTexture m_surfaceTexture;
 
+    
     ResizeRequest resizeRequest;
 };

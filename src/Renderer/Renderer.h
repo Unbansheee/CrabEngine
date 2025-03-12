@@ -7,13 +7,6 @@
 #include "UniformBuffer.h"
 #include "UniformDefinitions.h"
 
-struct Camera
-{
-    Vector3 Position = {0,0,0};
-    Matrix4 ViewMatrix = Matrix4(1.0f);
-    Matrix4 ProjectionMatrix = Matrix4(1.0f);
-};
-
 class Renderer : public observable_dtor {
 public:
     Renderer() = default;
@@ -23,7 +16,7 @@ public:
     
     void Flush();
 
-    void RenderNodeTree(Node* rootNode, const Camera& camera, wgpu::TextureView& colorAttachment, wgpu::TextureView& depthAttachment);
+    void RenderNodeTree(Node* rootNode, View& view, wgpu::TextureView& colorAttachment, wgpu::TextureView& depthAttachment);
     
     void AddCommand(wgpu::CommandBuffer command)
     {

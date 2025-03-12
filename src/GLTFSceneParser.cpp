@@ -51,18 +51,18 @@ std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std:
 		return nullptr;
 	}
 
-	//std::vector<std::shared_ptr<Texture>> parsed_textures;
+	std::vector<std::shared_ptr<TextureResource>> parsed_textures;
 	std::vector<std::shared_ptr<Mesh>> parsed_meshes;
-	//std::vector<std::shared_ptr<Material>> parsed_materials;
+	std::vector<std::shared_ptr<Material>> parsed_materials;
 	std::vector<Node*> parsed_nodes;
 
-	/*
+	
 	// parse textures
 	for (tinygltf::Texture& texture : model.textures)
 	{
-		parsed_textures.push_back(ParseTexture(context, model, texture));
+		parsed_textures.push_back(ParseTexture(device, model, texture));
 	}
-	*/
+	
 
 	// parse meshes
 	for (auto& mesh : model.meshes)
@@ -70,18 +70,18 @@ std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std:
 		parsed_meshes.push_back(ParseMesh(device, model, mesh));
 	}
 
-	/*
+	
 	// parse materials
 	for (auto& material : model.materials)
 	{
-		parsed_materials.push_back(ParseMaterial(context, model, parsed_textures, material));
+		parsed_materials.push_back(ParseMaterial(device, model, parsed_textures, material));
 	}
-	*/
+	
 
 	// Parse node tree
-	SharedRef<StandardMaterial> mat = MakeShared<StandardMaterial>(device, ENGINE_RESOURCE_DIR"/standard_material.wgsl");
-	mat->TargetTextureFormat = wgpu::TextureFormat::BGRA8UnormSrgb;
-	mat->Initialize();
+	//SharedRef<StandardMaterial> mat = MakeShared<StandardMaterial>(device, ENGINE_RESOURCE_DIR"/standard_material.wgsl");
+	//mat->TargetTextureFormat = wgpu::TextureFormat::BGRA8UnormSrgb;
+	//mat->Initialize();
 	for (tinygltf::Node& node : model.nodes)
 	{
 		std::unique_ptr<Node3D> createdNode = nullptr;
@@ -97,8 +97,8 @@ std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std:
 			tinygltf::Primitive& prim = meshdata.primitives.front();
 			if (prim.material >= 0)
 			{
-				//m->SetMaterial(parsed_materials.at(prim.material));
-				m->SetMaterial(mat);
+				m->SetMaterial(parsed_materials.at(prim.material));
+				//m->SetMaterial(mat);
 			}
 
 			createdNode = std::move(m);
@@ -334,35 +334,46 @@ std::shared_ptr<Mesh> GLTFSceneParser::ParseMesh(WGPUDevice device, tinygltf::Mo
 	return std::make_shared<Mesh>(device, vertices, indices);
 }
 
-/*
-std::shared_ptr<Material> GLTFSceneParser::ParseMaterial(Context& context, tinygltf::Model& model, const std::vector<std::shared_ptr<Texture>>& textures,
-	tinygltf::Material& material)
-{
-	std::shared_ptr<MaterialStandard> mat = std::make_shared<MaterialStandard>();
 
+std::shared_ptr<Material> GLTFSceneParser::ParseMaterial(WGPUDevice& context, tinygltf::Model& model, const std::vector<std::shared_ptr<TextureResource>>& textures, tinygltf::Material& material)
+{
+	std::shared_ptr<StandardMaterial> mat = std::make_shared<StandardMaterial>(context, ENGINE_RESOURCE_DIR"/standard_material.wgsl");
+	mat->TargetTextureFormat = wgpu::TextureFormat::BGRA8UnormSrgb;
+	
 	auto& bcf = material.pbrMetallicRoughness.baseColorFactor;
-	mat->params.ColourFactor = Vector4( bcf.at(0), bcf.at(1), bcf.at(2), bcf.at(3) );
-	mat->params.MetallicFactor = material.pbrMetallicRoughness.metallicFactor;
-	mat->params.RoughnessFactor = material.pbrMetallicRoughness.roughnessFactor;
+	//mat->params.ColourFactor = Vector4( bcf.at(0), bcf.at(1), bcf.at(2), bcf.at(3) );
+	//mat->params.MetallicFactor = material.pbrMetallicRoughness.metallicFactor;
+	//mat->params.RoughnessFactor = material.pbrMetallicRoughness.roughnessFactor;
+	Uniforms::UStandardMaterialParameters params;
+	//mat->MaterialParameters.SetData();
 
 	if (material.pbrMetallicRoughness.baseColorTexture.index >= 0)
 	{
-		mat->TBaseColour = textures.at(material.pbrMetallicRoughness.baseColorTexture.index);
+		//mat->TBaseColour = textures.at(material.pbrMetallicRoughness.baseColorTexture.index);
+		mat->BaseColorTextureView = textures.at(material.pbrMetallicRoughness.baseColorTexture.index);
 	}
-	if (material.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0)
+	if (material.normalTexture.index >= 0)
 	{
-		mat->TMetallicRoughness = textures.at(material.pbrMetallicRoughness.metallicRoughnessTexture.index);
+		mat->NormalTextureView = textures.at(material.normalTexture.index);
+		//mat->TMetallicRoughness = textures.at(material.pbrMetallicRoughness.metallicRoughnessTexture.index);
 	}
 
+	mat->Initialize();
 
 	return mat;
 }
 
-std::shared_ptr<Texture> GLTFSceneParser::ParseTexture(Context& context, tinygltf::Model& model,
+
+std::shared_ptr<TextureResource> GLTFSceneParser::ParseTexture(WGPUDevice& context, tinygltf::Model& model,
 	tinygltf::Texture& texture)
 {
 	tinygltf::Image& imageRef = model.images.at(texture.source);
 
+	std::shared_ptr<TextureResource> res = std::make_shared<TextureResource>();
+	res->InitializeFromData(context, imageRef.width, imageRef.height, imageRef.bits, imageRef.image.data());
+
+	return res;
+	/*
 	sce::Gnm::TextureSpec spec;
 	spec.init();
 	spec.m_textureType = sce::Gnm::kTextureType2d;
@@ -372,8 +383,8 @@ std::shared_ptr<Texture> GLTFSceneParser::ParseTexture(Context& context, tinyglt
 	spec.m_pitch = 0;
 	spec.m_numMipLevels = 1;
 	spec.m_numSlices = 1;
-
-
+*/
+/*
 	if (imageRef.bits == 8)
 	{
 		spec.m_format = sce::Gnm::kDataFormatR8G8B8A8UnormSrgb;
@@ -386,8 +397,7 @@ std::shared_ptr<Texture> GLTFSceneParser::ParseTexture(Context& context, tinyglt
 	spec.m_tileModeHint = sce::Gnm::kTileModeDisplay_LinearAligned;
 	spec.m_minGpuMode = sce::Gnm::kGpuModeBase;
 	spec.m_numFragments = sce::Gnm::kNumFragments1;
-
-	std::shared_ptr<Texture> tex = std::make_shared<Texture>(context, imageRef.image, spec);
-	return tex;
-}
 */
+	//std::shared_ptr<TextureResource> tex = std::make_shared<TextureResource>(context, imageRef.image, spec);
+	
+}

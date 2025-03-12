@@ -2,7 +2,6 @@
 #include <optional>
 #include <glm/glm.hpp>
 #include <memory>
-#include "CrabEngineAPI.h"
 
 typedef glm::vec2 Vector2;
 typedef glm::vec3 Vector3;

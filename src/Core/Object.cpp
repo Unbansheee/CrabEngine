@@ -2,6 +2,11 @@
 
 #include "PropertySerializer.h"
 
+const UID& Object::GetID() const
+{
+    return id;
+}
+
 void Object::Serialize(nlohmann::json& archive)
 {
     auto& object_data = archive[id.to_string()];

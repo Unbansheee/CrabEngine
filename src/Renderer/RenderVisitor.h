@@ -7,6 +7,9 @@
 #include "DynamicUniformBuffer.h"
 #include "Nodes/NodeMeshInstance3D.h"
 #include "UniformDefinitions.h"
+#include "Camera.h"
+#include "Nodes/NodeCamera3D.h"
+
 
 class Node;
 

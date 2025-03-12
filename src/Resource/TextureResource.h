@@ -9,11 +9,17 @@
 class TextureResource : public Resource
 {
 public:
-    TextureResource(const std::filesystem::path& path = ENGINE_RESOURCE_DIR "/null_texture_black.png")
+    TextureResource() : Resource(){};
+    void InitializeFromFile(const std::filesystem::path& file) override
     {
-        texture = ResourceManager::loadTexture(path, Application::Get().GetDevice(), &view);
+        texture = ResourceManager::loadTexture(file, Application::Get().GetDevice(), &view);
+        width = texture.getWidth();
+        height = texture.getHeight();
+        filePath = file.string();
     }
 
+    void InitializeFromData(wgpu::Device device, int width, int height, int channels, unsigned char* pixelData);
+    
     ~TextureResource() override
     {
         texture.release();
@@ -32,4 +38,6 @@ protected:
 
     wgpu::Texture texture = nullptr;
     wgpu::TextureView view = nullptr;
+
+private:
 };

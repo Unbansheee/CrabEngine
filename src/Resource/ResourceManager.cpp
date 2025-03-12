@@ -112,6 +112,39 @@ wgpu::Texture ResourceManager::loadTexture(const std::filesystem::path &path, wg
     return texture;
 }
 
+wgpu::Texture ResourceManager::loadTexture(wgpu::Device device, int width, int height, int channels,
+    unsigned char* pixelData, wgpu::TextureView* pTextureView)
+{
+    wgpu::TextureDescriptor textureDesc{};
+    textureDesc.dimension = wgpu::TextureDimension::_2D;
+    
+    textureDesc.format = wgpu::TextureFormat::RGBA8Unorm; // by convention for bmp, png and jpg file. Be careful with other formats.
+    
+    textureDesc.sampleCount = 1;
+    textureDesc.size = { (unsigned int)width, (unsigned int)height, 1 };
+    textureDesc.mipLevelCount = std::bit_width(std::max(textureDesc.size.width, textureDesc.size.height));
+    textureDesc.usage = wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopyDst;
+    textureDesc.viewFormatCount = 0;
+    textureDesc.viewFormats = nullptr;
+    Texture texture = device.createTexture(textureDesc);
+
+    if (pTextureView)
+    {
+        wgpu::TextureViewDescriptor textureViewDesc{};
+        textureViewDesc.aspect = wgpu::TextureAspect::All;
+        textureViewDesc.baseArrayLayer = 0;
+        textureViewDesc.arrayLayerCount = 1;
+        textureViewDesc.baseMipLevel = 0;
+        textureViewDesc.mipLevelCount = textureDesc.mipLevelCount;
+        textureViewDesc.dimension = wgpu::TextureViewDimension::_2D;
+        textureViewDesc.format = textureDesc.format;
+        *pTextureView = texture.createView(textureViewDesc);
+    }
+    
+    writeMipMaps(device, texture, textureDesc.size, textureDesc.mipLevelCount, pixelData);
+    return texture;
+}
+
 wgpu::ShaderModule ResourceManager::loadShaderModule(const std::filesystem::path &path, wgpu::Device device) {
     std::ifstream file(path);
     if (!file.is_open()) {

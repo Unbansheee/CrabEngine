@@ -76,18 +76,10 @@ struct Transform
 	// Convert a direction vector in World Space to Local Space (this might be broken)
 	Quat WorldToLocalRotation(const Quat& in) const;
 
-private:
-	// Legacy, needs deprecating
-	inline static Transform* identityTransform;
-	
 public:
 	static const Transform& identity() {
-		if (identityTransform)
-		{
-			return *identityTransform;
-		}
-		identityTransform = new Transform();
-		return *identityTransform;
+		const Transform s;
+		return s;
 	}
 
 };

@@ -3,9 +3,12 @@
 
 void SceneTree::Begin()
 {
-    RegisterNode(root.get());
-    ReadyNode(root.get());
-
+    if (root)
+    {
+        RegisterNode(root.get());
+        ReadyNode(root.get());
+    }
+    
     hasBegun = true;
 }
 
@@ -28,9 +31,9 @@ Node* SceneTree::GetNodeByID(UID id)
 
 void SceneTree::RegisterNode(Node* node)
 {
-    if (!nodeMap.contains(node->id))
+    if (!nodeMap.contains(node->GetID()))
     {
-        nodeMap[node->id] = node;
+        nodeMap[node->GetID()] = node;
         node->tree = this;
         node->ForEachChild([this](Node* child)
         {
@@ -43,9 +46,9 @@ void SceneTree::RegisterNode(Node* node)
 
 void SceneTree::UnregisterNode(Node* node)
 {
-    if (nodeMap.contains(node->id))
+    if (nodeMap.contains(node->GetID()))
     {
-        nodeMap.erase(node->id);
+        nodeMap.erase(node->GetID());
         node->tree = nullptr;
         node->ForEachChild([this](Node* child)
         {
