@@ -5,6 +5,7 @@
 
 class NodeWindow : public Node
 {
+    
     struct ResizeRequest
     {
         bool active = false;
@@ -14,6 +15,10 @@ class NodeWindow : public Node
 
     
 public:
+    CRAB_CLASS(NodeWindow, Node)
+    CLASS_FLAG(EditorVisible)
+
+    
     void EnterTree() override;
     void Update(float dt) override;
     bool WantsToClose() const { return bCloseRequested; }

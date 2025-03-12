@@ -12,7 +12,9 @@
 
 #include "NodeMeshInstance3D.h"
 #include "Gfx/Materials/StandardMaterial.h"
+#include "Resource/ArrayMeshResource.h"
 #include "Resource/ResourceManager.h"
+#include "Resource/RuntimeTextureResource.h"
 
 /*
 #include "MaterialStandard.h"
@@ -52,7 +54,7 @@ std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std:
 	}
 
 	std::vector<std::shared_ptr<TextureResource>> parsed_textures;
-	std::vector<std::shared_ptr<Mesh>> parsed_meshes;
+	std::vector<std::shared_ptr<MeshResource>> parsed_meshes;
 	std::vector<std::shared_ptr<Material>> parsed_materials;
 	std::vector<Node*> parsed_nodes;
 
@@ -243,7 +245,7 @@ std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std:
 	return root;
 }
 
-std::shared_ptr<Mesh> GLTFSceneParser::ParseMesh(WGPUDevice device, tinygltf::Model& model, tinygltf::Mesh& mesh)
+std::shared_ptr<MeshResource> GLTFSceneParser::ParseMesh(WGPUDevice device, tinygltf::Model& model, tinygltf::Mesh& mesh)
 {
 	std::vector<MeshVertex> vertices;
 	std::vector<uint16_t> indices;
@@ -331,7 +333,12 @@ std::shared_ptr<Mesh> GLTFSceneParser::ParseMesh(WGPUDevice device, tinygltf::Mo
 
 	ResourceManager::populateTextureFrameAttributes(vertices, indices);
 
-	return std::make_shared<Mesh>(device, vertices, indices);
+	auto m = ResourceManager::Load<ArrayMeshResource>(mesh.name);
+	m->indices = std::move(indices);
+	m->vertices = std::move(vertices);
+	m->bIsRuntime = true;
+	m->LoadData();
+	return m;
 }
 
 
@@ -369,8 +376,8 @@ std::shared_ptr<TextureResource> GLTFSceneParser::ParseTexture(WGPUDevice& conte
 {
 	tinygltf::Image& imageRef = model.images.at(texture.source);
 
-	std::shared_ptr<TextureResource> res = std::make_shared<TextureResource>();
-	res->InitializeFromData(context, imageRef.width, imageRef.height, imageRef.bits, imageRef.image.data());
+	std::shared_ptr<RuntimeTextureResource> res = ResourceManager::Load<RuntimeTextureResource>(texture.name + imageRef.name);
+	res->LoadFromPixelData(imageRef.width, imageRef.height, imageRef.bits, imageRef.image.data());
 
 	return res;
 	/*

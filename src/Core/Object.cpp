@@ -1,6 +1,12 @@
 ﻿#include "Object.h"
 
+#include "ClassDB.h"
 #include "PropertySerializer.h"
+
+const ClassType& Object::GetStaticClass()
+{
+    return ClassDB::Get().GetClass<Object>();
+}
 
 const UID& Object::GetID() const
 {
@@ -9,22 +15,29 @@ const UID& Object::GetID() const
 
 void Object::Serialize(nlohmann::json& archive)
 {
-    auto& object_data = archive[id.to_string()];
+    archive["class"] = GetStaticClassFromThis().Name;
+    archive["uid"] = id.to_string();
+    auto& properties = archive["properties"];
 
     auto s = PropertySerializer();
     for (auto& prop : GetPropertiesFromThis())
     {
-        prop.visit(s, object_data, this);
+        prop.visit(s, properties, this);
     }
 }
 
 void Object::Deserialize(nlohmann::json& archive)
 {
-    auto& object_data = archive[id.to_string()];
-    
+    id = archive["uid"].get<std::string>();
+
+    auto& properties = archive["properties"];
     auto s = PropertyDeserializer();
     for (auto& prop : GetPropertiesFromThis())
     {
-        prop.visit(s, object_data, this);
+        prop.visit(s, properties, this);
     }
+}
+
+void Object::OnPropertySet(Property& prop)
+{
 }

@@ -1,6 +1,8 @@
 ﻿#include "PropertySerializer.h"
 
 #include "Node.h"
+#include "Resource/Resource.h"
+#include "Resource/ResourceManager.h"
 
 // Serializer
 void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive, int& val)
@@ -57,6 +59,18 @@ void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive,
         {val.Position.x, val.Position.y, val.Position.z},
         {val.Orientation.w, val.Orientation.x, val.Orientation.y, val.Orientation.z},
         {val.Scale.x, val.Scale.y, val.Scale.z}};
+}
+
+void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive, StrongResourceRef& val)
+{
+    auto& a = *archive;
+    auto& properties = a[prop.name()];
+    properties["resource_path"] = val.GetResourcePath();
+    if (auto res = val.Get<Resource>())
+    {
+        auto& resource_data = properties["resource_data"];
+        res->Serialize(resource_data);
+    }
 }
 
 
@@ -135,4 +149,29 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
     {
         n->UpdateTransform();
     }
+}
+
+void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archive, StrongResourceRef& val)
+{
+    auto& a = *archive;
+    auto& properties = a[prop.name()];
+    std::string res_path = properties["resource_path"].get<std::string>();
+    if (val)
+    {
+        if (auto res = val.Get<Resource>())
+        {
+            res->Deserialize(a);
+            val = res;
+            prop.set(val);
+            return;
+        }
+    }
+    
+    auto& res_data = properties.at("resource_data");
+    auto res_type =  res_data.at("class").get<std::string>();
+    auto newResource = ResourceManager::Load(res_path, res_type);
+    newResource->Deserialize(res_data);
+    val = newResource;
+
+    prop.set(val);
 }

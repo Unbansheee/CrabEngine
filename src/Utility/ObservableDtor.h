@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <iostream>
 #include <rocket/rocket.hpp>
 
 struct observable_dtor

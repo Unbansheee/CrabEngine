@@ -1,12 +1,13 @@
 ﻿#include "NodeImGUIContextWindow.h"
 
 #include <glfw3webgpu.h>
+
+#include "Application.h"
 #include "imgui/imgui.h"
 #include "imgui/backends/imgui_impl_glfw.h"
 #include "imgui/backends/imgui_impl_wgpu.h"
 #include "ImGuizmo/ImGuizmo.h"
 
-REGISTER_CLASS(NodeImGUIContextWindow)
 
 
 void NodeImGUIContextWindow::EnterTree()

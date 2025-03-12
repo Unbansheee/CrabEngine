@@ -4,7 +4,6 @@
 #include "Renderer.h"
 #include "Core/ClassDB.h"
 
-REGISTER_CLASS(NodeCamera3D)
 
 void NodeCamera3D::EnterTree()
 {

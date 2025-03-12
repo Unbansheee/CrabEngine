@@ -9,8 +9,21 @@
 #include "Mesh.h"
 #include "Node3D.h"
 #include "NodeMeshInstance3D.h"
+#include "Gfx/MeshVertex.h"
 
 using namespace wgpu;
+
+std::vector<std::shared_ptr<Resource>> ResourceManager::GetAllResources()
+{
+    std::vector<std::shared_ptr<Resource>> r;
+    r.reserve(resourceCache.size());
+    
+    for (auto kv :resourceCache)
+    {
+        r.push_back(kv.second);
+    }
+    return r;
+}
 
 bool ResourceManager::loadGeometryFromObj(const std::filesystem::path &path, std::vector<MeshVertex> &vertexData) {
 

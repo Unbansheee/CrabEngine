@@ -2,7 +2,6 @@
 
 #include "Core/ClassDB.h"
 
-REGISTER_CLASS(Node3D)
 
 void Node3D::UpdateTransform()
 {

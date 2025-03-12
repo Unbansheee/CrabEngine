@@ -8,7 +8,6 @@
 
 using namespace wgpu;
 
-REGISTER_CLASS(NodeWindow)
 
 void NodeWindow::EnterTree()
 {

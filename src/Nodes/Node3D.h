@@ -10,9 +10,11 @@
 class Node3D : public Node
 {
 public:
+    CRAB_CLASS(Node3D, Node)
+    CLASS_FLAG(EditorVisible)
     
-    BEGIN_PROPERTIES(Node)
-        ADD_PROPERTY(Node3D, "Transform", transform)
+    BEGIN_PROPERTIES
+        ADD_PROPERTY("Transform", transform)
     END_PROPERTIES
     
     virtual void SetPosition(const Vector3& Pos);

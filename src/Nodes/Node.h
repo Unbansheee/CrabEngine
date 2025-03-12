@@ -11,10 +11,19 @@
 #include "Core/Object.h"
 #include "Core/SceneTree.h"
 #include "Core/UID.h"
+#include "Core/ClassDB.h"
 
 class RenderVisitor;
 
 class Node : public Object, public observable_dtor {
+public:
+	CRAB_CLASS(Node, Object)
+	CLASS_FLAG(EditorVisible)
+	BEGIN_PROPERTIES
+		ADD_PROPERTY("Name", Name)
+		ADD_PROPERTY_FLAGS("Hidden", isHidden, Property::Flags::Transient)
+	END_PROPERTIES
+	
 protected:
 	friend class Application;
 	friend class NodeWindow;
@@ -22,6 +31,8 @@ protected:
 	friend class SceneTree;
 	friend class Object;
 
+
+	
 	// Runs every frame before the Update function, with the latest controller input data
 	//virtual void ProcessInput(const Controller::Input::ControllerContext& PadData, int padIndex) {};
 
@@ -31,10 +42,7 @@ protected:
 	virtual void DrawGUI() {};
 
 public:
-	BEGIN_PROPERTIES(Object)
-		ADD_PROPERTY(Node, "Name", Name)
-		ADD_PROPERTY_FLAGS(Node, "Hidden", isHidden, Property::Flags::Transient)
-	END_PROPERTIES
+
 
 public:
 	virtual ~Node() override;
@@ -74,6 +82,8 @@ public:
 	// Walk the tree to the root node, and retrieve its Context
 	//Context& GetContext();
 
+	SceneTree* GetTree() {return tree;}
+	
 	// Walk the tree to find the outermost Node (Generally the SceneRoot)
 	Node* GetRootNode();
 	template<typename T>

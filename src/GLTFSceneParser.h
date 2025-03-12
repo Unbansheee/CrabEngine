@@ -20,7 +20,7 @@ public:
     std::unique_ptr<Node3D> ParseGLTF(WGPUDevice device, const std::string& path);
 
 private:
-    std::shared_ptr<Mesh> ParseMesh(WGPUDevice device, tinygltf::Model& model, tinygltf::Mesh& mesh);
+    std::shared_ptr<MeshResource> ParseMesh(WGPUDevice device, tinygltf::Model& model, tinygltf::Mesh& mesh);
     std::shared_ptr<Material> ParseMaterial(WGPUDevice& context, tinygltf::Model& model, const std::vector<std::shared_ptr<TextureResource>>& textures, tinygltf::Material& material);
     std::shared_ptr<TextureResource> ParseTexture(WGPUDevice& context, tinygltf::Model& model,
     tinygltf::Texture& texture);

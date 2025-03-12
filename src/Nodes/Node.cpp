@@ -9,7 +9,7 @@
 #include "imgui/imgui.h"
 #include "imgui/misc/cpp/imgui_stdlib.h"
 
-REGISTER_CLASS(Node)
+
 
 void Node::DrawInspectorWidget()
 {
@@ -199,18 +199,30 @@ void Node::Reparent(Node* newParent)
 void Node::Serialize(nlohmann::json& archive)
 {
 	Object::Serialize(archive);
-	auto& object_data = archive[id.to_string()];
-	auto& childrenData = object_data["Children"];
-	ForEachChild([&childrenData](Node* child)
+	auto childArray = nlohmann::json::array();
+	ForEachChild([&childArray](Node* child)
 	{
-		child->Serialize(childrenData);
+		auto childData = nlohmann::json::object();
+		child->Serialize(childData);
+		childArray.push_back(childData);
 	});
+	archive["children"] = childArray;
 }
 
 void Node::Deserialize(nlohmann::json& archive)
 {
 	Object::Deserialize(archive);
-
+	
+	for (auto& childJson : archive["children"])
+	{
+		auto childType = childJson.at("class").get<std::string>();
+		auto classType = ClassDB::Get().GetClassByName(childType);
+		Object* n = classType->Initializer();
+		Node* node = dynamic_cast<Node*>(n);
+		auto instance = Node::InitializeNode(node, classType->Name);
+		instance->Deserialize(childJson);
+		AddChild(std::move(instance));
+	}
 }
 
 void Node::DrawGUIInternal()

@@ -4,19 +4,37 @@
 
 #include "NodeMeshInstance3D.h"
 
+#include "Application.h"
 #include "RenderVisitor.h"
-#include "Core/ClassDB.h"
+#include "Gfx/Materials/StandardMaterial.h"
 
-REGISTER_CLASS(NodeMeshInstance3D)
 
-void NodeMeshInstance3D::SetMesh(const std::shared_ptr<Mesh> &newMesh) {
-    this->mesh = newMesh;
+void NodeMeshInstance3D::SetMesh(const std::shared_ptr<MeshResource> &newMesh) {
+    this->Mesh = newMesh;
 }
 
 void NodeMeshInstance3D::Render(RenderVisitor& Visitor)
 {
-    Visitor.Visit(*this);
-    Node3D::Render(Visitor);
+    if (!material)
+    {
+        material = MakeShared<StandardMaterial>(Application::Get().GetDevice(), ENGINE_RESOURCE_DIR"/standard_material.wgsl");
+        material->TargetTextureFormat = WGPUTextureFormat_BGRA8UnormSrgb;
+        //material->NormalTextureView = norm;
+        //material->BaseColorTextureView = albedo;
+        material->Initialize();
+    }
+
+    if (Mesh)
+    {
+        auto inst = Mesh.Get<MeshResource>();
+        if (!inst->IsLoaded())
+        {
+            inst->LoadData();
+        }
+        Visitor.Visit(*this);
+    }
+    
+    Super::Render(Visitor);
 }
 
 

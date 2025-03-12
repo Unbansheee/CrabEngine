@@ -6,18 +6,21 @@
 #include "Resource/Mesh.h"
 #include "Node3D.h"
 #include "Renderer/Material.h"
+#include "Resource/TextureResource.h"
 
 
 class NodeMeshInstance3D : public Node3D {
 public:
-
-    BEGIN_PROPERTIES(Node3D)
-        ADD_PROPERTY(NodeMeshInstance3D, "TestResource", TestResource)
-        ADD_PROPERTY(NodeMeshInstance3D, "Funny Number", FunnyNumber)
+    CRAB_CLASS(NodeMeshInstance3D, Node3D)
+    CLASS_FLAG(EditorVisible)
+    
+    BEGIN_PROPERTIES
+        ADD_PROPERTY("Mesh", Mesh)
+        ADD_PROPERTY("Funny Number", FunnyNumber)
     END_PROPERTIES
 
-    void SetMesh(const std::shared_ptr<Mesh>& newMesh);
-    std::shared_ptr<Mesh> GetMesh() const {return mesh;}
+    void SetMesh(const std::shared_ptr<MeshResource>& newMesh);
+    std::shared_ptr<MeshResource> GetMesh() const {return Mesh.Get<MeshResource>();}
 
     void SetMaterial(const std::shared_ptr<Material>& newMaterial) {material = newMaterial;}
     const std::shared_ptr<Material>& GetMaterial() const {return material;}
@@ -25,8 +28,7 @@ public:
     virtual void Render(RenderVisitor& Visitor) override;
     
 protected:
-    std::shared_ptr<Mesh> mesh;
     std::shared_ptr<Material> material;
-    ResourceHandle TestResource;
+    StrongResourceRef Mesh;
     int FunnyNumber = 0;
 };

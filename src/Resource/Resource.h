@@ -1,15 +1,35 @@
 ﻿#pragma once
 #include <filesystem>
 
+#include "Core/ClassDB.h"
 #include "Core/Object.h"
 #include "Utility/ObservableDtor.h"
-#include "Core/UID.h"
-#include "ResourceDB.h"
-#include "ResourceHandle.h"
+
 
 class Resource : public Object, public observable_dtor
 {
+    friend class ResourceManager;
+    
 public:
+    CRAB_CLASS(Resource, Object)
+    CLASS_FLAG(EditorVisible)
+    
+    BEGIN_PROPERTIES
+        ADD_PROPERTY("ResourceFilePath", resourceFilePath)
+    END_PROPERTIES
+    
+    virtual void Serialize(nlohmann::json& archive) override { Object::Serialize(archive); }
+    virtual void Deserialize(nlohmann::json& archive) override { Object::Deserialize(archive); }
+    virtual void LoadData() {};  // For explicit loading
+    virtual bool IsLoaded() const {return loaded;}
+
+    const std::string& GetResourcePath() const { return resourceFilePath; }
+
+protected:
+    std::string resourceFilePath;
+    std::atomic<bool> loaded{false};
+    
+    /*
     template<typename T>
     static std::shared_ptr<T> CreateResource()
     {
@@ -48,10 +68,10 @@ public:
             typeID
         };
     }
-
+    */
 protected:
-    Resource() = default;
+    //Resource() = default;
 private:
-    std::type_index typeID = std::type_index(typeid(Resource));
+    //std::type_index typeID = std::type_index(typeid(Resource));
 };
 

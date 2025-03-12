@@ -1,5 +1,7 @@
 ﻿#include "StandardMaterial.h"
 
+#include "Resource/ImageTextureResource.h"
+
 using namespace Uniforms;
 using namespace MaterialHelpers;
 
@@ -20,8 +22,20 @@ void StandardMaterial::Initialize()
     TextureSampler = m_device.createSampler(samplerDesc);
 
     WGPUTextureViewDescriptor d;
-    if (!BaseColorTextureView) BaseColorTextureView = Resource::CreateResource<TextureResource>(ENGINE_RESOURCE_DIR"/null_texture_black.png");
-    if (!NormalTextureView) NormalTextureView = Resource::CreateResource<TextureResource>(ENGINE_RESOURCE_DIR"/null_texture_black.png");
+
+    
+    if (!BaseColorTextureView.Get<TextureResource>())
+    {
+        auto t = ResourceManager::Load<ImageTextureResource>("NULL_BLACK_TEXTURE");
+        if (!t->IsLoaded()) t->LoadTextureFromPath(ENGINE_RESOURCE_DIR"/null_texture_black.png");
+        BaseColorTextureView = ResourceManager::Get<TextureResource>("NULL_BLACK_TEXTURE");
+    }
+    if (!NormalTextureView.Get<TextureResource>())
+    {
+        auto t = ResourceManager::Load<ImageTextureResource>("NULL_BLACK_TEXTURE_2");
+        if (!t->IsLoaded()) t->LoadTextureFromPath(ENGINE_RESOURCE_DIR"/null_texture_black.png");
+        NormalTextureView = ResourceManager::Get<TextureResource>("NULL_BLACK_TEXTURE_2");
+    }
     
     Material::Initialize();
 }
@@ -43,8 +57,8 @@ std::vector<Material::MaterialBindGroup> StandardMaterial::CreateMaterialBindGro
     auto matGroup = materialBindsCreator
         .Set<0, WGPUBuffer>(MaterialParameters.GetBuffer())
         .Set<1, WGPUSampler>(TextureSampler)
-        .Set<2, WGPUTextureView>(BaseColorTextureView->GetInternalTextureView())
-        .Set<3, WGPUTextureView>(NormalTextureView->GetInternalTextureView())
+        .Set<2, WGPUTextureView>(BaseColorTextureView.Get<TextureResource>()->GetInternalTextureView())
+        .Set<3, WGPUTextureView>(NormalTextureView.Get<TextureResource>()->GetInternalTextureView())
         .Build();
     
     return {{MATERIAL, matGroup}};

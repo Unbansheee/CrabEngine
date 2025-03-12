@@ -22,3 +22,4 @@ SharedRef<T> MakeShared(Args&&... args)
 {
     return std::make_shared<T>(std::forward<Args>(args)...);
 }
+

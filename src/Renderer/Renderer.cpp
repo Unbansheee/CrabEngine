@@ -1,5 +1,6 @@
 ﻿#include "Renderer.h"
 
+#include "Application.h"
 #include "MathUtils.h"
 #include "Gfx/Materials/StandardMaterial.h"
 #include "GLFW/glfw3.h"

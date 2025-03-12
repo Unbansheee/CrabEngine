@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <iostream>
 #include <json.hpp>
 
 #include "Reflection.h"
@@ -15,6 +16,8 @@ struct PropertySerializer
     void operator()(PropertyView& prop, nlohmann::json* archive, Vector4& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, Quat& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, Transform& val);
+    void operator()(PropertyView& prop, nlohmann::json* archive, StrongResourceRef& val);
+
     void operator()(PropertyView& prop, nlohmann::json* archive, auto val) { std::cout << "Invalid variant for serializing: " << prop.name() << "\n"; }
     
 
@@ -37,6 +40,7 @@ struct PropertyDeserializer
     void operator()(PropertyView& prop, nlohmann::json* archive, Vector4& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, Quat& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, Transform& val);
+    void operator()(PropertyView& prop, nlohmann::json* archive, StrongResourceRef& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, auto val) { std::cout << "Invalid variant for deserializing: " << prop.name() << "\n"; }
     
 

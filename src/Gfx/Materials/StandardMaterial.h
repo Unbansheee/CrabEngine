@@ -31,6 +31,6 @@ public:
 public:
     UniformBuffer<Uniforms::UStandardMaterialParameters> MaterialParameters;
     wgpu::Sampler TextureSampler = nullptr;
-    SharedRef<TextureResource> BaseColorTextureView = nullptr;
-    SharedRef<TextureResource> NormalTextureView = nullptr;
+    StrongResourceRef BaseColorTextureView = StrongResourceRef(typeid(TextureResource));
+    StrongResourceRef NormalTextureView = StrongResourceRef(typeid(TextureResource));
 };
