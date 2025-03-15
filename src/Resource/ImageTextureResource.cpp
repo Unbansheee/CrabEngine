@@ -1,8 +1,9 @@
-﻿#include "ImageTextureResource.h"
-
-#include "Application.h"
-#include "Core/ClassDB.h"
-
+﻿module image_texture_resource;
+import class_db;
+import resource_manager;
+import application;
+import texture_resource;
+import json;
 
 
 void ImageTextureResource::Serialize(nlohmann::json& archive)
@@ -17,17 +18,17 @@ void ImageTextureResource::Deserialize(nlohmann::json& archive)
 
 void ImageTextureResource::LoadData()
 {
-    assert(!imageFilePath.empty());
+    //assert(!imageFilePath.empty());
     
     LoadTextureFromPath(imageFilePath);
-    assert(texture);
+    //assert(texture);
     
     TextureResource::LoadData();
 }
 
-void ImageTextureResource::LoadTextureFromPath(const std::string& path)
+void ImageTextureResource::LoadTextureFromPath(const std::filesystem::path& path)
 {
-    imageFilePath = path;
+    imageFilePath = path.string();
     texture = ResourceManager::loadTexture(path, Application::Get().GetDevice(), &view);
     width = texture.getWidth();
     height = texture.getHeight();

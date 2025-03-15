@@ -1,4 +1,2 @@
-﻿#include "Vertex.h"
-
-using namespace wgpu;
+﻿module vertex;
 

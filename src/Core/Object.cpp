@@ -1,7 +1,10 @@
-﻿#include "Object.h"
-
-#include "ClassDB.h"
-#include "PropertySerializer.h"
+﻿
+module object;
+import reflection;
+import property_serialization;
+import uid;
+import class_db;
+import class_type;
 
 const ClassType& Object::GetStaticClass()
 {

@@ -1,13 +1,12 @@
-﻿#include "NodeImGUIContextWindow.h"
-
-#include <glfw3webgpu.h>
-
-#include "Application.h"
-#include "imgui/imgui.h"
+﻿#include "glfw3webgpu/glfw3webgpu.h"
+#include "../../../../src/Theme/ThemeManager.h"
 #include "imgui/backends/imgui_impl_glfw.h"
 #include "imgui/backends/imgui_impl_wgpu.h"
 #include "ImGuizmo/ImGuizmo.h"
+//#include "webgpu/webgpu.hpp"
 
+module node_imgui_context_window;
+import application;
 
 
 void NodeImGUIContextWindow::EnterTree()
@@ -41,13 +40,16 @@ void NodeImGUIContextWindow::EnterTree()
         return glfwGetWGPUSurface(Application::Get().GetInstance(), window);
     };
     ImGui_ImplWGPU_Init(&info);
+
+    ThemeManager::LoadTheme("Dark");
+    ThemeManager::SetDefaultFont(ENGINE_RESOURCE_DIR"/Fonts/Roboto-Light.ttf");
 }
 
 void NodeImGUIContextWindow::Update(float dt)
 {
     WGPURenderPassColorAttachment color_attachments = {};
-    color_attachments.loadOp = WGPULoadOp_Load;
-    color_attachments.storeOp = WGPUStoreOp_Store;
+    color_attachments.loadOp = wgpu::LoadOp::Load;
+    color_attachments.storeOp = wgpu::StoreOp::Store;
     color_attachments.clearValue = { 0, 0, 0, 0 };
     color_attachments.view = GetCurrentTextureView();
 	
@@ -81,7 +83,7 @@ void NodeImGUIContextWindow::Update(float dt)
     pass.end();
     wgpu::CommandBufferDescriptor cmd_buffer_desc = {};
     cmd_buffer_desc.label = "ImGUI Draw Command Buffer";
-    auto cmd = gui_encoder.finish(cmd_buffer_desc);
+    wgpu::CommandBuffer cmd = gui_encoder.finish(cmd_buffer_desc);
 
     renderer.AddCommand(cmd);
 

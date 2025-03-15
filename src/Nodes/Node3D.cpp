@@ -1,6 +1,13 @@
-#include "Node3D.h"
+//#include "Node3D.h"
+//#include <glm/glm.hpp>
+//#include <glm/gtc/quaternion.hpp>
 
-#include "Core/ClassDB.h"
+//#include "Core/ClassDB.cppm"
+
+module node_3d;
+import class_db;
+import transform;
+import crab_types;
 
 
 void Node3D::UpdateTransform()

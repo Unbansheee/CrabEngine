@@ -2,4 +2,4 @@
 // Created by Vinnie on 22/02/2025.
 //
 
-#include "Mesh.h"
+module mesh_resource;

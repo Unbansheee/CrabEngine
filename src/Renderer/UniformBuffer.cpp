@@ -1,1 +1,1 @@
-﻿#include "UniformBuffer.h"
+﻿module uniform_buffer;

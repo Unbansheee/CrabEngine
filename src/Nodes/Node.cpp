@@ -2,14 +2,14 @@
 // Created by Vinnie on 22/02/2025.
 //
 
-#include "Node.h"
+//#include "Node.cppm"
 
-#include "Core/ClassDB.h"
-#include "Core/SceneTree.h"
+//#include "Core/ClassDB.cppm"
 #include "imgui/imgui.h"
 #include "imgui/misc/cpp/imgui_stdlib.h"
 
-
+module node;
+import scene_tree;
 
 void Node::DrawInspectorWidget()
 {
@@ -248,4 +248,7 @@ void Node::ProcessInputInternal(const Controller::Input::ControllerContext& PadD
 	}
 }
 */
+
+
+
 

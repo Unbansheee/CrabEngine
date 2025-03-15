@@ -1,0 +1,18 @@
+﻿#pragma once
+//#include <webgpu/webgpu.hpp>
+
+export module draw_command;
+import material;
+import crab_types;
+import wgpu;
+
+export struct DrawCommand
+{
+    Material* material;
+    wgpu::Buffer vertexBuffer = nullptr;
+    uint32_t vertexCount = 0;
+    wgpu::Buffer indexBuffer = nullptr;
+    uint32_t indexCount = 0;
+    Matrix4 modelMatrix = Matrix4(1.0f);
+    uint32_t dynamicOffset = 0;
+};

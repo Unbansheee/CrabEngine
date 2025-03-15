@@ -1,20 +1,23 @@
 //
 // Created by Vinnie on 23/02/2025.
 //
-
-#include "GLTFSceneParser.h"
-
 #include <tiny_gltf.h>
-
-#include "Node3D.h"
-//#include "NodeMesh3D.h"
 #include <memory>
 
-#include "NodeMeshInstance3D.h"
-#include "Gfx/Materials/StandardMaterial.h"
-#include "Resource/ArrayMeshResource.h"
-#include "Resource/ResourceManager.h"
-#include "Resource/RuntimeTextureResource.h"
+module gltf_scene_parser;
+
+//#include "NodeMesh3D.h"
+
+import array_mesh_resource;
+import resource_manager;
+import runtime_texture_resource;
+import <string>;
+import node_mesh_instance_3d;
+import array_mesh_resource;
+import mesh_vertex;
+import uniform_definitions;
+
+
 
 /*
 #include "MaterialStandard.h"

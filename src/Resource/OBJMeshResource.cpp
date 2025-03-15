@@ -1,8 +1,9 @@
-﻿#include "OBJMeshResource.h"
-
-#include "Application.h"
-#include "ResourceManager.h"
-#include "Gfx/MeshVertex.h"
+﻿
+module obj_mesh_resource;
+import resource_manager;
+import application;
+import mesh_vertex;
+//#include <webgpu/webgpu.h>
 
 void OBJMeshResource::Serialize(nlohmann::json& archive)
 {
@@ -17,8 +18,6 @@ void OBJMeshResource::Deserialize(nlohmann::json& archive)
 void OBJMeshResource::LoadData()
 {
     MeshResource::LoadData();
-    LoadOBJFromPath(meshAssetPath);
-
     loaded = true;
 }
 

@@ -2,16 +2,87 @@
 // Created by Vinnie on 21/02/2025.
 //
 
-#include "ResourceManager.h"
-#include "tiny_obj_loader.h"
+#include <bit>
+
 #include "stb_image.h"
 #include <fstream>
-#include "Mesh.h"
-#include "Node3D.h"
-#include "NodeMeshInstance3D.h"
-#include "Gfx/MeshVertex.h"
+#include <tiny_obj_loader.h>
+//#include <webgpu/webgpu.hpp>
+//#include "glm/glm.hpp"
+
+module resource_manager;
+import mesh_resource;
+import node_3d;
+import mesh_vertex;
+import import_settings;
+import crab_types;
+import wgpu;
+import import_manager;
+import class_db;
 
 using namespace wgpu;
+
+bool ResourceManager::IsSourceFile(const std::filesystem::path& path)
+{
+    return path.has_extension() && path.extension() != ".res";
+}
+
+std::shared_ptr<Resource> ResourceManager::DeserializeResource(const std::filesystem::path& path)
+{
+    nlohmann::json j;
+    std::ifstream inFile(path);
+    inFile >> j;
+    inFile.close();
+
+    std::string type = j.at("class").get<std::string>();
+    
+    auto classData = ClassDB::Get().GetClassByName(type);
+    auto r = dynamic_cast<Resource*>(classData->Initializer());
+    std::shared_ptr<Resource> resource;
+    resource.reset(r);
+    resource->Deserialize(j);
+    resource->resourceFilePath = path.string();
+    resource->bIsSourceImported = false;
+    
+    return resource;
+}
+
+std::shared_ptr<Resource> ResourceManager::Load(const std::filesystem::path& path)
+{
+    // Existing resource loading logic
+    auto it = resourceCache.find(path.string());
+    if (it != resourceCache.end()) {
+        return it->second;
+    }
+
+    if (IsSourceFile(path)) {
+        auto res = ImportManager::Get().ImportOrLoad(path);
+        resourceCache[path.string()] = res;
+        return res;
+    }
+        
+    // Load from .res file
+    auto resource = DeserializeResource(path);
+    resourceCache[path.string()] = resource;
+    return resource;
+}
+
+void ResourceManager::SaveToFile(const std::filesystem::path& path, nlohmann::json& json)
+{
+    std::ofstream outFile(path);
+    outFile << json;
+    outFile.close();
+}
+
+void ResourceManager::SaveImportSettings(const std::filesystem::path& sourcePath,
+    const std::shared_ptr<ImportSettings>& importSettings)
+{
+    std::ofstream outFile(sourcePath.string() += ".importSettings");
+    nlohmann::json j;
+    importSettings->Serialize(j);
+    outFile << j;
+    outFile.close();
+}
 
 std::vector<std::shared_ptr<Resource>> ResourceManager::GetAllResources()
 {

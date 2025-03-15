@@ -1,9 +1,18 @@
-﻿#include "Renderer.h"
+﻿#include <webgpu/webgpu.h>
 
-#include "Application.h"
-#include "MathUtils.h"
-#include "Gfx/Materials/StandardMaterial.h"
+#include "MaterialHelpers.h"
 #include "GLFW/glfw3.h"
+
+module renderer;
+import render_visitor;
+import math_utils;
+import application;
+import render_visitor;
+import node;
+import material;
+
+
+
 
 void Renderer::Initialize(wgpu::Device device)
 {

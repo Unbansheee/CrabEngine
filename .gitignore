@@ -90,3 +90,7 @@ vendor/glfw/src/glfw3ConfigVersion.cmake
 !vendor/webgpu/bin/**/*
 *.log
 *.vcxproj.*
+*.ifc
+*.module.json
+*.ifc.d.json
+*.d.json

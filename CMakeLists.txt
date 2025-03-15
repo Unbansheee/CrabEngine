@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0...3.25)
+cmake_minimum_required(VERSION 3.28)
 project(
     CrabEngine # name of the project, which will also be the name of the visual studio solution if you use it
     VERSION 0.1.0 # any version number
@@ -15,6 +15,13 @@ file(GLOB_RECURSE SOURCES
         vendor/ImGuizmo/ImGuizmo.h
 )
 
+# Find all module interface files
+file(GLOB_RECURSE MODULE_FILES 
+    CONFIGURE_DEPENDS  # Optional: Watch for new files
+    LIST_DIRECTORIES false
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.cppm"
+)
+
 add_library(CrabEngine STATIC
         ${SOURCES}
 )
@@ -25,6 +32,21 @@ set_target_properties(CrabEngine PROPERTIES
     CXX_EXTENSIONS OFF
     COMPILE_WARNING_AS_ERROR OFF
 )
+
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Enable modules for different compilers
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    add_compile_options(/experimental:module)
+      
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-fmodules-ts --precompile)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    add_compile_options(-fmodules-ts)
+endif()
+
 
 if (MSVC)
     target_compile_options(CrabEngine PRIVATE /W4)
@@ -37,7 +59,8 @@ add_subdirectory(vendor/glfw)
 add_subdirectory(vendor/glfw3webgpu)
 add_subdirectory(vendor/imgui)
 add_subdirectory(vendor/rocket)
-target_link_libraries(CrabEngine PRIVATE glfw glfw3webgpu)
+add_subdirectory(vendor/nativefiledialog-extended)
+target_link_libraries(CrabEngine PRIVATE glfw glfw3webgpu nfd)
 target_link_libraries(CrabEngine PUBLIC webgpu imgui)
 target_copy_webgpu_binaries(CrabEngine)
 set_target_properties(CrabEngine PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
@@ -46,6 +69,7 @@ set_target_properties(glfw PROPERTIES FOLDER "CrabEngine/Dependencies/GLFW3")
 set_target_properties(glfw3webgpu PROPERTIES FOLDER "CrabEngine/Dependencies/GLFW3")
 set_target_properties(update_mappings PROPERTIES FOLDER "CrabEngine/Dependencies/GLFW3")
 set_target_properties(imgui PROPERTIES FOLDER "CrabEngine/Dependencies")
+set_target_properties(nfd PROPERTIES FOLDER "CrabEngine/Dependencies")
 set_target_properties(CrabEngine PROPERTIES FOLDER "CrabEngine")
 
 
@@ -91,4 +115,10 @@ target_include_directories(CrabEngine PRIVATE ./src/Nodes)
 target_include_directories(CrabEngine PRIVATE ./src/Renderer)
 target_include_directories(CrabEngine PUBLIC ./src/Utility)
 
-
+target_sources(CrabEngine
+  PUBLIC
+    FILE_SET "modules"
+    TYPE CXX_MODULES
+    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+    FILES ${MODULE_FILES}
+)

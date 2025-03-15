@@ -1,5 +1,5 @@
-﻿#include "SceneTree.h"
-#include "Node.h"
+﻿module scene_tree;
+import node;
 
 void SceneTree::Begin()
 {

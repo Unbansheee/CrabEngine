@@ -2,12 +2,12 @@
 // Created by Vinnie on 22/02/2025.
 //
 
-#include "Transform.h"
-#include <glm/gtx/quaternion.hpp>
-#include <glm/gtx/transform.hpp>
-#include <glm/gtx/norm.hpp>
+module transform;
+import math_utils;
 
-#include "MathUtils.h"
+//#include <glm/gtx/quaternion.hpp>
+//#include <glm/gtx/transform.hpp>
+//#include <glm/gtx/norm.hpp>
 
 Vector3 Transform::LocalToWorldPosition(Vector3 in) const
 {

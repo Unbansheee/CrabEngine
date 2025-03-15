@@ -1,5 +1,2 @@
-﻿#include "Resource.h"
-
-#include "Core/ClassDB.h"
-
+﻿module resource;
 

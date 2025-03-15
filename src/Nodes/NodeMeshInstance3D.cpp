@@ -2,12 +2,13 @@
 // Created by Vinnie on 22/02/2025.
 //
 
-#include "NodeMeshInstance3D.h"
-
-#include "Application.h"
-#include "RenderVisitor.h"
-#include "Gfx/Materials/StandardMaterial.h"
-
+module node_mesh_instance_3d;
+import application;
+import render_visitor;
+import standard_material;
+import wgpu;
+import crab_types;
+//#include "webgpu/webgpu.hpp"
 
 void NodeMeshInstance3D::SetMesh(const std::shared_ptr<MeshResource> &newMesh) {
     this->Mesh = newMesh;
@@ -24,13 +25,8 @@ void NodeMeshInstance3D::Render(RenderVisitor& Visitor)
         material->Initialize();
     }
 
-    if (Mesh)
+    if (Mesh.Get<Resource>())
     {
-        auto inst = Mesh.Get<MeshResource>();
-        if (!inst->IsLoaded())
-        {
-            inst->LoadData();
-        }
         Visitor.Visit(*this);
     }
     

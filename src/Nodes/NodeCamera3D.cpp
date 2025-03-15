@@ -1,8 +1,7 @@
-﻿#include "NodeCamera3D.h"
-
-#include "NodeWindow.h"
-#include "Renderer.h"
-#include "Core/ClassDB.h"
+﻿module node_camera_3d;
+import node_window;
+import glm;
+//#include "glm/glm.hpp"
 
 
 void NodeCamera3D::EnterTree()

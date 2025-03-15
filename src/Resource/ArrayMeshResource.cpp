@@ -1,5 +1,5 @@
-﻿#include "ArrayMeshResource.h"
-#include "JsonConversions.h"
+﻿module array_mesh_resource;
+import json_conversions;
 
 void ArrayMeshResource::Serialize(nlohmann::json& archive)
 {

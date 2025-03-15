@@ -1,19 +1,18 @@
 // Include the C++ wrapper instead of the raw header(s)
-#include <webgpu/webgpu.hpp>
-#include <GLFW/glfw3.h>
-#include <glfw3webgpu.h>
-#include <filesystem>
+module application;
+import mesh_vertex;
+import wgpu;
+import <GLFW/glfw3.h>;
+//#include <webgpu/webgpu.hpp>
+//#include <GLFW/glfw3.h>
+//#include <filesystem>
 #ifdef __EMSCRIPTEN__
 #  include <emscripten.h>
 #endif // __EMSCRIPTEN__
 
-#include "Application.h"
 
-#include <iostream>
-#include <fstream>
-#include "GLTFSceneParser.h"
-#include "Node.h"
-#include "Gfx/MeshVertex.h"
+//#include <iostream>
+
 
 /*
 using namespace wgpu;
@@ -1043,7 +1042,6 @@ Application::Application()
 		if (message) std::cout << " (" << message << ")";
 		std::cout << std::endl;
 	});
-
 	
 	sceneTree.SetRoot(Node::NewNode());
 }

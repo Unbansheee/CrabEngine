@@ -1,5 +1,6 @@
 ﻿#pragma once
-#include <webgpu/webgpu.hpp>
+//#include <webgpu/webgpu.hpp>
+import wgpu;
 
 enum EShaderStageVisibility : uint8_t
 {

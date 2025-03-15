@@ -1,6 +1,11 @@
-﻿#include "StandardMaterial.h"
+﻿module standard_material;
+import image_texture_resource;
+import resource_manager;
+import mesh_vertex;
+import wgpu;
+//#include <webgpu/webgpu.hpp>
 
-#include "Resource/ImageTextureResource.h"
+#include "MaterialHelpers.h"
 
 using namespace Uniforms;
 using namespace MaterialHelpers;
@@ -26,15 +31,11 @@ void StandardMaterial::Initialize()
     
     if (!BaseColorTextureView.Get<TextureResource>())
     {
-        auto t = ResourceManager::Load<ImageTextureResource>("NULL_BLACK_TEXTURE");
-        if (!t->IsLoaded()) t->LoadTextureFromPath(ENGINE_RESOURCE_DIR"/null_texture_black.png");
-        BaseColorTextureView = ResourceManager::Get<TextureResource>("NULL_BLACK_TEXTURE");
+        BaseColorTextureView = ResourceManager::Load<ImageTextureResource>(ENGINE_RESOURCE_DIR"/null_texture_black.png");
     }
     if (!NormalTextureView.Get<TextureResource>())
     {
-        auto t = ResourceManager::Load<ImageTextureResource>("NULL_BLACK_TEXTURE_2");
-        if (!t->IsLoaded()) t->LoadTextureFromPath(ENGINE_RESOURCE_DIR"/null_texture_black.png");
-        NormalTextureView = ResourceManager::Get<TextureResource>("NULL_BLACK_TEXTURE_2");
+        NormalTextureView = ResourceManager::Load<ImageTextureResource>(ENGINE_RESOURCE_DIR"/null_texture_black.png");
     }
     
     Material::Initialize();

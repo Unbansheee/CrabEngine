@@ -1,8 +1,4 @@
-﻿#include "TextureResource.h"
-
-#include "Core/ClassDB.h"
-
-
+﻿module texture_resource;
 /*
 void TextureResource::InitializeFromData(wgpu::Device device, int width, int height, int channels, unsigned char* pixelData)
 {

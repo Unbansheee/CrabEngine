@@ -1,8 +1,15 @@
-﻿#include "PropertySerializer.h"
+﻿//#include "PropertySerializer.h"
+#include "json.hpp"
 
-#include "Node.h"
-#include "Resource/Resource.h"
-#include "Resource/ResourceManager.h"
+module property_serialization;
+import resource;
+import resource_manager;
+import node;
+import transform;
+import <string>;
+
+
+//#include "glm/gtc/quaternion.hpp"
 
 // Serializer
 void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive, int& val)
@@ -65,12 +72,19 @@ void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive,
 {
     auto& a = *archive;
     auto& properties = a[prop.name()];
+    auto res = val.Get<Resource>();
+    properties["is_source_imported"] = res->IsSourceImported();
+    properties["resource_file_path"] = res->GetResourcePath();
+    properties["source_file_path"] = res->GetSourcePath();
+    
+    /*
     properties["resource_path"] = val.GetResourcePath();
     if (auto res = val.Get<Resource>())
     {
         auto& resource_data = properties["resource_data"];
         res->Serialize(resource_data);
     }
+    */
 }
 
 
@@ -155,7 +169,12 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
 {
     auto& a = *archive;
     auto& properties = a[prop.name()];
-    std::string res_path = properties["resource_path"].get<std::string>();
+    
+    bool sourceImported =  properties.at("is_source_imported").get<bool>();
+    std::string resource_file_path = properties.at("resource_file_path").get<std::string>();
+    std::string source_path = properties.at("source_file_path").get<std::string>();
+    
+    /*
     if (val)
     {
         if (auto res = val.Get<Resource>())
@@ -166,12 +185,13 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
             return;
         }
     }
-    
-    auto& res_data = properties.at("resource_data");
-    auto res_type =  res_data.at("class").get<std::string>();
-    auto newResource = ResourceManager::Load(res_path, res_type);
-    newResource->Deserialize(res_data);
-    val = newResource;
+    */
 
-    prop.set(val);
+    auto& load_path = sourceImported ? source_path : resource_file_path;
+    if (!load_path.empty())
+    {
+        auto newResource = ResourceManager::Load(load_path);
+        val = newResource;
+        prop.set(val);
+    }
 }

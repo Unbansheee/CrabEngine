@@ -1,7 +1,6 @@
-﻿#include "RuntimeTextureResource.h"
-
-#include "Application.h"
-#include "Core/ClassDB.h"
+﻿module runtime_texture_resource;
+import resource_manager;
+import application;
 
 
 void RuntimeTextureResource::Serialize(nlohmann::json& archive)

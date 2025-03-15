@@ -1,6 +1,10 @@
-﻿#include "SceneSerializer.h"
-
+﻿module;
 #include <fstream>
+#include "json.hpp"
+
+module scene_serializer;
+//import json;
+
 
 void SceneSerializer::SerializeScene(Node* rootNode, const std::filesystem::path& destination)
 {

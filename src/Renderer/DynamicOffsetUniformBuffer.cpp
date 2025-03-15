@@ -1,1 +1,1 @@
-﻿#include "DynamicOffsetUniformBuffer.h"
+﻿module dynamic_offset_uniform_buffer;

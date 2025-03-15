@@ -1,6 +1,6 @@
-﻿#include "Material.h"
-
-#include "Gfx/Vertex.h"
+﻿module material;
+import mesh_vertex;
+//#include "webgpu/webgpu.hpp"
 
 void Material::Apply(wgpu::RenderPassEncoder renderPass)
 {

@@ -1,13 +1,21 @@
-﻿#include "NodeWindow.h"
-
-#include <glfw3webgpu.h>
+﻿
+#include <iostream>
+#include <glfw3webgpu/glfw3webgpu.h>
+//#include <glm/ext/matrix_clip_space.hpp>
+//#include <webgpu/webgpu.hpp>
 
 #include "GLFW/glfw3.h"
-#include "Application.h"
-#include "Core/ClassDB.h"
+
+module node_window;
+import class_db;
+import node;
+import application;
+import view;
+
+
+
 
 using namespace wgpu;
-
 
 void NodeWindow::EnterTree()
 {
