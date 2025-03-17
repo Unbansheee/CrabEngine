@@ -1,1 +1,1 @@
-﻿#include "ShaderFileResource.cppm"
+﻿module shader_file_resource;

@@ -4,7 +4,7 @@
 #include <cstdint>
 
 export module uid;
-export import <uuid.h>;
+export import <vendor/uuid.h>;
 export struct UID
 {
     UID()

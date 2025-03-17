@@ -12,7 +12,7 @@ import import_manager;
 import resource_importer;
 import import_settings;
 import class_db;
-import <string>;
+import std;
 
 export class OBJMeshImporter : public ResourceImporter
 {

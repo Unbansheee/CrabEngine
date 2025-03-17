@@ -2,7 +2,6 @@
 // Created by Vinnie on 23/02/2025.
 //
 #include <tiny_gltf.h>
-#include <memory>
 
 module gltf_scene_parser;
 
@@ -11,7 +10,7 @@ module gltf_scene_parser;
 import array_mesh_resource;
 import resource_manager;
 import runtime_texture_resource;
-import <string>;
+import std;
 import node_mesh_instance_3d;
 import array_mesh_resource;
 import mesh_vertex;

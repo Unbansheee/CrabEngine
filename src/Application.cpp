@@ -1,4 +1,3 @@
-// Include the C++ wrapper instead of the raw header(s)
 module;
 #include "nfd.hpp"
 #include "nativefiledialog-extended/src/include/nfd_glfw3.h"
@@ -6,7 +5,7 @@ module;
 module application;
 import mesh_vertex;
 import wgpu;
-import <GLFW/glfw3.h>;
+import "GLFW/glfw3.h";
 //#include <webgpu/webgpu.hpp>
 //#include <GLFW/glfw3.h>
 //#include <filesystem>

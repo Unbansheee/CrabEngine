@@ -1,10 +1,10 @@
 module;
 #pragma once
 #include <optional>
-#include <memory>
 
 export module crab_types;
 export import glm;
+import std;
 
 export typedef glm::vec2 Vector2;
 export typedef glm::vec3 Vector3;

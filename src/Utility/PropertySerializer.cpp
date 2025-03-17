@@ -1,4 +1,5 @@
 ﻿//#include "PropertySerializer.h"
+module;
 #include "json.hpp"
 
 module property_serialization;
@@ -6,7 +7,7 @@ import resource;
 import resource_manager;
 import node;
 import transform;
-import <string>;
+import std;
 import class_db;
 
 

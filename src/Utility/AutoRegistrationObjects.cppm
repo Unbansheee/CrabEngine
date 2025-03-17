@@ -1,9 +1,9 @@
 ﻿module;
-#include <memory>
 
 export module auto_registration;
 import class_db;
-import string;
+import std;
+import std.compat;
 export class ResourceImporter;
 export struct ClassType;
 

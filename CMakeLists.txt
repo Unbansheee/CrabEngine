@@ -27,20 +27,20 @@ add_library(CrabEngine STATIC
 )
 
 set_target_properties(CrabEngine PROPERTIES
-    CXX_STANDARD 20
+    CXX_STANDARD 23
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
     COMPILE_WARNING_AS_ERROR OFF
 )
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(CrabEngine PRIVATE -fmodules-ts -fmodule-header)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
 
 if (MSVC)
     target_compile_options(CrabEngine PRIVATE /W4)
     target_compile_options(CrabEngine PRIVATE /Z7)
-
 else()
     target_compile_options(CrabEngine PRIVATE -Wall -Wextra -pedantic)
 endif()

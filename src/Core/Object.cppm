@@ -8,7 +8,7 @@ export module object;
 export import reflection;
 export import uid;
 export import json;
-export import <string>;
+export import std;
 
 export struct ClassType;
 

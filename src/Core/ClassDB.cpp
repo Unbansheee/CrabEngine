@@ -1,7 +1,4 @@
-﻿//#include "ClassDB.cppm"
-#include <assert.h>
-
-module class_db;
+﻿module class_db;
 import class_type;
 
 bool ClassType::IsSubclassOf(const ClassType& parent) const

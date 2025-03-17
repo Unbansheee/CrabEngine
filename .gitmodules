@@ -1,0 +1,6 @@
+[submodule "vendor/nativefiledialog-extended"]
+	path = vendor/nativefiledialog-extended
+	url = https://github.com/btzy/nativefiledialog-extended.git
+[submodule "vendor/string_id"]
+	path = vendor/string_id
+	url = https://github.com/foonathan/string_id.git

@@ -1,7 +1,7 @@
 ﻿#include "ReflectionMacros.h"
 
 export module shader_file_resource;
-import string;
+import std;
 import resource;
 
 export class ShaderFileResource : public Resource
