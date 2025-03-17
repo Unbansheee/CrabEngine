@@ -1,9 +1,10 @@
-﻿#include "glfw3webgpu/glfw3webgpu.h"
-#include "../../../../src/Theme/ThemeManager.h"
+﻿module;
+
+#include "glfw3webgpu/glfw3webgpu.h"
 #include "imgui/backends/imgui_impl_glfw.h"
 #include "imgui/backends/imgui_impl_wgpu.h"
+#include "imgui.h"
 #include "ImGuizmo/ImGuizmo.h"
-//#include "webgpu/webgpu.hpp"
 
 module node_imgui_context_window;
 import application;
@@ -40,9 +41,7 @@ void NodeImGUIContextWindow::EnterTree()
         return glfwGetWGPUSurface(Application::Get().GetInstance(), window);
     };
     ImGui_ImplWGPU_Init(&info);
-
-    ThemeManager::LoadTheme("Dark");
-    ThemeManager::SetDefaultFont(ENGINE_RESOURCE_DIR"/Fonts/Roboto-Light.ttf");
+    
 }
 
 void NodeImGUIContextWindow::Update(float dt)

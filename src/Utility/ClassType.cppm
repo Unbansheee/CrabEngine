@@ -1,10 +1,10 @@
 ﻿module;
 #include <cstdint>
 #include <functional>
-#include <string>
 #include <typeindex>
 
 export module class_type;
+export import string_id;
 
 export class Object;
 export class Property;
@@ -14,27 +14,42 @@ export enum class ClassFlags : uint32_t
     EditorVisible = 1 << 0
 };
 
-class UndefinedObject
+export class BAD_OBJECT
 {
 };
 
-export struct ClassType
+struct NoCopy{
+    // having the defaulted constructor is required for C++20 aggregate initialization to work
+    NoCopy() = default;
+    // prevents copy and deletes other constructors
+    NoCopy(const NoCopy&) = delete;
+};
+
+export struct ClassType : NoCopy
 {
     using CreateClassFn = std::function<Object*()>;
-    std::type_index ClassIndex = std::type_index(typeid(UndefinedObject));
-    std::string Name;
+    string_id Name = MakeStringID("null");
     CreateClassFn Initializer;
     std::vector<Property> Properties;
-    std::type_index ParentClass = std::type_index(typeid(UndefinedObject));
-    std::vector<std::type_index> ChildClasses;
+    string_id Parent = MakeStringID("null");
     uint32_t Flags;
 
     bool operator==(const ClassType& other) const
     {
-        return other.ClassIndex == ClassIndex;
+        return other.Name == Name;
     }
 
-    static const ClassType& Get(std::type_index id);
+    operator bool() const
+    {
+        return IsValid();
+    }
+
+    bool IsValid() const
+    {
+        return Name != MakeStringID("null") && Initializer != nullptr;
+    }
+    
+    
     bool IsSubclassOf(const ClassType& parent) const;
 
     template<typename T>
@@ -42,4 +57,5 @@ export struct ClassType
     {
         return IsSubclassOf(T::GetStaticClass());
     }
+    
 };

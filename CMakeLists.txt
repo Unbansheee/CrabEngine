@@ -19,7 +19,7 @@ file(GLOB_RECURSE SOURCES
 file(GLOB_RECURSE MODULE_FILES 
     CONFIGURE_DEPENDS  # Optional: Watch for new files
     LIST_DIRECTORIES false
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.cppm"
+    src/*.cppm
 )
 
 add_library(CrabEngine STATIC
@@ -60,8 +60,9 @@ add_subdirectory(vendor/glfw3webgpu)
 add_subdirectory(vendor/imgui)
 add_subdirectory(vendor/rocket)
 add_subdirectory(vendor/nativefiledialog-extended)
+add_subdirectory(vendor/string_id)
 target_link_libraries(CrabEngine PRIVATE glfw glfw3webgpu nfd)
-target_link_libraries(CrabEngine PUBLIC webgpu imgui)
+target_link_libraries(CrabEngine PUBLIC webgpu imgui foonathan_string_id)
 target_copy_webgpu_binaries(CrabEngine)
 set_target_properties(CrabEngine PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
@@ -70,6 +71,7 @@ set_target_properties(glfw3webgpu PROPERTIES FOLDER "CrabEngine/Dependencies/GLF
 set_target_properties(update_mappings PROPERTIES FOLDER "CrabEngine/Dependencies/GLFW3")
 set_target_properties(imgui PROPERTIES FOLDER "CrabEngine/Dependencies")
 set_target_properties(nfd PROPERTIES FOLDER "CrabEngine/Dependencies")
+set_target_properties(foonathan_string_id PROPERTIES FOLDER "CrabEngine/Dependencies")
 set_target_properties(CrabEngine PROPERTIES FOLDER "CrabEngine")
 
 
@@ -92,8 +94,8 @@ else()
     )
 endif()
 
-target_compile_definitions(CrabEngine PRIVATE GLM_FORCE_DEPTH_ZERO_TO_ONE)
-target_compile_definitions(CrabEngine PRIVATE GLM_FORCE_LEFT_HANDED)
+target_compile_definitions(CrabEngine PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
+target_compile_definitions(CrabEngine PUBLIC GLM_FORCE_LEFT_HANDED)
 target_compile_definitions(imgui PRIVATE IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
 
 if (MSVC)
@@ -107,13 +109,14 @@ if (MSVC)
     target_compile_options(CrabEngine PUBLIC /MP)
 endif (MSVC)
 
-target_include_directories(CrabEngine PRIVATE .)
-target_include_directories(CrabEngine PUBLIC ./vendor)
-target_include_directories(CrabEngine PUBLIC ./vendor/imgui)
-target_include_directories(CrabEngine PUBLIC ./src)
-target_include_directories(CrabEngine PRIVATE ./src/Nodes)
-target_include_directories(CrabEngine PRIVATE ./src/Renderer)
-target_include_directories(CrabEngine PUBLIC ./src/Utility)
+target_include_directories(CrabEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor)
+target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui)
+target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nativefiledialog-extended/src/include)
+target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(CrabEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Nodes)
+target_include_directories(CrabEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer)
+target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/Utility)
 
 target_sources(CrabEngine
   PUBLIC

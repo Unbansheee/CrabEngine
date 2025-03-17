@@ -12,8 +12,16 @@ export import <string>;
 
 export struct ClassType;
 
+struct BaseObjectRegistrationObject
+{
+    BaseObjectRegistrationObject();
+};
+
+
 export class Object : public IPropertyInterface
 {
+private:
+    inline static BaseObjectRegistrationObject ObjectRegistrationObject;
 public:
     template<typename T>
     static Object* Create()
@@ -55,6 +63,27 @@ public:
     virtual void Deserialize(nlohmann::json& archive);
 
     virtual void OnPropertySet(Property& prop) override;
+
+
+
+    template<typename T>
+    static T* Cast(Object* object)
+    {
+        if (object->IsA(T::GetStaticClass()))
+        {
+            return static_cast<T*>(object);
+        }
+        return nullptr;
+    }
+    
+
+    bool IsA(const ClassType& type);
+    template<typename T>
+    bool IsA()
+    {
+        return IsA(T::GetStaticClass());
+    }
+    
 
 
 protected:

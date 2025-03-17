@@ -1,14 +1,27 @@
-﻿
-module object;
+﻿module object;
 import reflection;
 import property_serialization;
 import uid;
 import class_db;
 import class_type;
+import string_id;
+
+BaseObjectRegistrationObject::BaseObjectRegistrationObject()
+{
+    ClassDB::Get().RegisterClassType(Object::GetStaticClass());
+}
 
 const ClassType& Object::GetStaticClass()
 {
-    return ClassDB::Get().GetClass<Object>();
+    static ClassType s
+{
+    .Name = MakeStringID("Object"),
+    .Initializer = &Object::Create<Object>,
+    .Properties = Object::GetClassProperties(),
+    .Parent = MakeStringID("null")
+    };
+    
+    return s;
 }
 
 const UID& Object::GetID() const
@@ -18,7 +31,7 @@ const UID& Object::GetID() const
 
 void Object::Serialize(nlohmann::json& archive)
 {
-    archive["class"] = GetStaticClassFromThis().Name;
+    archive["class"] = GetStaticClassFromThis().Name.string();
     archive["uid"] = id.to_string();
     auto& properties = archive["properties"];
 
@@ -43,4 +56,9 @@ void Object::Deserialize(nlohmann::json& archive)
 
 void Object::OnPropertySet(Property& prop)
 {
+}
+
+bool Object::IsA(const ClassType& type)
+{
+    return GetStaticClassFromThis().IsSubclassOf(type);
 }

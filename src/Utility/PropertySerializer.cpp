@@ -72,10 +72,19 @@ void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive,
 {
     auto& a = *archive;
     auto& properties = a[prop.name()];
-    auto res = val.Get<Resource>();
-    properties["is_source_imported"] = res->IsSourceImported();
-    properties["resource_file_path"] = res->GetResourcePath();
-    properties["source_file_path"] = res->GetSourcePath();
+    if (auto res = val.Get<Resource>())
+    {
+        properties["is_source_imported"] = res->IsSourceImported();
+        properties["resource_file_path"] = res->GetResourcePath();
+        properties["source_file_path"] = res->GetSourcePath();
+    }
+    else
+    {
+        properties["is_source_imported"] = false;
+        properties["resource_file_path"] = "";
+        properties["source_file_path"] = "";
+    }
+
     
     /*
     properties["resource_path"] = val.GetResourcePath();

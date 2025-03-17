@@ -12,29 +12,35 @@ import reflection;
 import reflection_concepts;
 import object;
 import class_type;
+import string_id;
 
 export class ClassDB {
     friend struct ClassType;
     using TypeInfoRef = std::type_index;
-    std::unordered_map<std::type_index, ClassType> classTypes;
+    //std::unordered_map<std::type_index, ClassType> classTypes;
+    std::vector<const ClassType*> allClassTypes;
+    std::unordered_map<string_id, const ClassType*> classNameLookup;
+    std::unordered_multimap<string_id, const ClassType*> classHierarchy;
 
 public:
     template<typename T>
-    const ClassType& GetClass()
+    const ClassType* GetClass()
     {
-        return classTypes.at(std::type_index(typeid(T)));
+        return &T::GetStaticClass();
     }
 
     const ClassType* GetClassByName(const std::string& name)
     {
+        string_id n = MakeStringID(name);
         for (auto& type : GetClasses())
         {
-            if (type.Name == name) return &classTypes.at(type.ClassIndex);
+            if (type->Name == n) return type;
         }
 
         return nullptr;
     }
-    
+
+    /*
     template <typename T, typename ParentClass>
     void RegisterClass(const std::string& Name) {
         ClassType& t = classTypes[typeid(T)];
@@ -56,82 +62,78 @@ public:
             std::cout << prop.name << "\n";
         }
     }
+    */
+
+    void RegisterClassType(const ClassType& classType)
+    {
+        allClassTypes.emplace_back(&classType);
+        classNameLookup[classType.Name] = &classType;
+        classHierarchy.insert({classType.Parent, &classType});
+        
+        std::cout << "Registered: " << classType.Name.string() << "\n";
+    }
 
     template <typename T>
     void AddClassFlag(uint32_t flags)
     {
-        ClassType& t = classTypes[typeid(T)];
+        const ClassType& classT = T::GetStaticClass();
+        auto& t = const_cast<ClassType&>(classT);
         t.Flags |= flags;
     }
     
     template <typename T>
     const std::vector<Property>& GetProperties() {
-        return classTypes.at(std::type_index(typeid(T))).Properties;
+        return T::GetStaticClass().Properties;
     }
 
     template <typename T>
     const std::vector<Property>& GetPropertiesOf(T* object) {
-        return classTypes.at(std::type_index(typeid(T))).Properties;
+        return T::GetStaticClass().Properties;
     }
 
     template<typename T>
-    const ClassType& GetParentClass()
+    const ClassType* GetParentClass()
     {
-        assert(classTypes.contains(typeid(T)));
-        auto t = classTypes.at(typeid(T));
-        return classTypes.at(t.ParentClass);
+        return T::GetStaticClass().Parent;
     }
 
-    template<typename  ParentClass, typename ChildClass>
-    bool IsSubclassOf(const ChildClass& c)
+    const ClassType* GetParentClass(string_id id)
     {
-        if (!classTypes.contains(typeid(c))) return false;
-        auto& current = classTypes.at(typeid(c));
-        if (current.ClassIndex == typeid(ParentClass)) return true;
-        while (current.ParentClass != typeid(ParentClass))
-        {
-            if (current.ParentClass == typeid(Object) && typeid(ParentClass) != typeid(Object)) return false;
-            current = classTypes.at(current.ParentClass);
-        }
-        return true;
+        return classNameLookup.at(id);
     }
-
-    bool IsSubclassOf(const Object& parent, const Object& child)
-    {
-        if (!classTypes.contains(typeid(child))) return false;
-        auto& current = classTypes.at(typeid(child));
-        if (current.ClassIndex == typeid(parent)) return true;
-        while (current.ParentClass != typeid(parent))
-        {
-            if (current.ParentClass == typeid(Object) && typeid(parent) != typeid(Object)) return false;
-            current = classTypes.at(current.ParentClass);
-        }
-        return true;
-    }
+    
 
     template<typename T>
-    std::vector<ClassType> GetSubclassesOf()
+    std::vector<const ClassType*> GetSubclassesOf()
     {
-        std::vector<ClassType> types;
-        std::vector<std::type_index> stack;
-        stack.push_back(typeid(T));
+        
+        std::vector<const ClassType*> types;
+        std::vector<string_id> stack;
+        stack.push_back(T::GetStaticClass().Name);
         while (!stack.empty())
         {
             auto curr = stack.back();
             stack.pop_back();
-            auto type = classTypes.at(curr);
+            auto type = classNameLookup.at(curr);
             types.push_back(type);
 
-            for (auto child : type.ChildClasses)
+            auto e = classHierarchy.find(curr);
+            auto range = classHierarchy.equal_range(curr);
+            for (auto it = range.first; it != range.second; ++it)
             {
-                stack.push_back(child);
+                stack.push_back(it->second->Name);
             }
+            
+            //for (const ClassType* child : classHierarchy.find(curr))
+            //{
+            //    stack.push_back(child->Name);
+            //}
         }
 
         return types;
     }
     
-    std::vector<ClassType> GetClasses();
+    const std::vector<const ClassType*>& GetClasses();
     
     static ClassDB& Get() {
         static ClassDB instance;

@@ -22,7 +22,6 @@ public:
     
     BEGIN_PROPERTIES
         ADD_PROPERTY("Mesh", Mesh)
-        ADD_PROPERTY("Funny Number", FunnyNumber)
     END_PROPERTIES
 
     void SetMesh(const std::shared_ptr<MeshResource>& newMesh);
@@ -36,5 +35,4 @@ public:
 protected:
     std::shared_ptr<Material> material;
     StrongResourceRef Mesh;
-    int FunnyNumber = 0;
 };

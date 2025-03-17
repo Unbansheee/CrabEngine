@@ -8,7 +8,6 @@ import render_visitor;
 import standard_material;
 import wgpu;
 import crab_types;
-//#include "webgpu/webgpu.hpp"
 
 void NodeMeshInstance3D::SetMesh(const std::shared_ptr<MeshResource> &newMesh) {
     this->Mesh = newMesh;
@@ -16,6 +15,7 @@ void NodeMeshInstance3D::SetMesh(const std::shared_ptr<MeshResource> &newMesh) {
 
 void NodeMeshInstance3D::Render(RenderVisitor& Visitor)
 {
+    
     if (!material)
     {
         material = MakeShared<StandardMaterial>(Application::Get().GetDevice(), ENGINE_RESOURCE_DIR"/standard_material.wgsl");
@@ -25,12 +25,14 @@ void NodeMeshInstance3D::Render(RenderVisitor& Visitor)
         material->Initialize();
     }
 
+    
     if (Mesh.Get<Resource>())
     {
         Visitor.Visit(*this);
     }
     
     Super::Render(Visitor);
+    
 }
 
 

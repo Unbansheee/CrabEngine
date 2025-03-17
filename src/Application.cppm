@@ -14,6 +14,7 @@ import node;
 import scene_tree;
 import glm;
 import wgpu;
+import string_id;
 
 struct ImGuiContext;
 using glm::mat4x4;
@@ -64,6 +65,8 @@ public:
         float time;
         float _pad[3];
     };
+
+    sid::default_database& GetStringDB() {return defaultStringDatabase;}
     
 protected:
     SceneTree sceneTree;
@@ -74,7 +77,8 @@ protected:
     wgpu::Device wgpuDevice = nullptr;
 
     std::unique_ptr<wgpu::ErrorCallback> errorCallbackHandle;
-
+    sid::default_database defaultStringDatabase;
+    
     Application(const Application &) = delete;
     Application & operator = (const Application &) = delete;
 private:

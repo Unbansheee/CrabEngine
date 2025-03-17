@@ -1,4 +1,8 @@
 // Include the C++ wrapper instead of the raw header(s)
+module;
+#include "nfd.hpp"
+#include "nativefiledialog-extended/src/include/nfd_glfw3.h"
+
 module application;
 import mesh_vertex;
 import wgpu;
@@ -1042,12 +1046,13 @@ Application::Application()
 		if (message) std::cout << " (" << message << ")";
 		std::cout << std::endl;
 	});
-	
+	NFD::Init();
 	sceneTree.SetRoot(Node::NewNode());
 }
 
 Application::~Application()
 {
+	NFD::Quit();
 	glfwTerminate();
 }
 

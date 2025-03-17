@@ -113,6 +113,7 @@ public:
     // Get resource with type checking
     template <typename T>
     std::shared_ptr<T> Get() const {
+        if (!m_resource) return nullptr;
         if (!IsType(T::GetStaticClass())) {
             throw std::runtime_error("Resource type mismatch in Get()");
         }
@@ -135,7 +136,7 @@ public:
 
 private:
     std::shared_ptr<Resource> m_resource;
-    const ClassType* m_classType;
+    const ClassType* m_classType = nullptr;
 
     bool IsCompatible(const std::shared_ptr<Resource>& with) const;
 };

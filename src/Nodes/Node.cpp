@@ -5,8 +5,8 @@
 //#include "Node.cppm"
 
 //#include "Core/ClassDB.cppm"
-#include "imgui/imgui.h"
-#include "imgui/misc/cpp/imgui_stdlib.h"
+module;
+#include "imgui.h"
 
 module node;
 import scene_tree;
@@ -174,7 +174,7 @@ std::unique_ptr<Node> Node::RemoveFromParent()
 void Node::Reparent(Node* newParent)
 {
 	if (!Parent) return;
-	assert(newParent);
+	//assert(newParent);
 
 	auto it = std::find_if(Parent->Children.begin(), Parent->Children.end(), [this](auto& a)
 	{
@@ -219,7 +219,7 @@ void Node::Deserialize(nlohmann::json& archive)
 		auto classType = ClassDB::Get().GetClassByName(childType);
 		Object* n = classType->Initializer();
 		Node* node = dynamic_cast<Node*>(n);
-		auto instance = Node::InitializeNode(node, classType->Name);
+		auto instance = Node::InitializeNode(node, classType->Name.string());
 		instance->Deserialize(childJson);
 		AddChild(std::move(instance));
 	}

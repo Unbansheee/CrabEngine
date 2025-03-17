@@ -5,6 +5,7 @@ export module auto_registration;
 import class_db;
 import string;
 export class ResourceImporter;
+export struct ClassType;
 
 void AddImporterToImportManager(std::unique_ptr<ResourceImporter> imp);
 
@@ -18,11 +19,8 @@ struct AutoRegisterResourceImporter
 };
 
 // Auto-registration helper
-export template <typename T, typename ParentClass>
-struct AutoRegister {
-    AutoRegister(const std::string& Name) {
-        ClassDB::Get().RegisterClass<T, ParentClass>(Name);
-    }
+export struct AutoClassRegister {
+    AutoClassRegister(const ClassType& classType);
 };
 
 // Auto-registration helper

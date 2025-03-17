@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <vector>
+#include "typeindex"
 import reflection;
 import class_db;
 import class_type;
@@ -38,9 +39,18 @@ return props; \
 public:\
 using ThisClass = Class; \
 using Super = ParentClass; \
-static const ClassType& GetStaticClass() { return ClassDB::Get().GetClass<ThisClass>(); }\
+static const ClassType& GetStaticClass() { \
+static ClassType s\
+{\
+    .Name = MakeStringID(#Class),\
+    .Initializer = &Object::Create<Class>,\
+    .Properties = Class::GetClassProperties(),\
+    .Parent = MakeStringID(#ParentClass)\
+};\
+return s;\
+}\
 virtual const ClassType& GetStaticClassFromThis() override { return GetStaticClass(); } \
-[[maybe_unused]] inline static AutoRegister<Class, ParentClass> AutoRegistrationObject_##Class = AutoRegister<Class, ParentClass>(#Class);
+[[maybe_unused]] inline static AutoClassRegister AutoRegistrationObject_##Class = AutoClassRegister(GetStaticClass());
 
 #define CLASS_FLAG(Flag)\
 [[maybe_unused]] inline static AutoClassFlagRegister<ThisClass> AutoFlagRegistrationObject_##Flag = AutoClassFlagRegister<ThisClass>((uint32_t)ClassFlags::##Flag);

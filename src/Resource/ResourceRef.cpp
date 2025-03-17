@@ -21,6 +21,10 @@ bool StrongResourceRef::IsCompatible(const std::shared_ptr<Resource>& with) cons
 }
 
 bool StrongResourceRef::IsType(const ClassType& type) const {
+    if (m_resource)
+    {
+        if (m_resource->GetStaticClassFromThis().IsSubclassOf(type)) return true;
+    }
     return m_classType && m_classType->IsSubclassOf(type);
 }
 
