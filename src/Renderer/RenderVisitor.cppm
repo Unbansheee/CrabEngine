@@ -24,7 +24,7 @@ export struct DrawItem {
 };
 
 export struct DrawBatch {
-    Material* material = nullptr;
+    MaterialResource* material = nullptr;
     std::vector<DrawItem> drawItems = {};    // Per-object data (buffers, offsets)
 };
 

@@ -90,25 +90,10 @@ public:
     StrongResourceRef() = default;
 
     // Main constructor with type constraint
-    template <typename T>
-    StrongResourceRef(std::shared_ptr<T> resource)
-        : m_resource(resource),
-          m_classType(&T::StaticClass()) // From reflection system
-    {
-    }
+    StrongResourceRef(std::shared_ptr<Resource> resource, const ClassType* filter);
 
     // Type-safe assignment using constructor's constraints
-    template <typename T>
-    StrongResourceRef& operator=(std::shared_ptr<T> resource) {
-        if (m_classType && !T::GetStaticClass().IsSubclassOf(*m_classType)) {
-            throw std::runtime_error("Resource type mismatch in assignment");
-        }
-        m_resource = resource;
-        if (!m_classType) {
-            m_classType = &T::GetStaticClass(); // Set type on first assignment
-        }
-        return *this;
-    }
+    StrongResourceRef& operator=(std::shared_ptr<Resource> resource);
 
     // Get resource with type checking
     template <typename T>
@@ -128,15 +113,23 @@ public:
         return m_resource == other.m_resource;
     }
 
+    operator bool() const
+    {
+        return m_resource.get();
+    }
+
     // Set explicit type filter (for editor properties)
     void SetTypeFilter(const ClassType& filterType);
     
     // Get current type filter
     const ClassType* GetTypeFilter() const { return m_classType; }
 
+    bool IsResourceCompatible(const std::shared_ptr<Resource>& resource) const;
+
+
 private:
     std::shared_ptr<Resource> m_resource;
     const ClassType* m_classType = nullptr;
 
-    bool IsCompatible(const std::shared_ptr<Resource>& with) const;
 };
+

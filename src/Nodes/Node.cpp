@@ -6,7 +6,6 @@
 
 //#include "Core/ClassDB.cppm"
 module;
-#include "imgui.h"
 
 module node;
 import scene_tree;

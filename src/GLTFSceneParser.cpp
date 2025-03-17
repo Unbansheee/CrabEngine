@@ -16,7 +16,8 @@ import node_mesh_instance_3d;
 import array_mesh_resource;
 import mesh_vertex;
 import uniform_definitions;
-
+import standard_material;
+import shader_file_resource;
 
 
 /*
@@ -58,7 +59,7 @@ std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std:
 
 	std::vector<std::shared_ptr<TextureResource>> parsed_textures;
 	std::vector<std::shared_ptr<MeshResource>> parsed_meshes;
-	std::vector<std::shared_ptr<Material>> parsed_materials;
+	std::vector<std::shared_ptr<MaterialResource>> parsed_materials;
 	std::vector<Node*> parsed_nodes;
 
 	
@@ -345,10 +346,10 @@ std::shared_ptr<MeshResource> GLTFSceneParser::ParseMesh(WGPUDevice device, tiny
 }
 
 
-std::shared_ptr<Material> GLTFSceneParser::ParseMaterial(WGPUDevice& context, tinygltf::Model& model, const std::vector<std::shared_ptr<TextureResource>>& textures, tinygltf::Material& material)
+std::shared_ptr<MaterialResource> GLTFSceneParser::ParseMaterial(WGPUDevice& context, tinygltf::Model& model, const std::vector<std::shared_ptr<TextureResource>>& textures, tinygltf::Material& material)
 {
-	std::shared_ptr<StandardMaterial> mat = std::make_shared<StandardMaterial>(context, ENGINE_RESOURCE_DIR"/standard_material.wgsl");
-	mat->TargetTextureFormat = wgpu::TextureFormat::BGRA8UnormSrgb;
+	std::shared_ptr<StandardMaterial> mat = std::make_shared<StandardMaterial>();
+	mat->shader_file = ResourceManager::Load<ShaderFileResource>(ENGINE_RESOURCE_DIR"/standard_material.wgsl");
 	
 	auto& bcf = material.pbrMetallicRoughness.baseColorFactor;
 	//mat->params.ColourFactor = Vector4( bcf.at(0), bcf.at(1), bcf.at(2), bcf.at(3) );
@@ -368,7 +369,7 @@ std::shared_ptr<Material> GLTFSceneParser::ParseMaterial(WGPUDevice& context, ti
 		//mat->TMetallicRoughness = textures.at(material.pbrMetallicRoughness.metallicRoughnessTexture.index);
 	}
 
-	mat->Initialize();
+	mat->LoadData();
 
 	return mat;
 }

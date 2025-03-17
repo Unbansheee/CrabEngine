@@ -4,18 +4,26 @@
 
 #include <cassert>
 #include <filesystem>
+#include "ReflectionMacros.h"
 //#include <webgpu/webgpu.hpp>
 
 export module material;
 import resource_manager;
 export import vertex;
 import wgpu;
+import object;
+import resource;
+import resource_ref;
 
 
-export class Material
+export class MaterialResource : public Resource
 {
-public:
-    virtual ~Material() = default;
+    CRAB_ABSTRACT_CLASS(MaterialResource, Resource)
+    BEGIN_PROPERTIES
+        ADD_PROPERTY("ShaderFile", shader_file)
+    END_PROPERTIES
+
+    ~MaterialResource() override = default;
 
     enum ENamedBindGroup
     {
@@ -52,16 +60,21 @@ public:
     wgpu::Device m_device = nullptr;
     wgpu::BindGroupLayout m_bindGroupLayouts = nullptr;
     std::vector<MaterialBindGroup> m_bindGroups = {};
-    wgpu::TextureFormat TargetTextureFormat = wgpu::TextureFormat::Undefined;
+    wgpu::TextureFormat TargetTextureFormat = WGPUTextureFormat::WGPUTextureFormat_BGRA8UnormSrgb;
     wgpu::TextureFormat DepthTextureFormat = wgpu::TextureFormat::Depth24Plus;
     MaterialSettings m_settings;
     bool bBindGroupsDirty = false;
+    StrongResourceRef shader_file;
 
+    void LoadData() override;
+    MaterialResource() : Resource() {};
     
-    Material(wgpu::Device device, const std::filesystem::path& shaderPath, MaterialSettings settings = MaterialSettings()) : m_device(device), m_settings(settings)
+    MaterialResource(wgpu::Device device, const std::filesystem::path& shaderPath, MaterialSettings settings = MaterialSettings()) : m_device(device), m_settings(settings)
     {
-        m_shaderModule = ResourceManager::loadShaderModule(shaderPath, device);
+        LoadFromShaderPath(device, shaderPath, settings);
     }
+
+    void LoadFromShaderPath(wgpu::Device device, const std::filesystem::path& shaderPath, MaterialSettings settings = MaterialSettings());
 
     virtual void Initialize()
     {
@@ -72,6 +85,7 @@ public:
 
     void MarkBindGroupsDirty() { bBindGroupsDirty = true;}
 
+    virtual void OnPropertySet(Property& prop) override;
     
     wgpu::RenderPipeline GetPipeline() const { return m_pipeline; }
     virtual wgpu::RenderPipeline CreateRenderPipeline();

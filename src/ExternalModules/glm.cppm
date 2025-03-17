@@ -1,5 +1,4 @@
-﻿#pragma once
-
+﻿
 export module glm;
 export import <glm/detail/type_quat.hpp>;
 export import <glm/gtc/quaternion.hpp>;

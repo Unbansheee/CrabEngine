@@ -25,7 +25,7 @@ public:
 
 private:
     std::shared_ptr<MeshResource> ParseMesh(WGPUDevice device, tinygltf::Model& model, tinygltf::Mesh& mesh);
-    std::shared_ptr<Material> ParseMaterial(WGPUDevice& context, tinygltf::Model& model, const std::vector<std::shared_ptr<TextureResource>>& textures, tinygltf::Material& material);
+    std::shared_ptr<MaterialResource> ParseMaterial(WGPUDevice& context, tinygltf::Model& model, const std::vector<std::shared_ptr<TextureResource>>& textures, tinygltf::Material& material);
     std::shared_ptr<TextureResource> ParseTexture(WGPUDevice& context, tinygltf::Model& model,
     tinygltf::Texture& texture);
 

@@ -52,8 +52,28 @@ return s;\
 virtual const ClassType& GetStaticClassFromThis() override { return GetStaticClass(); } \
 [[maybe_unused]] inline static AutoClassRegister AutoRegistrationObject_##Class = AutoClassRegister(GetStaticClass());
 
+
+#define CRAB_ABSTRACT_CLASS(Class, ParentClass) \
+public:\
+using ThisClass = Class; \
+using Super = ParentClass; \
+static const ClassType& GetStaticClass() { \
+static ClassType s\
+{\
+.Name = MakeStringID(#Class),\
+.Initializer = nullptr,\
+.Properties = Class::GetClassProperties(),\
+.Parent = MakeStringID(#ParentClass),\
+.Flags = (uint32_t)ClassType::ClassFlags::Abstract\
+};\
+return s;\
+}\
+virtual const ClassType& GetStaticClassFromThis() override { return GetStaticClass(); } \
+[[maybe_unused]] inline static AutoClassRegister AutoRegistrationObject_##Class = AutoClassRegister(GetStaticClass());
+
+
 #define CLASS_FLAG(Flag)\
-[[maybe_unused]] inline static AutoClassFlagRegister<ThisClass> AutoFlagRegistrationObject_##Flag = AutoClassFlagRegister<ThisClass>((uint32_t)ClassFlags::##Flag);
+[[maybe_unused]] inline static AutoClassFlagRegister<ThisClass> AutoFlagRegistrationObject_##Flag = AutoClassFlagRegister<ThisClass>((uint32_t)ClassType::ClassFlags::##Flag);
 
 #define REGISTER_RESOURCE_IMPORTER(Type)\
 [[maybe_unused]] inline static AutoRegisterResourceImporter<Type> ImporterRegistrationObject_##Type = AutoRegisterResourceImporter<Type>();

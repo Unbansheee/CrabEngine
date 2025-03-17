@@ -60,8 +60,4 @@ namespace Uniforms
         float Ks = 0.5f;
         float NormalStrength = 0.f;
     };
-
-
-    
-
 }

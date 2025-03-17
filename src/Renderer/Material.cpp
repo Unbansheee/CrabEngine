@@ -1,8 +1,9 @@
 ﻿module material;
 import mesh_vertex;
-//#include "webgpu/webgpu.hpp"
+import shader_file_resource;
+import application;
 
-void Material::Apply(wgpu::RenderPassEncoder renderPass)
+void MaterialResource::Apply(wgpu::RenderPassEncoder renderPass)
 {
     renderPass.setPipeline(GetPipeline());
     if (bBindGroupsDirty)
@@ -21,7 +22,34 @@ void Material::Apply(wgpu::RenderPassEncoder renderPass)
     }
 }
 
-wgpu::RenderPipeline Material::CreateRenderPipeline()
+void MaterialResource::LoadData()
+{
+    LoadFromShaderPath(Application::Get().GetDevice(), shader_file.Get<ShaderFileResource>()->shaderFilePath);
+    Resource::LoadData();
+    MarkBindGroupsDirty();
+}
+
+void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::filesystem::path& shaderPath,
+    MaterialSettings settings)
+{
+    m_device = device;
+    m_settings = settings;
+    m_shaderModule = ResourceManager::loadShaderModule(shaderPath, device);
+    Initialize();
+    loaded = true;
+}
+
+void MaterialResource::OnPropertySet(Property& prop)
+{
+    Resource::OnPropertySet(prop);
+
+    if (((uint32_t)prop.flags & (uint32_t)Property::Flags::MaterialProperty))
+    {
+        MarkBindGroupsDirty();
+    }
+}
+
+wgpu::RenderPipeline MaterialResource::CreateRenderPipeline()
 {
     Vertex::VertexBufferLayout layout;
     Vertex::CreateVertexBufferLayout<MeshVertex>(layout);

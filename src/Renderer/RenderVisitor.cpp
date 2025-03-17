@@ -14,10 +14,10 @@ void RenderVisitor::Visit(const NodeMeshInstance3D& node)
     data.LocalMatrix = node.GetTransform().GetLocalModelMatrix();
     data.ModelMatrix = node.GetTransform().GetWorldModelMatrix();
     uint32_t offset = dynamicUniforms.Write(data);
-        
+        auto m = node.GetMaterial();
     // Create a DrawCommand with dynamic offset
     DrawCommand cmd = {
-        .material = node.GetMaterial().get(),
+        .material = m.get(),
         .vertexBuffer = node.GetMesh()->vertexBuffer,
         .vertexCount = node.GetMesh()->vertexCount,
         .indexBuffer = node.GetMesh()->indexBuffer,

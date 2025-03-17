@@ -37,19 +37,10 @@ set_target_properties(CrabEngine PROPERTIES
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Enable modules for different compilers
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    add_compile_options(/experimental:module)
-      
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    add_compile_options(-fmodules-ts --precompile)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    add_compile_options(-fmodules-ts)
-endif()
-
-
 if (MSVC)
     target_compile_options(CrabEngine PRIVATE /W4)
+    target_compile_options(CrabEngine PRIVATE /Z7)
+
 else()
     target_compile_options(CrabEngine PRIVATE -Wall -Wextra -pedantic)
 endif()

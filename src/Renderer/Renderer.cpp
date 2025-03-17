@@ -158,7 +158,7 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
     wgpu::RenderPassEncoder pass = encoder.beginRenderPass(desc);
         
     // 2. Track current state
-    Material* currentMaterial = nullptr;
+    MaterialResource* currentMaterial = nullptr;
         
     for (const auto& batch : batches) {
         // Pipeline state change
@@ -170,14 +170,14 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
         }
 
         // Bind global bind groups
-        pass.setBindGroup(Material::ENamedBindGroup::GLOBAL, m_globalBindGroup, 0, nullptr);
-        pass.setBindGroup(Material::ENamedBindGroup::RENDERER, m_rendererUniformBindGroup, 0, nullptr);
+        pass.setBindGroup(MaterialResource::ENamedBindGroup::GLOBAL, m_globalBindGroup, 0, nullptr);
+        pass.setBindGroup(MaterialResource::ENamedBindGroup::RENDERER, m_rendererUniformBindGroup, 0, nullptr);
         
         // Execute draw calls
         for (const auto& item : batch.drawItems) {
             uint32_t dynamicOffset = item.dynamicOffset;
 
-            pass.setBindGroup(Material::ENamedBindGroup::OBJECT, m_objectUniformBindGroup, 1, &dynamicOffset);
+            pass.setBindGroup(MaterialResource::ENamedBindGroup::OBJECT, m_objectUniformBindGroup, 1, &dynamicOffset);
             pass.setVertexBuffer(0, item.vertexBuffer, 0, WGPU_WHOLE_SIZE);
             
             // Model bind group

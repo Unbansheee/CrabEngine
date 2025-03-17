@@ -22,17 +22,23 @@ public:
     
     BEGIN_PROPERTIES
         ADD_PROPERTY("Mesh", Mesh)
+        ADD_PROPERTY("Material", material);
     END_PROPERTIES
 
+    NodeMeshInstance3D();
+    
     void SetMesh(const std::shared_ptr<MeshResource>& newMesh);
     std::shared_ptr<MeshResource> GetMesh() const {return Mesh.Get<MeshResource>();}
 
-    void SetMaterial(const std::shared_ptr<Material>& newMaterial) {material = newMaterial;}
-    const std::shared_ptr<Material>& GetMaterial() const {return material;}
+    void SetMaterial(const std::shared_ptr<MaterialResource>& newMaterial) { material = newMaterial; }
+    std::shared_ptr<MaterialResource> GetMaterial() const
+    {
+        return material.Get<MaterialResource>();
+    }
 
     virtual void Render(RenderVisitor& Visitor) override;
     
 protected:
-    std::shared_ptr<Material> material;
+    StrongResourceRef material;
     StrongResourceRef Mesh;
 };

@@ -142,9 +142,13 @@ void NodeWindow::TerminateSurface()
 void NodeWindow::RequestResize()
 {
     auto size = GetWindowSize();
-    resizeRequest.active = true;
-    resizeRequest.width = size.x;
-    resizeRequest.height = size.y;
+    if (size.x > 0 && size.y > 0)
+    {
+        resizeRequest.active = true;
+        resizeRequest.width = size.x;
+        resizeRequest.height = size.y;
+    }
+
 }
 
 wgpu::TextureView NodeWindow::GetCurrentTextureView()

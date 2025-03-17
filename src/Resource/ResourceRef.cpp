@@ -15,9 +15,11 @@ ResourceRef::ResourceRef() : typeHash(typeid(Resource))
 }
 
 
-bool StrongResourceRef::IsCompatible(const std::shared_ptr<Resource>& with) const
+bool StrongResourceRef::IsResourceCompatible(const std::shared_ptr<Resource>& resource) const
 {
-    return (with->GetStaticClassFromThis().IsSubclassOf(*m_classType));
+    if (!resource) return false;
+    if (!m_classType) return true;
+    return (resource->GetStaticClassFromThis().IsSubclassOf(*m_classType));
 }
 
 bool StrongResourceRef::IsType(const ClassType& type) const {
@@ -40,3 +42,27 @@ bool ResourceHandle::IsValid() const
     return ResourceDB::Get().IsResourceIDValid(ResourceID);
 }
 */
+
+StrongResourceRef::StrongResourceRef(std::shared_ptr<Resource> resource, const ClassType* filter): m_resource(resource)
+{
+    if (filter)
+    {
+        m_classType = filter;
+    }
+    else
+    {
+        m_classType = &resource->GetStaticClassFromThis();
+    }
+}
+
+StrongResourceRef& StrongResourceRef::operator=(std::shared_ptr<Resource> resource)
+{
+    if (m_classType && !resource->GetStaticClassFromThis().IsSubclassOf(*m_classType)) {
+        throw std::runtime_error("Resource type mismatch in assignment");
+    }
+    m_resource = resource;
+    if (!m_classType) {
+        m_classType = &resource->GetStaticClassFromThis(); // Set type on first assignment
+    }
+    return *this;
+}

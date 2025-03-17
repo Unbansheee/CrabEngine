@@ -3,6 +3,7 @@
 #pragma once
 #include <filesystem>
 
+#include "ReflectionMacros.h"
 #include "Renderer/MaterialHelpers.h"
 
 export module standard_material;
@@ -14,18 +15,26 @@ import uniform_definitions;
 export import material;
 import dynamic_uniform_buffer;
 
-export class StandardMaterial : public Material
+export class StandardMaterial : public MaterialResource
 {
 public:
+    CRAB_CLASS(StandardMaterial, MaterialResource)
+    BEGIN_PROPERTIES
+        ADD_PROPERTY_FLAGS("Base Colour", BaseColorTextureView, Property::Flags::MaterialProperty)
+        ADD_PROPERTY_FLAGS("Normal", NormalTextureView, Property::Flags::MaterialProperty)
+    END_PROPERTIES
+    
     using StandardMaterialUniformsLayout = MaterialHelpers::BindGroupLayoutBuilder<
         MaterialHelpers::UniformBufferEntry<0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>, // UStandardMaterialParameters
         MaterialHelpers::SamplerEntry<1, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>, // TextureSampler
         MaterialHelpers::TextureEntry<2, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>, // BaseColorTexture
         MaterialHelpers::TextureEntry<3, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>>; // NormalTexture
 
+    StandardMaterial();
+    
     StandardMaterial(const wgpu::Device& device, const std::filesystem::path& shaderPath, const MaterialSettings& settings = MaterialSettings())
-        : Material(device, shaderPath, settings),
-          MaterialParameters(device)
+        : MaterialResource(device, shaderPath, settings)
+          
     {
     }
 

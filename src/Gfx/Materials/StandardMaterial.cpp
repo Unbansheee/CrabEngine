@@ -10,8 +10,14 @@ import wgpu;
 using namespace Uniforms;
 using namespace MaterialHelpers;
 
+StandardMaterial::StandardMaterial() : MaterialResource()
+{
+}
+
 void StandardMaterial::Initialize()
 {
+    MaterialParameters.Initialize(m_device);
+    
     using namespace wgpu;
     SamplerDescriptor samplerDesc;
     samplerDesc.addressModeU = AddressMode::Repeat;
@@ -38,7 +44,7 @@ void StandardMaterial::Initialize()
         NormalTextureView = ResourceManager::Load<ImageTextureResource>(ENGINE_RESOURCE_DIR"/null_texture_black.png");
     }
     
-    Material::Initialize();
+    MaterialResource::Initialize();
 }
 
 std::vector<wgpu::BindGroupLayout> StandardMaterial::CreateMaterialBindGroupLayouts()
@@ -51,7 +57,7 @@ std::vector<wgpu::BindGroupLayout> StandardMaterial::CreateMaterialBindGroupLayo
     };   
 }
 
-std::vector<Material::MaterialBindGroup> StandardMaterial::CreateMaterialBindGroups()
+std::vector<MaterialResource::MaterialBindGroup> StandardMaterial::CreateMaterialBindGroups()
 {
     BindGroupCreator<StandardMaterialUniformsLayout> materialBindsCreator(m_device);
     

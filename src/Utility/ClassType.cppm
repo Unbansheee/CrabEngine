@@ -9,10 +9,7 @@ export import string_id;
 export class Object;
 export class Property;
 
-export enum class ClassFlags : uint32_t
-{
-    EditorVisible = 1 << 0
-};
+
 
 export class BAD_OBJECT
 {
@@ -27,6 +24,13 @@ struct NoCopy{
 
 export struct ClassType : NoCopy
 {
+    enum class ClassFlags : uint32_t
+    {
+        None = 0 << 0,
+        EditorVisible = 1 << 1,
+        Abstract = 1 << 2
+    };
+    
     using CreateClassFn = std::function<Object*()>;
     string_id Name = MakeStringID("null");
     CreateClassFn Initializer;
@@ -46,7 +50,7 @@ export struct ClassType : NoCopy
 
     bool IsValid() const
     {
-        return Name != MakeStringID("null") && Initializer != nullptr;
+        return Name != MakeStringID("null");
     }
     
     
@@ -57,5 +61,14 @@ export struct ClassType : NoCopy
     {
         return IsSubclassOf(T::GetStaticClass());
     }
-    
+
+    void AddFlag(uint32_t Flag)
+    {
+        Flags |= Flag;
+    };
+
+    bool HasFlag(uint32_t Flag) const
+    {
+        return Flags & Flag;
+    }
 };

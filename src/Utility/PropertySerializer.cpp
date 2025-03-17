@@ -7,6 +7,7 @@ import resource_manager;
 import node;
 import transform;
 import <string>;
+import class_db;
 
 
 //#include "glm/gtc/quaternion.hpp"
@@ -77,14 +78,21 @@ void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive,
         properties["is_source_imported"] = res->IsSourceImported();
         properties["resource_file_path"] = res->GetResourcePath();
         properties["source_file_path"] = res->GetSourcePath();
+        properties["is_inline"] = res->IsInline();
+        if (res->IsInline())
+        {
+            auto& inlineDef = properties["inline_resource"];
+            res->Serialize(inlineDef);
+        }
     }
     else
     {
         properties["is_source_imported"] = false;
         properties["resource_file_path"] = "";
         properties["source_file_path"] = "";
+        properties["is_inline"] = false;
     }
-
+    
     
     /*
     properties["resource_path"] = val.GetResourcePath();
@@ -102,6 +110,8 @@ void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive,
 void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archive, int& val)
 {
     auto& a = *archive;
+    if (!a.contains(prop.name())) return;
+
     val = a[prop.name()].get<int>();
     prop.set(val);
 }
@@ -109,6 +119,8 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
 void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archive, float& val)
 {
     auto& a = *archive;
+    if (!a.contains(prop.name())) return;
+
     val = (a[prop.name()].template get<float>());
     prop.set(val);
 }
@@ -116,6 +128,8 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
 void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archive, bool& val)
 {
     auto& a = *archive;
+    if (!a.contains(prop.name())) return;
+
     val = (a[prop.name()].template get<bool>());
     prop.set(val);
 }
@@ -123,6 +137,8 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
 void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archive, std::string& val)
 {
     auto& a = *archive;
+    if (!a.contains(prop.name())) return;
+
     val = (a[prop.name()].get<std::string>());
     prop.set(val);
 }
@@ -130,6 +146,8 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
 void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archive, Vector2& val)
 {
     auto& a = *archive;
+    if (!a.contains(prop.name())) return;
+
     std::array<float, 2> v = a[prop.name()].get<std::array<float, 2>>();
     val = {v[0], v[1]};
     prop.set<Vector2>(val);
@@ -138,6 +156,8 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
 void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archive, Vector3& val)
 {
     auto& a = *archive;
+    if (!a.contains(prop.name())) return;
+
     std::array<float, 3> v = a[prop.name()].get<std::array<float, 3>>();
     val = {v[0], v[1], v[2]};
     prop.set<Vector3>(val);
@@ -146,6 +166,8 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
 void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archive, Vector4& val)
 {
     auto& a = *archive;
+    if (!a.contains(prop.name())) return;
+
     std::array<float, 4> v = a[prop.name()].get<std::array<float, 4>>();
     val = {v[0], v[1], v[2], v[3]};
     prop.set<Vector4>(val);
@@ -154,6 +176,8 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
 void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archive, Quat& val)
 {
     auto& a = *archive;
+    if (!a.contains(prop.name())) return;
+
     std::array<float, 4> v = a[prop.name()].get<std::array<float, 4>>();
     val = {v[0], v[1], v[2], v[3]};
     prop.set<Quat>(val);
@@ -162,6 +186,8 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
 void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archive, Transform& val)
 {
     auto& a = *archive;
+    if (!a.contains(prop.name())) return;
+
     std::array<std::vector<float>, 3> v = a[prop.name()].get<std::array<std::vector<float>, 3>>();
     val.Position = {v[0][0], v[0][1], v[0][2]};
     val.Orientation = {v[1][0], v[1][1], v[1][2], v[1][3]};
@@ -177,26 +203,45 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
 void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archive, StrongResourceRef& val)
 {
     auto& a = *archive;
+    if (!a.contains(prop.name())) return;
+    
     auto& properties = a[prop.name()];
     
     bool sourceImported =  properties.at("is_source_imported").get<bool>();
+    bool isInline = properties.at("is_inline").get<bool>();
     std::string resource_file_path = properties.at("resource_file_path").get<std::string>();
     std::string source_path = properties.at("source_file_path").get<std::string>();
-    
-    /*
-    if (val)
+    auto& load_path = sourceImported ? source_path : resource_file_path;
+
+    if (isInline)
     {
-        if (auto res = val.Get<Resource>())
+        if (val)
         {
-            res->Deserialize(a);
-            val = res;
+            if (auto res = val.Get<Resource>())
+            {
+                res->Deserialize(a);
+                val = res;
+                prop.set(val);
+                return;
+            }
+        }
+        else
+        {
+            auto& j = properties["inline_resource"];
+            auto res = static_cast<Resource*>(ClassDB::Get().GetClassByName(j.at("class"))->Initializer());
+            std::shared_ptr<Resource> resource;
+            resource.reset(res);
+            resource->Deserialize(j);
+            resource->LoadData();
+            val = resource;
             prop.set(val);
             return;
         }
     }
+    /*
+
     */
 
-    auto& load_path = sourceImported ? source_path : resource_file_path;
     if (!load_path.empty())
     {
         auto newResource = ResourceManager::Load(load_path);

@@ -26,8 +26,9 @@ public:
     enum class Flags : uint32_t
     {
         None = 0 << 0,
-        Transient = 1 << 0,
-        HideFromInspector = 1 << 1,
+        Transient = 1 << 1,
+        HideFromInspector = 1 << 2,
+        MaterialProperty = 1 << 3
     };
 
     template <typename T, typename Class>

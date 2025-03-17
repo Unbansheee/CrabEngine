@@ -21,7 +21,8 @@ export template<typename T>
 using SharedRef = std::shared_ptr<T>;
 
 export template<typename T, typename... Args>
-SharedRef<T> MakeShared(Args&&... args)
+SharedRef<T>
+MakeShared(Args&&... args)
 {
     return std::make_shared<T>(std::forward<Args>(args)...);
 }

@@ -43,6 +43,7 @@ std::shared_ptr<Resource> ResourceManager::DeserializeResource(const std::filesy
     resource->Deserialize(j);
     resource->resourceFilePath = path.string();
     resource->bIsSourceImported = false;
+    resource->bIsInline = false;
     
     return resource;
 }

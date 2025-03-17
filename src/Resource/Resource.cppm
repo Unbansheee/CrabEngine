@@ -27,9 +27,9 @@ public:
     
     BEGIN_PROPERTIES
         ADD_PROPERTY("Name", name)
-        ADD_PROPERTY("ResourceFilePath", resourceFilePath)
-        ADD_PROPERTY("SourcePath", sourcePath)
-        ADD_PROPERTY("IsSourceImported", bIsSourceImported)
+        ADD_PROPERTY_FLAGS("ResourceFilePath", resourceFilePath, Property::Flags::HideFromInspector)
+        ADD_PROPERTY_FLAGS("SourcePath", sourcePath, Property::Flags::HideFromInspector)
+        ADD_PROPERTY_FLAGS("IsSourceImported", bIsSourceImported, Property::Flags::HideFromInspector)
     END_PROPERTIES
 
     using Ptr = std::shared_ptr<Resource>;
@@ -44,9 +44,11 @@ public:
     bool IsSourceImported() const { return bIsSourceImported; }
     const std::string& GetSourcePath() {return sourcePath; }
     const std::shared_ptr<ImportSettings>& GetImportSettings() { return importSettings; };
+    bool IsInline() const { return bIsInline; }
 protected:
     std::string name;
     bool bIsSourceImported;
+    bool bIsInline = true;
     std::shared_ptr<ImportSettings> importSettings;
     // The location the resource file is stored at on disk
     std::string resourceFilePath;

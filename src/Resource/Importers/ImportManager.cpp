@@ -66,6 +66,7 @@ std::shared_ptr<Resource> ImportManager::ImportSourceFile(const std::filesystem:
     auto res = importer->Import(path, *settings);
     res->sourcePath = path.string();
     res->bIsSourceImported = true;
+    res->bIsInline = false;
     res->name = path.stem().string();
     res->LoadData();
     return res;

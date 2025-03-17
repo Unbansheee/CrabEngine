@@ -8,7 +8,7 @@ import wgpu;
 
 export struct DrawCommand
 {
-    Material* material;
+    MaterialResource* material;
     wgpu::Buffer vertexBuffer = nullptr;
     uint32_t vertexCount = 0;
     wgpu::Buffer indexBuffer = nullptr;

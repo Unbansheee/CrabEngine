@@ -8,6 +8,7 @@ export class ResourceImporter;
 export struct ClassType;
 
 void AddImporterToImportManager(std::unique_ptr<ResourceImporter> imp);
+void AddFlagToClassType(ClassType& type, uint32_t flag);
 
 export template<typename T>
 struct AutoRegisterResourceImporter
@@ -27,6 +28,8 @@ export struct AutoClassRegister {
 export template <typename T>
 struct AutoClassFlagRegister {
     AutoClassFlagRegister(uint32_t flags) {
-        ClassDB::Get().AddClassFlag<T>(flags);
+        const ClassType& type = T::GetStaticClass();
+        ClassType& unconst = const_cast<ClassType&>(type);
+        AddFlagToClassType(unconst, flags);
     }
 };
