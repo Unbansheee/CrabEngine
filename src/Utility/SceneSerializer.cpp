@@ -14,7 +14,7 @@ void SceneSerializer::SerializeScene(Node* rootNode, const std::filesystem::path
 
     std::ofstream outFile(destination);
     outFile.clear();
-    outFile << archive;
+    outFile << std::setw(4) << archive << std::endl;
     outFile.close();
 }
 
