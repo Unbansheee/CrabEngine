@@ -40,11 +40,13 @@ endif()
 
 if (MSVC)
     target_compile_options(CrabEngine PRIVATE /W4)
-    target_compile_options(CrabEngine PRIVATE /Z7)
+    #target_compile_options(CrabEngine PRIVATE /Z7)
 else()
     target_compile_options(CrabEngine PRIVATE -Wall -Wextra -pedantic)
 endif()
 
+
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 add_subdirectory(vendor/webgpu)
 add_subdirectory(vendor/glfw)
 add_subdirectory(vendor/glfw3webgpu)
@@ -62,7 +64,8 @@ set_target_properties(glfw3webgpu PROPERTIES FOLDER "CrabEngine/Dependencies/GLF
 set_target_properties(update_mappings PROPERTIES FOLDER "CrabEngine/Dependencies/GLFW3")
 set_target_properties(imgui PROPERTIES FOLDER "CrabEngine/Dependencies")
 set_target_properties(nfd PROPERTIES FOLDER "CrabEngine/Dependencies")
-set_target_properties(foonathan_string_id PROPERTIES FOLDER "CrabEngine/Dependencies")
+set_target_properties(foonathan_string_id PROPERTIES FOLDER "CrabEngine/Dependencies/string_id")
+set_target_properties(foonathan_string_id_example PROPERTIES FOLDER "CrabEngine/Dependencies/string_id")
 set_target_properties(CrabEngine PROPERTIES FOLDER "CrabEngine")
 
 
