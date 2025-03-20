@@ -5,16 +5,13 @@ module;
 
 #pragma once
 
-//#include <webgpu/webgpu.h>
-//#include <webgpu/webgpu.hpp>
-//#include <glm/glm.hpp>
-
 export module application;
 import node;
 import scene_tree;
 import glm;
 import wgpu;
 import string_id;
+import jolt;
 
 struct ImGuiContext;
 using glm::mat4x4;
@@ -67,7 +64,9 @@ public:
     };
 
     sid::default_database& GetStringDB() {return defaultStringDatabase;}
-    
+
+    JPH::TempAllocator* GetPhysicsAllocator() const {return tempAllocator;}
+    JPH::JobSystem* GetJobSystem() const {return jobSystem;}
 protected:
     SceneTree sceneTree;
     DeltaTicker deltaTime;
@@ -78,6 +77,10 @@ protected:
 
     std::unique_ptr<wgpu::ErrorCallback> errorCallbackHandle;
     sid::default_database defaultStringDatabase;
+
+    int maxConcurrentJobs = std::thread::hardware_concurrency();		// How many jobs to run in parallel
+    JPH::TempAllocator* tempAllocator;
+    JPH::JobSystem* jobSystem;
     
     Application(const Application &) = delete;
     Application & operator = (const Application &) = delete;

@@ -336,7 +336,7 @@ std::shared_ptr<MeshResource> GLTFSceneParser::ParseMesh(WGPUDevice device, tiny
 
 	ResourceManager::populateTextureFrameAttributes(vertices, indices);
 
-	auto m = ResourceManager::Load<ArrayMeshResource>(mesh.name);
+	auto m = MakeShared<ArrayMeshResource>();
 	m->indices = std::move(indices);
 	m->vertices = std::move(vertices);
 	m->bIsRuntime = true;
@@ -379,7 +379,7 @@ std::shared_ptr<TextureResource> GLTFSceneParser::ParseTexture(WGPUDevice& conte
 {
 	tinygltf::Image& imageRef = model.images.at(texture.source);
 
-	std::shared_ptr<RuntimeTextureResource> res = ResourceManager::Load<RuntimeTextureResource>(texture.name + imageRef.name);
+	std::shared_ptr<RuntimeTextureResource> res = MakeShared<RuntimeTextureResource>();
 	res->LoadFromPixelData(imageRef.width, imageRef.height, imageRef.bits, imageRef.image.data());
 
 	return res;

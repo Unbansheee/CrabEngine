@@ -95,3 +95,4 @@ vendor/glfw/src/glfw3ConfigVersion.cmake
 *.ifc.d.json
 *.d.json
 *.command
+*cmake-build*/

@@ -18,7 +18,7 @@ import texture_resource;
 import node_3d;
 import wgpu;
 
-class GLTFSceneParser
+export class GLTFSceneParser
 {
 public:
     std::unique_ptr<Node3D> ParseGLTF(WGPUDevice device, const std::string& path);

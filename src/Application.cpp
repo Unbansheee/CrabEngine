@@ -1,20 +1,19 @@
 module;
 #include "nfd.hpp"
 #include "nativefiledialog-extended/src/include/nfd_glfw3.h"
+#include "Jolt/Jolt.h"
+#include "Jolt/Core/IssueReporting.h"
 
 module application;
 import mesh_vertex;
 import wgpu;
+import jolt;
 import "GLFW/glfw3.h";
-//#include <webgpu/webgpu.hpp>
-//#include <GLFW/glfw3.h>
-//#include <filesystem>
+import "cstdarg";
+
 #ifdef __EMSCRIPTEN__
 #  include <emscripten.h>
 #endif // __EMSCRIPTEN__
-
-
-//#include <iostream>
 
 
 /*
@@ -1005,6 +1004,43 @@ RequiredLimits Application::GetRequiredLimits(wgpu::Adapter adapter) {
 }
 */
 
+
+
+
+
+
+
+
+
+
+
+
+// Callback for traces, connect this to your own trace function if you have one
+static void TraceImpl(const char *inFMT, ...)
+{
+	// Format the message
+	va_list list;
+	va_start(list, inFMT);
+	char buffer[1024];
+	vsnprintf(buffer, sizeof(buffer), inFMT, list);
+	va_end(list);
+
+	// Print to the TTY
+	std::cout << buffer << std::endl;
+}
+
+#ifdef JPH_ENABLE_ASSERTS
+
+// Callback for asserts, connect this to your own assert handler if you have one
+static bool AssertFailedImpl(const char *inExpression, const char *inMessage, const char *inFile, JPH::uint inLine)
+{
+	// Print to the TTY
+	std::cout << inFile << ":" << inLine << ": (" << inExpression << ") " << (inMessage != nullptr? inMessage : "") << std::endl;
+	// Breakpoint
+	return true;
+};
+#endif // JPH_ENABLE_ASSERTS
+
 Application::Application()
 {
 	WGPUInstanceDescriptor instanceDesc{};
@@ -1046,11 +1082,53 @@ Application::Application()
 		std::cout << std::endl;
 	});
 	NFD::Init();
+
+	JPH::RegisterDefaultAllocator();
+	JPH::Trace = TraceImpl;
+	JPH_IF_ENABLE_ASSERTS(JPH::AssertFailed = AssertFailedImpl;)
+	JPH::Factory::sInstance = new JPH::Factory();
+	JPH::RegisterJoltTypes();
+	tempAllocator = new JPH::TempAllocatorImpl(10 * 1024 * 1024);
+	jobSystem = new JPH::JobSystemThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, maxConcurrentJobs - 1);
+
+
+
+	/*
+	// Now we're ready to simulate the body, keep simulating until it goes to sleep
+	JPH::uint step = 0;
+	const float cDeltaTime = 1.0f / 60.0f;
+	while (body_interface.IsActive(sphere_id)) {
+		// Next step
+		++step;
+
+		// Output current position and velocity of the sphere
+		JPH::RVec3 position = body_interface.GetCenterOfMassPosition(sphere_id);
+		JPH::Vec3 velocity = body_interface.GetLinearVelocity(sphere_id);
+		std::cout << "Step " << step << ": Position = (" << position.GetX() << ", " << position.GetY() << ", " << position.GetZ() << "), Velocity = (" << velocity.GetX() << ", " << velocity.GetY() << ", " << velocity.GetZ() << ")" << std::endl;
+	}
+	// Remove the sphere from the physics system. Note that the sphere itself keeps all of its state and can be re-added at any time.
+	body_interface.RemoveBody(sphere_id);
+
+	// Destroy the sphere. After this the sphere ID is no longer valid.
+	body_interface.DestroyBody(sphere_id);
+
+	// Remove and destroy the floor
+	body_interface.RemoveBody(floor->GetID());
+	body_interface.DestroyBody(floor->GetID());
+*/
+
+
 	sceneTree.SetRoot(Node::NewNode());
 }
 
 Application::~Application()
 {
+	// Unregisters all types with the factory and cleans up the default material
+	JPH::UnregisterJoltTypes();
+	// Destroy the factory
+	delete JPH::Factory::sInstance;
+	JPH::Factory::sInstance = nullptr;
+
 	NFD::Quit();
 	glfwTerminate();
 }

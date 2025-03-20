@@ -2,13 +2,8 @@
 // Created by Vinnie on 21/02/2025.
 //
 
-#include <bit>
-
 #include "stb_image.h"
-#include <fstream>
 #include <tiny_obj_loader.h>
-//#include <webgpu/webgpu.hpp>
-//#include "glm/glm.hpp"
 
 module resource_manager;
 import mesh_resource;

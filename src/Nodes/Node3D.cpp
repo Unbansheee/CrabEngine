@@ -74,7 +74,7 @@ Vector3 Node3D::GetGlobalScale() const
 {
     if (Parent)
     {
-        return GetTransform().LocalToWorldScale(GetScale());
+        return GetParentTransform().LocalToWorldScale(GetScale());
     }
     else
     {

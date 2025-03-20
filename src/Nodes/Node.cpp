@@ -25,7 +25,7 @@ Node* Node::AddChild(std::unique_ptr<Node> node)
 	n->Parent = this;
 
 	// if node is not already in the tree but we are, register it to the tree
-	if (tree)
+	if (tree && isInTree)
 	{
 		if (!n->tree)
 		{
@@ -48,14 +48,17 @@ Node::~Node()
 }
 
 
+std::unique_ptr<Node> Node::Duplicate() {
+	auto newnode = static_cast<Node*>(GetStaticClassFromThis().Initializer());
+	for (auto prop : GetPropertiesFromThis()) {
+		if (prop.name == "id") continue;
+		prop.setVariant(newnode, prop.getVariant(this));
+	}
+	std::unique_ptr<Node> n = InitializeNode(newnode, GetName());
+	ForEachChild([&n](Node* child) {
+		n->AddChild(child->Duplicate());
+	});
 
-std::unique_ptr<Node> Node::InitializeNode(Node* raw, const std::string& name)
-{
-	raw->SetName(name);
-	raw->Init();
-
-	std::unique_ptr<Node> n;
-	n.reset(raw);
 	return n;
 }
 
@@ -162,7 +165,7 @@ std::unique_ptr<Node> Node::RemoveFromParent()
 		std::unique_ptr<Node> n = std::move(*it);
 		std::erase_if(Parent->Children, [](std::unique_ptr<Node>& n){ return n == nullptr; });
 		
-		if (n->tree) n->tree->UnregisterNode(n.get());
+		if (n->tree && isInTree) n->tree->UnregisterNode(n.get());
 		
 		return n;
 	}
@@ -216,11 +219,13 @@ void Node::Deserialize(nlohmann::json& archive)
 	{
 		auto childType = childJson.at("class").get<std::string>();
 		auto classType = ClassDB::Get().GetClassByName(childType);
-		Object* n = classType->Initializer();
-		Node* node = dynamic_cast<Node*>(n);
-		auto instance = Node::InitializeNode(node, classType->Name.string());
-		instance->Deserialize(childJson);
-		AddChild(std::move(instance));
+		if (classType->Initializer) {
+			Object* n = classType->Initializer();
+			Node* node = dynamic_cast<Node*>(n);
+			auto instance = Node::InitializeNode(node, classType->Name.string());
+			instance->Deserialize(childJson);
+			AddChild(std::move(instance));
+		}
 	}
 }
 

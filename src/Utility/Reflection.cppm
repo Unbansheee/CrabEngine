@@ -32,8 +32,9 @@ public:
     };
 
     template <typename T, typename Class>
-    Property(const std::string& name, T Class::*member_ptr, Flags flags) 
+    Property(const std::string& name, const std::string& display_name, T Class::*member_ptr, Flags flags)
         : name(name),
+          displayName(display_name),
           type(typeid(T)),
           flags(flags),
           getter([member_ptr](IPropertyInterface* obj) -> ValueVariant {
@@ -59,6 +60,16 @@ public:
         return std::get<T>(getter(obj));
     }
 
+    ValueVariant getVariant(IPropertyInterface* obj) const {
+        return getter(obj);
+    }
+
+    void setVariant(IPropertyInterface* obj, ValueVariant value) const {
+        setter(obj, value);
+        TriggerPropertySetOn(obj);
+    }
+
+
     template <typename T>
     void set(IPropertyInterface* obj, T value) const
     {
@@ -67,7 +78,6 @@ public:
         // this must be const to make PropertyView's property field readonly
         // TODO: use a getter instead for propertyview
         TriggerPropertySetOn(obj);
-        
     }
 
     template <typename Visitor>
@@ -76,6 +86,7 @@ public:
     template <typename Visitor>
     void visit(Visitor&& vis, nlohmann::json& archive, IPropertyInterface* obj) const;
 
+    std::string displayName;
     std::string name;
     std::type_index type;
     Flags flags;
@@ -85,10 +96,6 @@ private:
     
     std::function<ValueVariant(IPropertyInterface*)> getter;
     std::function<void(IPropertyInterface*, const ValueVariant&)> setter;
-
-    ValueVariant getVariant(IPropertyInterface* obj) const {
-        return getter(obj); 
-    }
 
 };
 
@@ -117,6 +124,7 @@ export struct PropertyView {
     void set(T& val) { property.set(object, val); }
 
     const std::string& name() const { return property.name; }
+    const std::string& displayName() const {return property.displayName;}
     Property::Flags flags() const { return property.flags; }
 };
 

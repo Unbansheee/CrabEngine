@@ -13,16 +13,18 @@ static const std::vector<Property> props = []{ \
 std::vector<Property> base = Super::GetClassProperties(); \
 std::vector<Property> custom;
 
-#define ADD_PROPERTY_FLAGS(Name, Member, Flags) \
-custom.push_back(Property( \
-Name, \
+#define ADD_PROPERTY_FLAGS(DisplayName, Member, Flags) \
+custom.emplace_back(Property( \
+#Member, \
+DisplayName, \
 &ThisClass::Member, \
 Flags \
 ));
 
-#define ADD_PROPERTY(Name, Member) \
-custom.push_back(Property( \
-Name, \
+#define ADD_PROPERTY(DisplayName, Member) \
+custom.emplace_back(Property( \
+#Member, \
+DisplayName, \
 &ThisClass::Member, \
 Property::Flags::None \
 ));

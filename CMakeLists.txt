@@ -32,6 +32,7 @@ set_target_properties(CrabEngine PROPERTIES
     CXX_EXTENSIONS OFF
     COMPILE_WARNING_AS_ERROR OFF
 )
+set(INTERPROCEDURAL_OPTIMIZATION ON)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(CrabEngine PRIVATE -fmodules-ts -fmodule-header)
@@ -54,7 +55,8 @@ add_subdirectory(vendor/imgui)
 add_subdirectory(vendor/rocket)
 add_subdirectory(vendor/nativefiledialog-extended)
 add_subdirectory(vendor/string_id)
-target_link_libraries(CrabEngine PRIVATE glfw glfw3webgpu nfd)
+add_subdirectory(vendor/jolt)
+target_link_libraries(CrabEngine PRIVATE glfw glfw3webgpu nfd Jolt)
 target_link_libraries(CrabEngine PUBLIC webgpu imgui foonathan_string_id)
 target_copy_webgpu_binaries(CrabEngine)
 set_target_properties(CrabEngine PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")

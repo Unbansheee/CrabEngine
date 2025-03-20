@@ -29,9 +29,9 @@ public:
 	CLASS_FLAG(EditorVisible)
 	BEGIN_PROPERTIES
 		ADD_PROPERTY("Name", Name)
-		ADD_PROPERTY_FLAGS("Hidden", isHidden, Property::Flags::Transient)
+		ADD_PROPERTY("Hidden", isHidden)
 	END_PROPERTIES
-	
+
 protected:
 	friend class Application;
 	friend class NodeWindow;
@@ -60,19 +60,24 @@ protected:
 
 public:
 	template<typename T = Node>
+	static std::unique_ptr<T> InitializeNode(T* raw, const std::string& name) {
+		raw->SetName(name);
+		raw->Init();
+
+		std::unique_ptr<T> n;
+		n.reset(raw);
+		return n;
+	}
+
+	template<typename T = Node>
 	static std::unique_ptr<T> NewNode(const std::string& name = "Node")
 	{
 		T* node = new T();
-		node->SetName(name);
-		node->Init();
-
-		std::unique_ptr<T> n;
-		n.reset(node);
-		return n;
+		return InitializeNode(node, name);
 	};
 	//static std::unique_ptr<Node> NewNode(Node* raw, const std::string& name);
 	//static std::unique_ptr<Node> MakeNode()
-	static std::unique_ptr<Node> InitializeNode(Node* raw, const std::string& name);
+	std::unique_ptr<Node> Duplicate();
 
 	// Called when the node enters the SceneTree
 	virtual void EnterTree() {};
@@ -221,6 +226,20 @@ public:
 		{
 			if (Children.at(i) == nullptr) continue;
 			functor(Children.at(i).get());
+		}
+	}
+
+	template<typename NodeType, typename Functor>
+	void ForEachChildOfType(Functor functor) const
+	{
+		for (int i = 0; i < Children.size(); i++)
+		{
+			if (Children.at(i) == nullptr) continue;
+			NodeType* n = dynamic_cast<NodeType*>(Children[i].get());
+			if (n)
+			{
+				functor(n);
+			}
 		}
 	}
 
