@@ -198,8 +198,8 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
     val.Scale = {v[2][0], v[2][1], v[2][2]};
 
     prop.set<Transform>(val);
-    if (auto n = dynamic_cast<Node*>(prop.object))
-    {
+    if (prop.objectClass && prop.objectClass->IsSubclassOf(Node::GetStaticClass())) {
+        auto n = static_cast<Node*>(prop.object);
         n->UpdateTransform();
     }
 }

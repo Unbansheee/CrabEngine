@@ -20,6 +20,7 @@ export import Engine.Reflection.Class;
 import Engine.Reflection.Class;
 import Engine.Object.ObservableDtor;
 import Engine.SceneTree;
+import Engine.Object.Ref;
 
 export class RenderVisitor;
 
@@ -108,6 +109,7 @@ public:
 	
 	// Walk the tree to find the outermost Node (Generally the SceneRoot)
 	Node* GetRootNode();
+
 	template<typename T>
 	T* GetRootNode()
 	{
@@ -115,13 +117,13 @@ public:
 		return dynamic_cast<T*>(root);
 	};
 
-	Node* GetParent() { return Parent; }
+	Node* GetParent() { return Parent.Get(); }
 
 	template<typename T>
 	T* GetAncestorOfType(){
 		if (Parent)
 		{
-			if (T* ancestor = dynamic_cast<T*>(Parent))
+			if (T* ancestor = dynamic_cast<T*>(Parent.Get()))
 			{
 				return ancestor;
 			}
@@ -229,6 +231,24 @@ public:
 		}
 	}
 
+	template<typename ChildClass, typename Functor>
+	void ForEachChildSafe(Functor functor)
+		{
+			std::vector<ObjectRef<ChildClass>> safe_children;
+			for (int i = 0; i < Children.size(); i++) {
+				//if (!i <= Children.size()) break;
+				if (auto ptr = Children.at(i).get()) {
+					safe_children.emplace_back(ObjectRef<ChildClass>(ptr));
+				}
+			}
+
+			for (auto& safe : safe_children)
+			{
+				if (!safe.IsValid()) continue;
+				functor(safe);
+			}
+	}
+
 	template<typename NodeType, typename Functor>
 	void ForEachChildOfType(Functor functor) const
 	{
@@ -285,7 +305,7 @@ private:
 
 protected:
 	// Parent node. If nullptr, assume this is SceneRoot
-	Node* Parent = nullptr;
+	ObjectRef<Node> Parent;
 
 	
 	virtual void DrawGUIInternal();
@@ -296,7 +316,7 @@ protected:
 	bool isInTree = false;
 	bool isReady = false;
 private:
-	SceneTree* tree;
+	SceneTree* tree = nullptr;
 	// RenderContext that 'owns' this. Only valid if this is the Root node. Should work on a better way to do this
 	//Context* OwningContext = nullptr;
 	//Application* ApplicationContext = nullptr;

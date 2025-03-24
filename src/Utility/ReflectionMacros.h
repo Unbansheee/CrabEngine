@@ -5,6 +5,10 @@ import Engine.Reflection;
 import Engine.Reflection.ClassDB;
 import Engine.Reflection.Class;
 import Engine.Reflection.AutoRegistration;
+import Engine.Variant;
+
+#define GET_PROPERTY_NAME(Property)\
+    #Property
 
 #define BEGIN_PROPERTIES \
 virtual const std::vector<Property>& GetPropertiesFromThis() override { return GetClassProperties(); }\
@@ -13,15 +17,20 @@ static const std::vector<Property> props = []{ \
 std::vector<Property> base = Super::GetClassProperties(); \
 std::vector<Property> custom;
 
-#define CRAB_STRUCT(StructType)\
-    using ThisClass = StructType;
 
-#define BEGIN_STRUCT_PROPERTIES \
-    static const auto& GetClassProperties() { \
-    std::vector<Property> custom;
+#define BEGIN_STRUCT_PROPERTIES(Struct) \
+using ThisClass = Struct; \
+static const std::vector<Property>& GetStructProperties() { \
+static const auto props = []{ \
+std::vector<Property> custom;
+
 
 #define END_STRUCT_PROPERTIES \
-    return custom; }
+return custom; \
+}(); \
+return props; \
+}
+
 
 
 #define ADD_PROPERTY_FLAGS(DisplayName, Member, Flags) \
@@ -29,15 +38,63 @@ custom.emplace_back(Property( \
 #Member, \
 DisplayName, \
 &ThisClass::Member, \
-Flags \
+Flags, \
+&ThisClass::StaticOnPropertySet \
 ));
+
+#define ADD_NESTED_STRUCT(StructMember, StructType) \
+{ \
+const auto& nested_props = StructType::GetStructProperties(); \
+for (const auto& nested_prop : nested_props) { \
+const std::string full_name = std::string(#StructMember) + "." + nested_prop.name; \
+\
+auto getter = [=](void* obj) -> ValueVariant { \
+ThisClass* parent = static_cast<ThisClass*>(obj); \
+void* struct_ptr = static_cast<void*>(&(parent->StructMember)); \
+return nested_prop.getVariant(struct_ptr); \
+}; \
+\
+auto setter = [=](void* obj, const ValueVariant& value) { \
+ThisClass* parent = static_cast<ThisClass*>(obj); \
+void* struct_ptr = static_cast<void*>(&(parent->StructMember)); \
+nested_prop.setVariant(struct_ptr, value); \
+}; \
+\
+custom.emplace_back(Property( \
+full_name, \
+nested_prop.displayName, \
+std::function<ValueVariant(void*)>(getter), \
+std::function<void(void*, const ValueVariant&)>(setter), \
+&ThisClass::StaticOnPropertySet, \
+nested_prop.type, \
+nested_prop.flags \
+)); \
+} \
+}
+
+#define ADD_STRUCT_PROPERTY(DisplayName, Member) \
+custom.emplace_back(\
+#Member, \
+DisplayName, \
+&ThisClass::Member, \
+PropertyFlags::None \
+);
+
+#define ADD_STRUCT_PROPERTY_FLAGS(DisplayName, Member, Flags) \
+custom.emplace_back(\
+#Member, \
+DisplayName, \
+&ThisClass::Member, \
+Flags \
+);
 
 #define ADD_PROPERTY(DisplayName, Member) \
 custom.emplace_back(Property( \
 #Member, \
 DisplayName, \
 &ThisClass::Member, \
-Property::Flags::None \
+PropertyFlags::None, \
+&ThisClass::StaticOnPropertySet\
 ));
 
 #define END_PROPERTIES \

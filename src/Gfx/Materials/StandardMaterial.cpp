@@ -80,3 +80,11 @@ void StandardMaterial::CreateVertexBufferLayouts(std::vector<Vertex::VertexBuffe
 void StandardMaterial::UpdateUniforms()
 {
 }
+
+void StandardMaterial::OnPropertySet(Property &prop) {
+    MaterialResource::OnPropertySet(prop);
+
+    if (prop.flags & PropertyFlags::MaterialProperty) {
+        MarkBindGroupsDirty();
+    }
+}

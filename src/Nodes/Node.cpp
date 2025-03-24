@@ -132,7 +132,9 @@ Context& Node::GetContext()
 
 Node* Node::GetRootNode()
 {
-	if (Parent)
+	if (tree) return tree->GetRoot();
+
+	else if (Parent)
 		return Parent->GetRootNode();
 	else
 		return this;
@@ -233,7 +235,7 @@ void Node::DrawGUIInternal()
 {
 	DrawGUI();
 
-	ForEachChild([](Node* Child)
+	ForEachChildSafe<Node>([](ObjectRef<Node>& Child)
 	{
 		Child->DrawGUIInternal();
 	});

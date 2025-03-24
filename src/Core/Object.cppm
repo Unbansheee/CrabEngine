@@ -10,7 +10,6 @@ export import uid;
 export import json;
 export import std;
 import Engine.Object.ObservableDtor;
-export struct ClassType;
 
 struct BaseObjectRegistrationObject
 {
@@ -18,10 +17,11 @@ struct BaseObjectRegistrationObject
 };
 
 
-export class Object : public IPropertyInterface, public observable_dtor
+export class Object : public observable_dtor
 {
 private:
     inline static BaseObjectRegistrationObject ObjectRegistrationObject;
+    friend class Property;
 public:
     template<typename T>
     static Object* Create()
@@ -62,9 +62,7 @@ public:
     virtual void Serialize(nlohmann::json& archive);
     virtual void Deserialize(nlohmann::json& archive);
 
-    virtual void OnPropertySet(Property& prop) override;
-
-
+    virtual void OnPropertySet(Property& prop);
 
     template<typename T>
     static T* Cast(Object* object)
@@ -88,6 +86,11 @@ public:
 
 protected:
     UID id ;
+
+    static void StaticOnPropertySet(void* obj, Property& prop) {
+        auto o = static_cast<Object*>(obj);
+        o->OnPropertySet(prop);
+    };
 };
 
 

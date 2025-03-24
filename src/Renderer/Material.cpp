@@ -30,7 +30,7 @@ void MaterialResource::LoadData()
 }
 
 void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::filesystem::path& shaderPath,
-    MaterialSettings settings)
+                                          MaterialSettings settings)
 {
     m_device = device;
     m_settings = settings;
@@ -43,7 +43,7 @@ void MaterialResource::OnPropertySet(Property& prop)
 {
     Resource::OnPropertySet(prop);
 
-    if (((uint32_t)prop.flags & (uint32_t)Property::Flags::MaterialProperty))
+    if ((prop.flags & PropertyFlags::MaterialProperty))
     {
         MarkBindGroupsDirty();
     }

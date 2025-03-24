@@ -19,48 +19,73 @@ import Engine.Object.Ref;
 //import class_type;
 
 
-
-export class IPropertyInterface;
+export class Property;
 export class Node;
-export class Property {
+
+export namespace PropertyFlags
+{
+    constexpr uint32_t None = 0 << 0;
+    constexpr uint32_t Transient = 1 << 1;
+    constexpr uint32_t HideFromInspector = 1 << 2;
+    constexpr uint32_t MaterialProperty = 1 << 3;
+    constexpr uint32_t ColorHint = 1 << 4;
+};
+
+class Property {
 public:
-    enum class Flags : uint32_t
-    {
-        None = 0 << 0,
-        Transient = 1 << 1,
-        HideFromInspector = 1 << 2,
-        MaterialProperty = 1 << 3
-    };
+    // Add optional callback type
+    using PostSetCallback = std::function<void(void* obj, Property& prop)>;
 
     template <typename T, typename Class>
-    Property(const std::string& name, const std::string& display_name, T Class::*member_ptr, Flags flags)
-        : name(name),
-          displayName(display_name),
-          type(typeid(T)),
-          flags(flags)
+    Property(const std::string& name,
+        const std::string& display_name,
+        T Class::*member_ptr,
+        uint32_t flags,
+        PostSetCallback post_set_cb = nullptr // New optional callback
+    ) : name(name),
+        displayName(display_name),
+        type(typeid(T)),
+        flags(flags),
+        post_set_callback(std::move(post_set_cb)) // Store callback
     {
-        if constexpr (std::is_base_of_v<_ObjectRefBase, T>) {
-            setter = [member_ptr](IPropertyInterface* obj, const ValueVariant& value) {
-                //T newref;
-                //newref.AssignUnsafe(std::get<ObjectRef<Object>>(value).Get());
-                static_cast<Class*>(obj)->*member_ptr = std::get<ObjectRef<Object>>(value).Cast<T>();
-            };
 
-            getter = ([member_ptr](IPropertyInterface* obj) -> ValueVariant {
-                ObjectRef<Object> ob = ObjectRef<Object>(static_cast<Class*>(obj)->*member_ptr);
-                return ob;
-            });
-        }
-        else {
-            setter = [member_ptr](IPropertyInterface* obj, const ValueVariant& value) {
-                static_cast<Class*>(obj)->*member_ptr = std::get<T>(value);
-            };
-            getter = ([member_ptr](IPropertyInterface* obj) -> ValueVariant {
+        // Setter with callback invocation
+        setter = [member_ptr](void* obj, const ValueVariant& value) {
+            Class* target = static_cast<Class*>(obj);
+            if constexpr (std::is_base_of_v<_ObjectRefBase, T>) {
+                target->*member_ptr = std::get<ObjectRef<Object>>(value).Cast<T>();
+            } else {
+                target->*member_ptr = std::get<T>(value);
+            }
+        };
+
+        getter = ([member_ptr](void* obj) -> ValueVariant {
+            if constexpr (std::is_base_of_v<_ObjectRefBase, T>) {
+                return ObjectRef<Object>(static_cast<Class*>(obj)->*member_ptr);
+            }
+            else
+            {
                 return static_cast<Class*>(obj)->*member_ptr;
-            });
-
-        }
+            }
+        });
     }
+
+
+    Property(
+    const std::string& name,
+    const std::string& display_name,
+    std::function<ValueVariant(void*)> getter,
+    std::function<void(void*, const ValueVariant&)> setter,
+    PostSetCallback postSetCallback,
+    std::type_index type,
+    uint32_t flags
+) : name(name),
+    displayName(display_name),
+    type(type),
+    flags(flags),
+    getter(std::move(getter)),
+    setter(std::move(setter)),
+    post_set_callback(std::move(postSetCallback)){}
 
     // Type checking interface
     template <typename T>
@@ -70,48 +95,50 @@ public:
 
     // Safe value access
     template <typename T>
-    T get(IPropertyInterface* obj) const {
+    T get(void* obj) const {
         if (!is<T>()) throw std::bad_variant_access{};
         return std::get<T>(getter(obj));
     }
 
-    ValueVariant getVariant(IPropertyInterface* obj) const {
+    ValueVariant getVariant(void* obj) const {
         return getter(obj);
     }
 
-    void setVariant(IPropertyInterface* obj, ValueVariant value) const {
+    void setVariant(void* obj, ValueVariant value) const {
         setter(obj, value);
-        TriggerPropertySetOn(obj);
+        if (post_set_callback) {
+            post_set_callback(obj, *const_cast<Property*>(this));
+        }
     }
 
 
     template <typename T>
-    void set(IPropertyInterface* obj, T value) const
+    void set(void* obj, T value) const
     {
         if (!is<T>()) throw std::bad_variant_access{};
         setter(obj, value);
         // this must be const to make PropertyView's property field readonly
         // TODO: use a getter instead for propertyview
-        TriggerPropertySetOn(obj);
+        if (post_set_callback) {
+            post_set_callback(obj, *const_cast<Property*>(this));
+        }
     }
 
-    template <typename Visitor>
-    void visit(Visitor&& vis, IPropertyInterface* obj) const;
+    template <typename Visitor, typename ObjectClass>
+    void visit(Visitor&& vis, ObjectClass* obj) const;
 
-    template <typename Visitor>
-    void visit(Visitor&& vis, nlohmann::json& archive, IPropertyInterface* obj) const;
+    template <typename Visitor, typename ObjectClass>
+    void visit(Visitor&& vis, nlohmann::json& archive, ObjectClass* obj) const;
 
     std::string displayName;
     std::string name;
     std::type_index type;
-    Flags flags;
+    uint32_t flags;
 
 private:
-    void TriggerPropertySetOn(IPropertyInterface* obj) const;
-    
-    std::function<ValueVariant(IPropertyInterface*)> getter;
-    std::function<void(IPropertyInterface*, const ValueVariant&)> setter;
-
+    std::function<ValueVariant(void*)> getter;
+    std::function<void(void*, const ValueVariant&)> setter;
+    PostSetCallback post_set_callback;
 };
 
 
@@ -126,11 +153,13 @@ concept IsResource =
     { T::StaticClass() } -> std::convertible_to<const ClassType&>;
     };
 */
+export struct ClassType;
 
 export struct PropertyView {
     const Property& property;  // Reference to property metadata
     ValueVariant& value;  // Reference to the actual value
-    IPropertyInterface* object;
+    void* object;
+    const ClassType* objectClass = nullptr;
 
     template <typename T>
     T& get() { return std::get<T>(value); }
@@ -140,33 +169,38 @@ export struct PropertyView {
 
     const std::string& name() const { return property.name; }
     const std::string& displayName() const {return property.displayName;}
-    Property::Flags flags() const { return property.flags; }
+    uint32_t flags() const { return property.flags; }
 };
 
 
 
-template <typename Visitor>
-void Property::visit(Visitor&& vis, IPropertyInterface* obj) const
+template <typename Visitor, typename ObjectClass>
+void Property::visit(Visitor&& vis, ObjectClass* obj) const
 {
     auto value = getVariant(obj);
     PropertyView v = {.property= *this, .value= value, .object= obj};
+
+    if constexpr (std::is_base_of_v<Object, ObjectClass>) {
+        auto o = static_cast<Object*>(obj);
+        v.objectClass = &o->GetStaticClassFromThis();
+    }
+
     std::variant<PropertyView> p = v;
     return std::visit(std::forward<Visitor>(vis), p, value);
 }
 
-template <typename Visitor>
-void Property::visit(Visitor&& vis, nlohmann::json& archive, IPropertyInterface* obj) const
+template <typename Visitor, typename ObjectClass>
+void Property::visit(Visitor&& vis, nlohmann::json& archive, ObjectClass* obj) const
 {
     auto value = getVariant(obj);
     PropertyView v = {.property= *this, .value= value, .object= obj};
+
+    if constexpr (std::is_base_of_v<Object, ObjectClass>) {
+        auto o = static_cast<Object*>(obj);
+        v.objectClass = &o->GetStaticClassFromThis();
+    }
+
     std::variant<PropertyView> p = v;
     std::variant<nlohmann::json*> j = &archive;
     return std::visit(std::forward<Visitor>(vis), p, j, value);
 }
-
-class IPropertyInterface
-{
-    friend class Property;
-protected:
-    virtual void OnPropertySet(Property& prop) = 0;
-};

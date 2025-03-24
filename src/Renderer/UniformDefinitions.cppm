@@ -2,9 +2,8 @@
 #pragma once
 #include <array>
 //#include <webgpu/webgpu.hpp>
-
-#include "MaterialHelpers.h"
 #include "ReflectionMacros.h"
+#include "MaterialHelpers.h"
 
 export module Engine.GFX.UniformDefinitions;
 export import Engine.Types;
@@ -54,13 +53,12 @@ namespace Uniforms
     
     export struct UStandardMaterialParameters
     {
-        CRAB_STRUCT(UStandardMaterialParameters)
-        BEGIN_STRUCT_PROPERTIES
-            ADD_PROPERTY("Base Color Factor", BaseColorFactor);
-            ADD_PROPERTY("Hardness", Hardness);
-            ADD_PROPERTY("Diffuse Intensity", Kd)
-            ADD_PROPERTY("Specular Intensity", Ks)
-            ADD_PROPERTY("Normal Strength", NormalStrength)
+        BEGIN_STRUCT_PROPERTIES(UStandardMaterialParameters)
+            ADD_STRUCT_PROPERTY_FLAGS("Base Color Factor", BaseColorFactor, PropertyFlags::MaterialProperty | PropertyFlags::ColorHint)
+            ADD_STRUCT_PROPERTY_FLAGS("Hardness", Hardness, PropertyFlags::MaterialProperty)
+            ADD_STRUCT_PROPERTY_FLAGS("Diffuse Intensity", Kd, PropertyFlags::MaterialProperty)
+            ADD_STRUCT_PROPERTY_FLAGS("Specular Intensity", Ks, PropertyFlags::MaterialProperty)
+            ADD_STRUCT_PROPERTY_FLAGS("Normal Strength", NormalStrength, PropertyFlags::MaterialProperty)
         END_STRUCT_PROPERTIES
 
         // Tint

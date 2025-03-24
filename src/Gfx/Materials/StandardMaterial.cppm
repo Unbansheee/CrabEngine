@@ -1,7 +1,6 @@
 ﻿module;
 
 #pragma once
-#include <filesystem>
 
 #include "ReflectionMacros.h"
 #include "Renderer/MaterialHelpers.h"
@@ -14,15 +13,17 @@ import Engine.GFX.UniformBuffer;
 import Engine.GFX.UniformDefinitions;
 export import Engine.Resource.Material;
 import Engine.GFX.DynamicUniformBuffer;
+import Engine.Variant;
 
 export class StandardMaterial : public MaterialResource
 {
 public:
+
     CRAB_CLASS(StandardMaterial, MaterialResource)
     BEGIN_PROPERTIES
-        ADD_PROPERTY_FLAGS("Base Colour", BaseColorTextureView, Property::Flags::MaterialProperty)
-        ADD_PROPERTY_FLAGS("Normal", NormalTextureView, Property::Flags::MaterialProperty)
-        ADD_PROPERTY_STRUCT("Parameters", MaterialParameters, Uniforms::UStandardMaterialParameters)
+        ADD_PROPERTY_FLAGS("Base Colour", BaseColorTextureView, PropertyFlags::MaterialProperty)
+        ADD_PROPERTY_FLAGS("Normal", NormalTextureView, PropertyFlags::MaterialProperty)
+        ADD_NESTED_STRUCT(MaterialParameters, UniformBuffer<Uniforms::UStandardMaterialParameters>)
     END_PROPERTIES
     
     using StandardMaterialUniformsLayout = MaterialHelpers::BindGroupLayoutBuilder<
@@ -44,6 +45,7 @@ public:
     std::vector<MaterialBindGroup> CreateMaterialBindGroups() override;
     void CreateVertexBufferLayouts(std::vector<Vertex::VertexBufferLayout>& Layouts) override;
     void UpdateUniforms() override;
+    void OnPropertySet(Property &prop) override;
 
 public:
     UniformBuffer<Uniforms::UStandardMaterialParameters> MaterialParameters;

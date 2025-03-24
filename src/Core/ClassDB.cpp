@@ -15,6 +15,7 @@ bool ClassType::IsSubclassOf(const ClassType& parent) const
     {
         // If we get all the way up to Object we can safely say we are not related
         if (current->Parent == Object::GetStaticClass().Name) return false;
+        if (current == &Object::GetStaticClass()) return false;
 
         // Move up the hierarchy to the parent
         if (auto c = db.GetParentClass(current->Parent))

@@ -27,9 +27,9 @@ public:
     
     BEGIN_PROPERTIES
         ADD_PROPERTY("Name", name)
-        ADD_PROPERTY_FLAGS("ResourceFilePath", resourceFilePath, Property::Flags::HideFromInspector)
-        ADD_PROPERTY_FLAGS("SourcePath", sourcePath, Property::Flags::HideFromInspector)
-        ADD_PROPERTY_FLAGS("IsSourceImported", bIsSourceImported, Property::Flags::HideFromInspector)
+        ADD_PROPERTY_FLAGS("ResourceFilePath", resourceFilePath, PropertyFlags::HideFromInspector)
+        ADD_PROPERTY_FLAGS("SourcePath", sourcePath, PropertyFlags::HideFromInspector)
+        ADD_PROPERTY_FLAGS("IsSourceImported", bIsSourceImported, PropertyFlags::HideFromInspector)
     END_PROPERTIES
 
     using Ptr = std::shared_ptr<Resource>;

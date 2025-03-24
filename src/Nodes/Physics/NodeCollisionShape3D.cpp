@@ -9,6 +9,7 @@ JPH::ShapeRefC NodeBoxShape3D::GetShape() const {
     JPH::BoxShapeSettings boxSettings(glm_to_jolt(Dimensions));
     boxSettings.SetEmbedded();
     auto s = boxSettings.Create();
+
     if (s.HasError()) {
         std::cout << s.GetError() << std::endl;
     }

@@ -32,6 +32,12 @@ public:
     Vector3 GetPosition() const;
     Quat GetOrientation() const;
 
+    void SetRestitution(float restitution);
+    float GetRestitution() const;
+
+    void SetFriction(float friction);
+    float GetFriction() const;
+
     bool IsValid() const { return body && bodyInterface; };
     void Invalidate();
     bool IsActive() const;
@@ -68,6 +74,22 @@ Vector3 PhysicsBody::GetPosition() const {
 Quat PhysicsBody::GetOrientation() const {
     auto q = bodyInterface->GetRotation(body->GetID());
     return Quat{q.GetW(), q.GetX(), q.GetY(), q.GetZ()};
+}
+
+void PhysicsBody::SetRestitution(float restitution) {
+    bodyInterface->SetRestitution(body->GetID(), restitution);
+}
+
+float PhysicsBody::GetRestitution() const {
+    return bodyInterface->GetRestitution(body->GetID());
+}
+
+void PhysicsBody::SetFriction(float friction) {
+    bodyInterface->SetFriction(body->GetID(), friction);
+}
+
+float PhysicsBody::GetFriction() const {
+    return bodyInterface->GetFriction(body->GetID());
 }
 
 void PhysicsBody::Invalidate() {

@@ -85,6 +85,7 @@ export namespace JPH {
     using JPH::StaticCompoundShapeSettings;
     using JPH::ScaledShapeSettings;
     using JPH::ScaledShape;
+    using JPH::PhysicsMaterial;
 
     void RegisterJoltTypes() {
         JPH::RegisterTypes();

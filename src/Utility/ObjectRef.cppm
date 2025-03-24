@@ -179,8 +179,7 @@ ObjectRef<T>::ObjectRef(ObjectRef<U> &&other) {
     connection = std::move(other.connection);
 
     // Clear 'other'
-    other.node = nullptr;
-    other.connection.disconnect();
+    other.Clear();
 }
 
 template <typename T>
@@ -318,7 +317,7 @@ ObjectRef<typename ObjectRefUnderlyingType<Target>::type> ObjectRef<T>::Cast() c
 template <typename T>
 bool ObjectRef<T>::IsValid() const
 {
-    return node != nullptr;
+    return node != nullptr && connection.is_connected();
     //return node != nullptr && connection.is_connected();
 }
 
