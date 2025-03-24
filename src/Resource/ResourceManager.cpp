@@ -5,15 +5,15 @@
 #include "stb_image.h"
 #include <tiny_obj_loader.h>
 
-module resource_manager;
-import mesh_resource;
-import node_3d;
-import mesh_vertex;
-import import_settings;
-import crab_types;
-import wgpu;
-import import_manager;
-import class_db;
+module Engine.Resource.ResourceManager;
+import Engine.Resource.Mesh;
+import Engine.Node.Node3D;
+import Engine.GFX.MeshVertex;
+import Engine.Resource.Importer.ImportSettings;
+import Engine.Types;
+import Engine.WGPU;
+import Engine.Resource.ImportManager;
+import Engine.Reflection.ClassDB;
 
 using namespace wgpu;
 

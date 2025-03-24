@@ -7,8 +7,8 @@
 //#include "Core/ClassDB.cppm"
 module;
 
-module node;
-import scene_tree;
+module Engine.Node;
+import Engine.SceneTree;
 
 void Node::DrawInspectorWidget()
 {

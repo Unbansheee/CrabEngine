@@ -1,5 +1,5 @@
-﻿module class_db;
-import class_type;
+﻿module Engine.Reflection.ClassDB;
+import Engine.Reflection.Class;
 
 bool ClassType::IsSubclassOf(const ClassType& parent) const
 {

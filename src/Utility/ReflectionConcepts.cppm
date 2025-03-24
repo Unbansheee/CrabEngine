@@ -1,7 +1,7 @@
 ﻿module;
 #include <vector>
 
-export module reflection_concepts;
+export module Engine.Reflection.Concepts;
 
 export class Property;
 export struct ClassType;

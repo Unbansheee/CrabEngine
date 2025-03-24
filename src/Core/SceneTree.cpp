@@ -1,6 +1,6 @@
-﻿module scene_tree;
-import node;
-import application;
+﻿module Engine.SceneTree;
+import Engine.Node;
+import Engine.Application;
 
 
 SceneTree::~SceneTree() {
@@ -53,6 +53,7 @@ void SceneTree::RegisterNode(Node* node)
     {
         nodeMap[node->GetID()] = node;
         node->tree = this;
+        node->isInTree = true;
         node->ForEachChild([this](Node* child)
         {
             RegisterNode(child);
@@ -68,6 +69,7 @@ void SceneTree::UnregisterNode(Node* node)
     {
         nodeMap.erase(node->GetID());
         node->tree = nullptr;
+        node->isInTree = false;
         node->ForEachChild([this](Node* child)
         {
             UnregisterNode(child);

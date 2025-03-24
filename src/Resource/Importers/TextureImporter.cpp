@@ -1,5 +1,5 @@
-﻿module texture_importer;
-import image_texture_resource;
+﻿module Engine.Resource.Importer.ImageTexture;
+import Engine.Resource.ImageTexture;
 
 std::string TextureImporter::GetResourceType() const
 {

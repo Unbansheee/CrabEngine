@@ -1,12 +1,11 @@
 ﻿module;
 
 #pragma once
-#include <cassert>
 
-
-export module dynamic_offset_uniform_buffer;
-import math_utils;
-import wgpu;
+export module Engine.GFX.DynamicOffsetUniformBuffer;
+import Engine.Math;
+import Engine.WGPU;
+import Engine.Assert;
 
 export template<typename T>
 class DynamicOffsetUniformBuffer
@@ -41,13 +40,14 @@ public:
 
     ~DynamicOffsetUniformBuffer()
     {
-        buffer.release();
+        if (buffer)
+            buffer.release();
         delete[] mappedData;
     }
 
     int Write(const T& value)
     {
-        assert(initialized);
+        Assert::Verify(initialized, "initialized == true", "Buffer not initialized before use");
         auto offset = currentCount * stride;
         memcpy(mappedData + offset, &value, sizeof(T));
         //mappedData[currentCount * stride] = value;
@@ -57,7 +57,7 @@ public:
 
     void Upload(wgpu::Queue queue)
     {
-        assert(initialized);
+        Assert::Verify(initialized, "initialized == true", "Buffer not initialized before use");
         auto offset = currentCount * stride;
         queue.writeBuffer(buffer, 0, mappedData, offset);
         currentCount = 0;

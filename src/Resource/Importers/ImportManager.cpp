@@ -1,11 +1,11 @@
 ﻿#include <filesystem>
 #include <fstream>
 
-module import_manager;
-import resource_manager;
-import resource;
-import resource_importer;
-import import_settings;
+module Engine.Resource.ImportManager;
+import Engine.Resource.ResourceManager;
+import Engine.Resource;
+import Engine.Resource.Importer;
+import Engine.Resource.Importer.ImportSettings;
 
 void ImportManager::RegisterImporter(std::unique_ptr<ResourceImporter> importer)
 {

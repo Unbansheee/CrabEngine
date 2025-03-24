@@ -6,10 +6,10 @@ module;
 
 //#include "Node3D.cppm"
 
-export module node_camera_3d;
-export import node_3d;
-import view;
-import crab_types;
+export module Engine.Node.Camera3D;
+export import Engine.Node.Node3D;
+import Engine.GFX.View;
+import Engine.Types;
 
 export class NodeCamera3D : public Node3D
 {

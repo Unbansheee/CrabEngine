@@ -2,7 +2,7 @@
 
 #pragma once
 
-export module scene_tree;
+export module Engine.SceneTree;
 import uid;
 import physics_world;
 import <memory>;
@@ -47,7 +47,7 @@ public:
     }
 
     Node* GetNodeByID(UID id);
-    
+    bool IsInEditor() const { return bIsInEditor; }
 private:
     void RegisterNode(Node* node);
     void UnregisterNode(Node* node);
@@ -55,8 +55,8 @@ private:
     std::unique_ptr<Node> root;
     std::unordered_map<UID, Node*> nodeMap;
     bool hasBegun = false;
-
     bool bUsePhysics = true;
+    bool bIsInEditor = false;
     std::unique_ptr<PhysicsWorld> physicsWorld;
 private:
     void UpdateNode(Node* n, float dt, bool recursive = true);

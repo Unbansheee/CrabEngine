@@ -2,8 +2,8 @@
 #pragma once
 #include <cstdint>
 
-export module math_utils;
-export import crab_types;
+export module Engine.Math;
+export import Engine.Types;
 
 namespace MathUtils
 {

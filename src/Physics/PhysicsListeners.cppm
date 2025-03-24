@@ -2,12 +2,12 @@
 // Created by Vinnie on 20/03/2025.
 //
 
-export module physics.listeners;
-import jolt;
+export module Engine.Physics.Listeners;
+import Engine.Physics.Jolt;
 import std;
-import physics.body;
-import crab_types;
-import jolt_conversions;
+import Engine.Physics.Body;
+import Engine.Types;
+import Engine.Physics.JoltConversions;
 
 
 // An example contact listener

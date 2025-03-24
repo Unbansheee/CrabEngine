@@ -1,1 +1,1 @@
-﻿module uniform_buffer;
+﻿module Engine.GFX.UniformBuffer;

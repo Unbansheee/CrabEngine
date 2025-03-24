@@ -5,10 +5,10 @@
 module;
 #include "ReflectionMacros.h"
 
-export module node_rigid_body_3d;
-import node_collision_object_3d;
-import jolt;
-import physics.layers;
+export module Engine.Node.RigidBody3D;
+import Engine.Node.CollisionObject3D;
+import Engine.Physics.Jolt;
+import Engine.Physics.Layers;
 
 export class NodeRigidBody3D : public NodeCollisionObject3D
 {

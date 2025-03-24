@@ -1,4 +1,4 @@
-﻿module texture_resource;
+﻿module Engine.Resource.Texture;
 /*
 void TextureResource::InitializeFromData(wgpu::Device device, int width, int height, int channels, unsigned char* pixelData)
 {

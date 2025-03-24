@@ -3,9 +3,9 @@
 #pragma once
 #include "ReflectionMacros.h"
 
-export module obj_mesh_resource;
-import mesh_resource;
-import resource;
+export module Engine.Resource.OBJMesh;
+import Engine.Resource.Mesh;
+import Engine.Resource;
 
 export class OBJMeshResource : public MeshResource
 {

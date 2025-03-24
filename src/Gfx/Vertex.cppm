@@ -9,10 +9,10 @@
 #include <cstdint>
 //#include <glm/vec4.hpp>
 
-export module vertex;
-import mesh_vertex;
-import glm;
-import wgpu;
+export module Engine.GFX.Vertex;
+import Engine.GFX.MeshVertex;
+import Engine.GLM;
+import Engine.WGPU;
 
 // Helper template to map C++ types to WebGPU formats
 export template <typename T>

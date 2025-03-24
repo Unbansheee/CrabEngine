@@ -1,6 +1,6 @@
-﻿module runtime_texture_resource;
-import resource_manager;
-import application;
+﻿module Engine.Resource.RuntimeTexture;
+import Engine.Resource.ResourceManager;
+import Engine.Application;
 
 
 void RuntimeTextureResource::Serialize(nlohmann::json& archive)

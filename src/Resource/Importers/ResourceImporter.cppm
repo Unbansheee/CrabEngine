@@ -8,8 +8,8 @@
 
 //#include "ImportSettings.h"
 
-export module resource_importer;
-import import_settings;
+export module Engine.Resource.Importer;
+import Engine.Resource.Importer.ImportSettings;
 
 export class Resource;
 

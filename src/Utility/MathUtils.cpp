@@ -1,5 +1,5 @@
-﻿module math_utils;
-import crab_types;
+﻿module Engine.Math;
+import Engine.Types;
 //#include "glm/gtc/quaternion.hpp"
 
 using namespace glm;

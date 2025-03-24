@@ -1,5 +1,5 @@
 ﻿
-export module string_id;
+export module Engine.StringID;
 export import <string_id/string_id.hpp>;
 export import <string_id/database.hpp>;
 

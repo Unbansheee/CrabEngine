@@ -2,13 +2,13 @@
 // Created by Vinnie on 20/03/2025.
 //
 
-export module physics.body;
-import jolt;
-import crab_types;
+export module Engine.Physics.Body;
+import Engine.Physics.Jolt;
+import Engine.Types;
 import uid;
 import rocket;
 import std;
-import jolt_conversions;
+import Engine.Physics.JoltConversions;
 
 export class PhysicsBody;
 

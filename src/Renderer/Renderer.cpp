@@ -4,12 +4,12 @@
 #include "GLFW/glfw3.h"
 
 module renderer;
-import render_visitor;
-import math_utils;
-import application;
-import render_visitor;
-import node;
-import material;
+import Engine.Renderer.Visitor;
+import Engine.Math;
+import Engine.Application;
+import Engine.Renderer.Visitor;
+import Engine.Node;
+import Engine.Resource.Material;
 
 
 

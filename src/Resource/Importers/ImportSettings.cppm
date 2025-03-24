@@ -6,9 +6,9 @@
 //#include "Core/Object.h"
 #include "ReflectionMacros.h"
 
-export module import_settings;
-import object;
-import class_type;
+export module Engine.Resource.Importer.ImportSettings;
+import Engine.Object;
+import Engine.Reflection.Class;
 
 export class ImportSettings : public Object
 {

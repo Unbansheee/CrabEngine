@@ -1,2 +1,2 @@
-﻿module resource;
+﻿module Engine.Resource;
 

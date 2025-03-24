@@ -11,8 +11,9 @@
 //#include "ReflectionMacros.h"
 //#include "Resource/ResourceHandle.h"
 
-export module reflection;
-import variant;
+export module Engine.Reflection;
+import Engine.Variant;
+import Engine.Object.Ref;
 //import class_db;
 //import resource;
 //import class_type;
@@ -20,7 +21,7 @@ import variant;
 
 
 export class IPropertyInterface;
-
+export class Node;
 export class Property {
 public:
     enum class Flags : uint32_t
@@ -36,15 +37,29 @@ public:
         : name(name),
           displayName(display_name),
           type(typeid(T)),
-          flags(flags),
-          getter([member_ptr](IPropertyInterface* obj) -> ValueVariant {
-              return static_cast<Class*>(obj)->*member_ptr;
-          }),
-        setter( [member_ptr](IPropertyInterface* obj, const ValueVariant& value) {
-            static_cast<Class*>(obj)->*member_ptr = std::get<T>(value);
-        })
+          flags(flags)
     {
-        
+        if constexpr (std::is_base_of_v<_ObjectRefBase, T>) {
+            setter = [member_ptr](IPropertyInterface* obj, const ValueVariant& value) {
+                //T newref;
+                //newref.AssignUnsafe(std::get<ObjectRef<Object>>(value).Get());
+                static_cast<Class*>(obj)->*member_ptr = std::get<ObjectRef<Object>>(value).Cast<T>();
+            };
+
+            getter = ([member_ptr](IPropertyInterface* obj) -> ValueVariant {
+                ObjectRef<Object> ob = ObjectRef<Object>(static_cast<Class*>(obj)->*member_ptr);
+                return ob;
+            });
+        }
+        else {
+            setter = [member_ptr](IPropertyInterface* obj, const ValueVariant& value) {
+                static_cast<Class*>(obj)->*member_ptr = std::get<T>(value);
+            };
+            getter = ([member_ptr](IPropertyInterface* obj) -> ValueVariant {
+                return static_cast<Class*>(obj)->*member_ptr;
+            });
+
+        }
     }
 
     // Type checking interface

@@ -6,14 +6,14 @@
 #include "ReflectionMacros.h"
 #include "Renderer/MaterialHelpers.h"
 
-export module standard_material;
-import vertex;
-import texture_resource;
-import resource_ref;
-import uniform_buffer;
-import uniform_definitions;
-export import material;
-import dynamic_uniform_buffer;
+export module Engine.Resource.Material.Standard;
+import Engine.GFX.Vertex;
+import Engine.Resource.Texture;
+import Engine.Resource.Ref;
+import Engine.GFX.UniformBuffer;
+import Engine.GFX.UniformDefinitions;
+export import Engine.Resource.Material;
+import Engine.GFX.DynamicUniformBuffer;
 
 export class StandardMaterial : public MaterialResource
 {
@@ -22,6 +22,7 @@ public:
     BEGIN_PROPERTIES
         ADD_PROPERTY_FLAGS("Base Colour", BaseColorTextureView, Property::Flags::MaterialProperty)
         ADD_PROPERTY_FLAGS("Normal", NormalTextureView, Property::Flags::MaterialProperty)
+        ADD_PROPERTY_STRUCT("Parameters", MaterialParameters, Uniforms::UStandardMaterialParameters)
     END_PROPERTIES
     
     using StandardMaterialUniformsLayout = MaterialHelpers::BindGroupLayoutBuilder<

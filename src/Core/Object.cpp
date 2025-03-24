@@ -1,10 +1,10 @@
-﻿module object;
-import reflection;
-import property_serialization;
+﻿module Engine.Object;
+import Engine.Reflection;
+import Engine.Reflection.Serialization;
 import uid;
-import class_db;
-import class_type;
-import string_id;
+import Engine.Reflection.ClassDB;
+import Engine.Reflection.Class;
+import Engine.StringID;
 
 BaseObjectRegistrationObject::BaseObjectRegistrationObject()
 {

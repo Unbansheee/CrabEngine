@@ -1,6 +1,6 @@
-﻿module node_camera_3d;
-import node_window;
-import glm;
+﻿module Engine.Node.Camera3D;
+import Engine.Node.Window;
+import Engine.GLM;
 //#include "glm/glm.hpp"
 
 

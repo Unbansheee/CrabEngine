@@ -8,10 +8,13 @@
 //#include "Transform.h"
 //#include "Resource/ResourceHandle.h"
 
-export module variant;
-import resource_ref;
-import crab_types;
-import transform;
+export module Engine.Variant;
+import Engine.Resource.Ref;
+import Engine.Types;
+import Engine.Transform;
+import Engine.Object.Ref;
+
+//export class Object;
 
 // Supported native types + common engine types
 export using ValueVariant = std::variant<
@@ -25,5 +28,6 @@ export using ValueVariant = std::variant<
     Vector4,
     Transform,
     ResourceRef,
-    StrongResourceRef
+    StrongResourceRef,
+    ObjectRef<Object>
 >;

@@ -1,7 +1,7 @@
 ﻿#pragma once
 
-export module view;
-import crab_types;
+export module Engine.GFX.View;
+import Engine.Types;
 
 export struct View
 {

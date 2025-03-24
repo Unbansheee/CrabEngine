@@ -1,2 +1,2 @@
-﻿module vertex;
+﻿module Engine.GFX.Vertex;
 

@@ -1,4 +1,4 @@
-﻿module resource_importer;
+﻿module Engine.Resource.Importer;
 ResourceImporter::~ResourceImporter()
 {
 }

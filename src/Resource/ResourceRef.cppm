@@ -7,7 +7,7 @@
 #include <string>
 #include <typeindex>
 
-export module resource_ref;
+export module Engine.Resource.Ref;
 //import class_type;
 //import resource;
 //import reflection;

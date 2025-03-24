@@ -6,14 +6,14 @@
 #include <rocket/rocket.hpp>
 
 export module renderer;
-import node;
-import render_visitor;
-import uniform_buffer;
-import dynamic_offset_uniform_buffer;
-import uniform_definitions;
-import view;
-import wgpu;
-import observable_dtor;
+import Engine.Node;
+import Engine.Renderer.Visitor;
+import Engine.GFX.UniformBuffer;
+import Engine.GFX.DynamicOffsetUniformBuffer;
+import Engine.GFX.UniformDefinitions;
+import Engine.GFX.View;
+import Engine.WGPU;
+import Engine.Object.ObservableDtor;
 
 export class Renderer : public observable_dtor {
 public:

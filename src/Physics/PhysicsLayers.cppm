@@ -5,8 +5,8 @@ module;
 #include "Jolt/Jolt.h"
 #include "Jolt/Core/IssueReporting.h"
 
-export module physics.layers;
-import jolt;
+export module Engine.Physics.Layers;
+import Engine.Physics.Jolt;
 
 export namespace Layers
 {

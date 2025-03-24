@@ -1,1 +1,1 @@
-﻿module shader_file_resource;
+﻿module Engine.Resource.ShaderFile;

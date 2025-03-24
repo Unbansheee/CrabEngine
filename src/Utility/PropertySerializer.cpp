@@ -2,13 +2,13 @@
 module;
 #include "json.hpp"
 
-module property_serialization;
-import resource;
-import resource_manager;
-import node;
-import transform;
+module Engine.Reflection.Serialization;
+import Engine.Resource;
+import Engine.Resource.ResourceManager;
+import Engine.Node;
+import Engine.Transform;
 import std;
-import class_db;
+import Engine.Reflection.ClassDB;
 
 
 //#include "glm/gtc/quaternion.hpp"
@@ -103,6 +103,9 @@ void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive,
         res->Serialize(resource_data);
     }
     */
+}
+
+void PropertySerializer::operator()(PropertyView &prop, nlohmann::json *archive, ObjectRef<Object> &val) {
 }
 
 
@@ -249,4 +252,7 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
         val = newResource;
         prop.set(val);
     }
+}
+
+void PropertyDeserializer::operator()(PropertyView &prop, nlohmann::json *archive, ObjectRef<Object> &val) {
 }

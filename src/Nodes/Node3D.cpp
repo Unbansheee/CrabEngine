@@ -4,10 +4,10 @@
 
 //#include "Core/ClassDB.cppm"
 
-module node_3d;
-import class_db;
-import transform;
-import crab_types;
+module Engine.Node.Node3D;
+import Engine.Reflection.ClassDB;
+import Engine.Transform;
+import Engine.Types;
 
 
 void Node3D::UpdateTransform()

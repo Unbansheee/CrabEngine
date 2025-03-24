@@ -44,6 +44,7 @@ struct GlobalData
 
 struct StandardMaterialParameters
 {
+    baseColorFactor: vec3f,
     hardness: f32,
     kd: f32,
     ks: f32,
@@ -119,7 +120,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
         let V = normalize(in.viewDirection);
     
         // Sample texture
-        let baseColor = textureSample(baseColorTexture, textureSampler, in.uv).rgb;
+        let baseColor = textureSample(baseColorTexture, textureSampler, in.uv).rgb * uMaterialUniforms.baseColorFactor;
         //let baseColor = vec3f(1,1,1);
         let kd = uMaterialUniforms.kd;
         let ks = uMaterialUniforms.ks;

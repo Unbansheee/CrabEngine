@@ -1,11 +1,11 @@
 ﻿//
 // Created by Vinnie on 20/03/2025.
 //
-module node_collision_object_3d;
-import jolt;
-import node_collision_shape_3d;
-import physics.layers;
-import jolt_conversions;
+module Engine.Node.CollisionObject3D;
+import Engine.Physics.Jolt;
+import Engine.Node.CollisionShape3D;
+import Engine.Physics.Layers;
+import Engine.Physics.JoltConversions;
 
 
 void NodeCollisionObject3D::Init() {

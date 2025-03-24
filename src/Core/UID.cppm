@@ -43,7 +43,7 @@ export struct UID
         return id == other.id;
     }
     
-    std::string to_string()
+    std::string to_string() const
     {
         return uuids::to_string(id);
     }

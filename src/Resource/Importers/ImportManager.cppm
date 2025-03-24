@@ -6,8 +6,8 @@
 #include <unordered_map>
 
 
-export module import_manager;
-import resource_importer;
+export module Engine.Resource.ImportManager;
+import Engine.Resource.Importer;
 
 export class ImportSettings;
 

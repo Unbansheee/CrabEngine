@@ -3,11 +3,11 @@ module;
 
 #include "ReflectionMacros.h"
 
-export module node_3d;
-export import transform;
-export import object;
-export import node;
-import crab_types;
+export module Engine.Node.Node3D;
+export import Engine.Transform;
+export import Engine.Object;
+export import Engine.Node;
+import Engine.Types;
 
 // 3D version of a Node
 // Contains a Transform

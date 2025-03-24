@@ -2,17 +2,16 @@
 
 #pragma once
 
-#include <cassert>
 #include <functional>
 #include <iostream>
 #include <typeindex>
 
-export module class_db;
-import reflection;
-import reflection_concepts;
-import object;
-import class_type;
-import string_id;
+export module Engine.Reflection.ClassDB;
+import Engine.Reflection;
+import Engine.Reflection.Concepts;
+import Engine.Object;
+import Engine.Reflection.Class;
+import Engine.StringID;
 
 export class ClassDB {
     friend struct ClassType;

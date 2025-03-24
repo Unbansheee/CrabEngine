@@ -2,15 +2,15 @@
 // Created by Vinnie on 22/02/2025.
 //
 
-module node_mesh_instance_3d;
-import application;
-import render_visitor;
-import standard_material;
-import wgpu;
-import crab_types;
-import material;
-import resource_manager;
-import shader_file_resource;
+module Engine.Node.MeshInstance3D;
+import Engine.Application;
+import Engine.Renderer.Visitor;
+import Engine.Resource.Material.Standard;
+import Engine.WGPU;
+import Engine.Types;
+import Engine.Resource.Material;
+import Engine.Resource.ResourceManager;
+import Engine.Resource.ShaderFile;
 
 NodeMeshInstance3D::NodeMeshInstance3D()
 {

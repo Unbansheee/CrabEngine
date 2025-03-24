@@ -4,10 +4,10 @@
 module;
 #include "ReflectionMacros.h"
 
-export module node_collision_shape_3d;
-import node_3d;
-import jolt;
-import crab_types;
+export module Engine.Node.CollisionShape3D;
+import Engine.Node.Node3D;
+import Engine.Physics.Jolt;
+import Engine.Types;
 
 export class NodeCollisionShape3D : public Node3D {
     CRAB_ABSTRACT_CLASS(NodeCollisionShape3D, Node3D)

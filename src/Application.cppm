@@ -5,13 +5,13 @@ module;
 
 #pragma once
 
-export module application;
-import node;
-import scene_tree;
-import glm;
-import wgpu;
-import string_id;
-import jolt;
+export module Engine.Application;
+import Engine.Node;
+import Engine.SceneTree;
+import Engine.GLM;
+import Engine.WGPU;
+import Engine.StringID;
+import Engine.Physics.Jolt;
 
 struct ImGuiContext;
 using glm::mat4x4;

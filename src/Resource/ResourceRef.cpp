@@ -1,8 +1,8 @@
-﻿module resource_ref;
-import reflection;
-import class_db;
-import class_type;
-import resource;
+﻿module Engine.Resource.Ref;
+import Engine.Reflection;
+import Engine.Reflection.ClassDB;
+import Engine.Reflection.Class;
+import Engine.Resource;
 
 //#include <cassert>
 //#include <memory>

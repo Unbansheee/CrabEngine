@@ -2,8 +2,8 @@ module;
 #pragma once
 #include <optional>
 
-export module crab_types;
-export import glm;
+export module Engine.Types;
+export import Engine.GLM;
 import std;
 
 export typedef glm::vec2 Vector2;

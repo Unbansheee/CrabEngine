@@ -1,1 +1,1 @@
-﻿module dynamic_offset_uniform_buffer;
+﻿module Engine.GFX.DynamicOffsetUniformBuffer;

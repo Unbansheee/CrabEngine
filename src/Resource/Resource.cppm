@@ -7,16 +7,16 @@
 //#include "Importers/ResourceImporter.cppm"
 //#include "Utility/ObservableDtor.h"
 
-export module resource;
-export import object;
-export import observable_dtor;
-import resource_importer;
-import import_settings;
-import class_type;
+export module Engine.Resource;
+export import Engine.Object;
+export import Engine.Object.ObservableDtor;
+import Engine.Resource.Importer;
+import Engine.Resource.Importer.ImportSettings;
+import Engine.Reflection.Class;
 
 export class ImportManager;
 
-export class Resource : public Object, public observable_dtor
+export class Resource : public Object
 {
     friend class ResourceManager;
     friend class ImportManager;

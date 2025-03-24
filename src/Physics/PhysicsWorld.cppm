@@ -3,10 +3,10 @@
 //
 
 export module physics_world;
-import jolt;
-import physics.layers;
-import physics.listeners;
-import physics.body;
+import Engine.Physics.Jolt;
+import Engine.Physics.Layers;
+import Engine.Physics.Listeners;
+import Engine.Physics.Body;
 
 export class PhysicsWorld
 {

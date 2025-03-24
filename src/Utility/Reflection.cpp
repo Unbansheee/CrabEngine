@@ -1,5 +1,5 @@
 ﻿//#include <Reflection.cppm>
-module reflection;
+module Engine.Reflection;
 void Property::TriggerPropertySetOn(IPropertyInterface* obj) const
 {
     obj->OnPropertySet(*const_cast<Property*>(this));

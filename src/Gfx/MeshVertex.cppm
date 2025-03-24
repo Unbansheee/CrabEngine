@@ -4,8 +4,8 @@
 //#include <glm/vec2.hpp>
 //#include <glm/vec3.hpp>
 
-export module mesh_vertex;
-import glm;
+export module Engine.GFX.MeshVertex;
+import Engine.GLM;
 
 export struct MeshVertex {
     MeshVertex() = default;

@@ -16,11 +16,11 @@ module;
 
 //#include "Resource.h"
 
-export module resource_manager;
-import resource;
-import import_settings;
-import wgpu;
-import crab_types;
+export module Engine.Resource.ResourceManager;
+import Engine.Resource;
+import Engine.Resource.Importer.ImportSettings;
+import Engine.WGPU;
+import Engine.Types;
 
 export struct MeshVertex;
 export struct ImportManager;

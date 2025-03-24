@@ -1,7 +1,7 @@
 ﻿
-module shader_file_importer;
-import shader_file_resource;
-import resource;
+module Engine.Resource.Importer.ShaderFile;
+import Engine.Resource.ShaderFile;
+import Engine.Resource;
 
 std::string ShaderFileImporter::GetResourceType() const
 {

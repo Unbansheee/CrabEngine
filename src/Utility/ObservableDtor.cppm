@@ -2,7 +2,7 @@
 #pragma once
 #include <rocket/rocket.hpp>
 
-export module observable_dtor;
+export module Engine.Object.ObservableDtor;
 
 export struct observable_dtor
 {

@@ -9,10 +9,10 @@ module;
 #include "ReflectionMacros.h"
 //#include "webgpu/webgpu.hpp"
 
-export module mesh_resource;
-import class_db;
-export import resource;
-import wgpu;
+export module Engine.Resource.Mesh;
+import Engine.Reflection.ClassDB;
+export import Engine.Resource;
+import Engine.WGPU;
 
 export class MeshResource : public Resource {
 public:

@@ -1,5 +1,5 @@
-﻿module array_mesh_resource;
-import json_conversions;
+﻿module Engine.Resource.ArrayMesh;
+import Engine.JsonConversions;
 
 void ArrayMeshResource::Serialize(nlohmann::json& archive)
 {

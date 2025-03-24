@@ -3,10 +3,10 @@
 #include <json.hpp>
 //#include <glm/detail/type_quat.hpp>
 
-export module json_conversions;
-import crab_types;
-import vertex;
-import mesh_vertex;
+export module Engine.JsonConversions;
+import Engine.Types;
+import Engine.GFX.Vertex;
+import Engine.GFX.MeshVertex;
 
 export
 {

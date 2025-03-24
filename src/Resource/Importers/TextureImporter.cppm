@@ -8,13 +8,13 @@
 #include "ReflectionMacros.h"
 //#include "webgpu/webgpu.hpp"
 
-export module texture_importer;
-import resource_importer;
-import import_manager;
-import import_settings;
-import wgpu;
-import resource;
-import class_type;
+export module Engine.Resource.Importer.ImageTexture;
+import Engine.Resource.Importer;
+import Engine.Resource.ImportManager;
+import Engine.Resource.Importer.ImportSettings;
+import Engine.WGPU;
+import Engine.Resource;
+import Engine.Reflection.Class;
 
 class TextureImporter : public ResourceImporter
 {

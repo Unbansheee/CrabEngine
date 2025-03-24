@@ -34,6 +34,11 @@ set_target_properties(CrabEngine PROPERTIES
 )
 set(INTERPROCEDURAL_OPTIMIZATION ON)
 
+target_compile_definitions(CrabEngine PUBLIC "$<$<CONFIG:Debug>:_DEBUG>")
+target_compile_definitions(CrabEngine PUBLIC "$<$<CONFIG:Debug>:ENGINE_ENABLE_ASSERTS>")
+
+
+
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(CrabEngine PRIVATE -fmodules-ts -fmodule-header)
 

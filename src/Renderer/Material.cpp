@@ -1,7 +1,7 @@
-﻿module material;
-import mesh_vertex;
-import shader_file_resource;
-import application;
+﻿module Engine.Resource.Material;
+import Engine.GFX.MeshVertex;
+import Engine.Resource.ShaderFile;
+import Engine.Application;
 
 void MaterialResource::Apply(wgpu::RenderPassEncoder renderPass)
 {

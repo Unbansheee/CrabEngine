@@ -1,9 +1,9 @@
 ﻿#include <memory>
 
-module auto_registration;
-import import_manager;
-import resource_importer;
-import class_type;
+module Engine.Reflection.AutoRegistration;
+import Engine.Resource.ImportManager;
+import Engine.Resource.Importer;
+import Engine.Reflection.Class;
 
 void AddImporterToImportManager(std::unique_ptr<ResourceImporter> imp)
 {

@@ -1,22 +1,23 @@
 //
 // Created by Vinnie on 23/02/2025.
 //
+module;
 #include <tiny_gltf.h>
 
-module gltf_scene_parser;
+module Engine.GLTFSceneParser;
 
 //#include "NodeMesh3D.h"
 
-import array_mesh_resource;
-import resource_manager;
-import runtime_texture_resource;
+import Engine.Resource.ArrayMesh;
+import Engine.Resource.ResourceManager;
+import Engine.Resource.RuntimeTexture;
 import std;
-import node_mesh_instance_3d;
-import array_mesh_resource;
-import mesh_vertex;
-import uniform_definitions;
-import standard_material;
-import shader_file_resource;
+import Engine.Node.MeshInstance3D;
+import Engine.Resource.ArrayMesh;
+import Engine.GFX.MeshVertex;
+import Engine.GFX.UniformDefinitions;
+import Engine.Resource.Material.Standard;
+import Engine.Resource.ShaderFile;
 
 
 /*
@@ -355,6 +356,7 @@ std::shared_ptr<MaterialResource> GLTFSceneParser::ParseMaterial(WGPUDevice& con
 	//mat->params.MetallicFactor = material.pbrMetallicRoughness.metallicFactor;
 	//mat->params.RoughnessFactor = material.pbrMetallicRoughness.roughnessFactor;
 	Uniforms::UStandardMaterialParameters params;
+	params.BaseColorFactor = {bcf[0], bcf[1], bcf[2]};
 	//mat->MaterialParameters.SetData();
 
 	if (material.pbrMetallicRoughness.baseColorTexture.index >= 0)

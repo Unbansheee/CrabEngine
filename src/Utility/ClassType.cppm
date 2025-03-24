@@ -1,10 +1,9 @@
 ﻿module;
 #include <cstdint>
 #include <functional>
-#include <typeindex>
 
-export module class_type;
-export import string_id;
+export module Engine.Reflection.Class;
+export import Engine.StringID;
 
 export class Object;
 export class Property;

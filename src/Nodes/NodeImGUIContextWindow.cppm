@@ -6,9 +6,9 @@
 #include "imgui.h"
 
 
-export module node_imgui_context_window;
-export import node_window;
-import class_db;
+export module Engine.Node.ImGuiContextWindow;
+export import Engine.Node.Window;
+import Engine.Reflection.ClassDB;
 
 
 export class NodeImGUIContextWindow : public NodeWindow

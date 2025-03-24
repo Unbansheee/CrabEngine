@@ -4,8 +4,8 @@
 #include <filesystem>
 #include "ReflectionMacros.h"
 
-export module image_texture_resource;
-export import texture_resource;
+export module Engine.Resource.ImageTexture;
+export import Engine.Resource.Texture;
 
 export class ImageTextureResource : public TextureResource
 {

@@ -4,9 +4,9 @@
 
 #include "ReflectionMacros.h"
 
-export module shader_file_importer;
-import resource_importer;
-import import_settings;
+export module Engine.Resource.Importer.ShaderFile;
+import Engine.Resource.Importer;
+import Engine.Resource.Importer.ImportSettings;
 
 export class ShaderFileImporter : public ResourceImporter
 {

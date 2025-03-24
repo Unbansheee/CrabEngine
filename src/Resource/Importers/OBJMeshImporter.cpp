@@ -1,6 +1,6 @@
 ﻿
-module obj_mesh_importer;
-import obj_mesh_resource;
+module Engine.Resource.Importer.OBJMesh;
+import Engine.Resource.OBJMesh;
 
 std::string OBJMeshImporter::GetResourceType() const
 {

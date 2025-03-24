@@ -5,11 +5,13 @@
 #include <iostream>
 #include <json.hpp>
 
-export module property_serialization;
-import reflection;
-import resource_ref;
-import transform;
-import crab_types;
+export module Engine.Reflection.Serialization;
+import Engine.Reflection;
+import Engine.Resource.Ref;
+import Engine.Transform;
+import Engine.Types;
+import Engine.Object.Ref;
+
 
 export struct PropertySerializer
 {
@@ -24,6 +26,7 @@ export struct PropertySerializer
     void operator()(PropertyView& prop, nlohmann::json* archive, Quat& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, Transform& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, StrongResourceRef& val);
+    void operator()(PropertyView& prop, nlohmann::json* archive, ObjectRef<Object>& val);
 
     void operator()(PropertyView& prop, nlohmann::json* archive, auto val) { std::cout << "Invalid variant for serializing: " << prop.name() << "\n"; }
     
@@ -48,6 +51,8 @@ export struct PropertyDeserializer
     void operator()(PropertyView& prop, nlohmann::json* archive, Quat& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, Transform& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, StrongResourceRef& val);
+    void operator()(PropertyView& prop, nlohmann::json* archive, ObjectRef<Object>& val);
+
     void operator()(PropertyView& prop, nlohmann::json* archive, auto val) { std::cout << "Invalid variant for deserializing: " << prop.name() << "\n"; }
     
 

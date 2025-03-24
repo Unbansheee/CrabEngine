@@ -4,10 +4,11 @@
 //#include <webgpu/webgpu.hpp>
 
 #include "MaterialHelpers.h"
+#include "ReflectionMacros.h"
 
-export module uniform_definitions;
-export import crab_types;
-import wgpu;
+export module Engine.GFX.UniformDefinitions;
+export import Engine.Types;
+import Engine.WGPU;
 
 namespace Uniforms
 {
@@ -53,6 +54,18 @@ namespace Uniforms
     
     export struct UStandardMaterialParameters
     {
+        CRAB_STRUCT(UStandardMaterialParameters)
+        BEGIN_STRUCT_PROPERTIES
+            ADD_PROPERTY("Base Color Factor", BaseColorFactor);
+            ADD_PROPERTY("Hardness", Hardness);
+            ADD_PROPERTY("Diffuse Intensity", Kd)
+            ADD_PROPERTY("Specular Intensity", Ks)
+            ADD_PROPERTY("Normal Strength", NormalStrength)
+        END_STRUCT_PROPERTIES
+
+        // Tint
+        Vector3 BaseColorFactor = {1,1,1};
+
         float Hardness = 32.f;
         // Diffuse Contribution
         float Kd = 1.f;

@@ -5,10 +5,10 @@
 //#include <webgpu/webgpu.hpp>
 #include "ReflectionMacros.h"
 
-export module texture_resource;
-export import resource;
-import resource_manager;
-import wgpu;
+export module Engine.Resource.Texture;
+export import Engine.Resource;
+import Engine.Resource.ResourceManager;
+import Engine.WGPU;
 
 
 export class TextureResource : public Resource

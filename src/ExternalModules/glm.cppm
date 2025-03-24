@@ -1,5 +1,5 @@
 ﻿
-export module glm;
+export module Engine.GLM;
 export import <glm/detail/type_quat.hpp>;
 export import <glm/gtc/quaternion.hpp>;
 export import <glm/glm.hpp>;

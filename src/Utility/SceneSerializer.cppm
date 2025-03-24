@@ -2,8 +2,8 @@
 module;
 #pragma once
 
-export module scene_serializer;
-import node;
+export module Engine.SceneSerializer;
+import Engine.Node;
 import std;
 
 export struct SceneSerializer

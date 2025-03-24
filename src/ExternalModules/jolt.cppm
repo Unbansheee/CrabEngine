@@ -27,7 +27,7 @@ module;
 #include "Jolt/Physics/Collision/Shape/StaticCompoundShape.h"
 
 
-export module jolt;
+export module Engine.Physics.Jolt;
 export import "Jolt/Jolt.h";
 
 export namespace JPH {

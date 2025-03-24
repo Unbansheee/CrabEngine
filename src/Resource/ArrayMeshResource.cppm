@@ -5,11 +5,11 @@
 #include "ReflectionMacros.h"
 
 
-export module array_mesh_resource;
-export import mesh_resource;
-import mesh_vertex;
-import application;
-import crab_types;
+export module Engine.Resource.ArrayMesh;
+export import Engine.Resource.Mesh;
+import Engine.GFX.MeshVertex;
+import Engine.Application;
+import Engine.Types;
 
 export class ArrayMeshResource : public MeshResource
 {

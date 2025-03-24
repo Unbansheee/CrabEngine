@@ -7,13 +7,13 @@ module;
 
 #include "ReflectionMacros.h"
 
-export module node_mesh_instance_3d;
-export import node_3d;
-import material;
-import texture_resource;
-import resource_ref;
-import mesh_resource;
-import render_visitor;
+export module Engine.Node.MeshInstance3D;
+export import Engine.Node.Node3D;
+import Engine.Resource.Material;
+import Engine.Resource.Texture;
+import Engine.Resource.Ref;
+import Engine.Resource.Mesh;
+import Engine.Renderer.Visitor;
 
 export class NodeMeshInstance3D : public Node3D {
 public:

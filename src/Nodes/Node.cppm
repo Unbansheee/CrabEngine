@@ -12,18 +12,18 @@ module;
 #include "ReflectionMacros.h"
 //#include "Core/ClassDB.cppm"
 
-export module node;
-export import object;
-export import class_db;
-export import transform;
-export import class_type;
-import class_type;
-import observable_dtor;
-import scene_tree;
+export module Engine.Node;
+export import Engine.Object;
+export import Engine.Reflection.ClassDB;
+export import Engine.Transform;
+export import Engine.Reflection.Class;
+import Engine.Reflection.Class;
+import Engine.Object.ObservableDtor;
+import Engine.SceneTree;
 
 export class RenderVisitor;
 
-export class Node : public Object, public observable_dtor {
+export class Node : public Object {
 public:
 	CRAB_CLASS(Node, Object)
 	CLASS_FLAG(EditorVisible)

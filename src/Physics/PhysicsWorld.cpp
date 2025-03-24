@@ -9,7 +9,7 @@ module;
 
 
 module physics_world;
-import jolt;
+import Engine.Physics.Jolt;
 
 
 PhysicsWorld::PhysicsWorld() {

@@ -1,1 +1,1 @@
-﻿module dynamic_uniform_buffer;
+﻿module Engine.GFX.DynamicUniformBuffer;

@@ -4,14 +4,14 @@
 #include <vector>
 //#include "webgpu/webgpu.hpp"
 
-export module render_visitor;
-import draw_command;
-import dynamic_offset_uniform_buffer;
-import dynamic_uniform_buffer;
-import uniform_definitions;
-import view;
-import material;
-import wgpu;
+export module Engine.Renderer.Visitor;
+import Engine.GFX.DrawCommand;
+import Engine.GFX.DynamicOffsetUniformBuffer;
+import Engine.GFX.DynamicUniformBuffer;
+import Engine.GFX.UniformDefinitions;
+import Engine.GFX.View;
+import Engine.Resource.Material;
+import Engine.WGPU;
 
 export class NodeMeshInstance3D;
 

@@ -1,10 +1,10 @@
 ﻿#pragma once
 //#include <webgpu/webgpu.hpp>
 
-export module draw_command;
-import material;
-import crab_types;
-import wgpu;
+export module Engine.GFX.DrawCommand;
+import Engine.Resource.Material;
+import Engine.Types;
+import Engine.WGPU;
 
 export struct DrawCommand
 {

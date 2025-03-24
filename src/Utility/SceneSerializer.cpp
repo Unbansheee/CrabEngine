@@ -2,7 +2,7 @@
 #include <fstream>
 #include "json.hpp"
 
-module scene_serializer;
+module Engine.SceneSerializer;
 //import json;
 
 

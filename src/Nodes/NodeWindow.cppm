@@ -6,13 +6,13 @@
 #include "ReflectionMacros.h"
 #include "GLFW/glfw3.h"
 
-export module node_window;
-export import node;
+export module Engine.Node.Window;
+export import Engine.Node;
 import renderer;
-import object_ref;
-import wgpu;
-import node_camera_3d;
-import crab_types;
+import Engine.Object.Ref;
+import Engine.WGPU;
+import Engine.Node.Camera3D;
+import Engine.Types;
 
 export class NodeWindow : public Node
 {
@@ -44,7 +44,7 @@ public:
     void SetSurfaceDrawEnabled(bool enabled) {bShouldRenderNodesToSurface = enabled;}
     float GetAspectRatio() const;
 
-    WeakRef<NodeCamera3D> ActiveCamera;
+    ObjectRef<NodeCamera3D> ActiveCamera;
     
 protected:
     void InitializeRenderer();

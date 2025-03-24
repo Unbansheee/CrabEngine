@@ -6,11 +6,11 @@
 
 #include "GLFW/glfw3.h"
 
-module node_window;
-import class_db;
-import node;
-import application;
-import view;
+module Engine.Node.Window;
+import Engine.Reflection.ClassDB;
+import Engine.Node;
+import Engine.Application;
+import Engine.GFX.View;
 
 
 
@@ -19,7 +19,7 @@ using namespace wgpu;
 
 void NodeWindow::EnterTree()
 {
-    Node::Init();
+    if (GetTree()->IsInEditor()) return;
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     window = glfwCreateWindow(640, 480, Name.c_str(), nullptr, nullptr);
@@ -77,6 +77,8 @@ void NodeWindow::EnterTree()
 void NodeWindow::Update(float dt)
 {
     Node::Update(dt);
+    if (GetTree()->IsInEditor()) return;
+
     glfwMakeContextCurrent(window);
     glfwPollEvents();
     

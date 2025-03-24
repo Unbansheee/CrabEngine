@@ -3,9 +3,9 @@
 #pragma once
 #include "ReflectionMacros.h"
 
-export module runtime_texture_resource;
-export import texture_resource;
-import class_db;
+export module Engine.Resource.RuntimeTexture;
+export import Engine.Resource.Texture;
+import Engine.Reflection.ClassDB;
 
 export class RuntimeTextureResource : public TextureResource
 {

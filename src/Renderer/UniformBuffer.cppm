@@ -2,9 +2,9 @@
 #pragma once
 #include <cassert>
 
-export module uniform_buffer;
-import dynamic_uniform_buffer;
-import wgpu;
+export module Engine.GFX.UniformBuffer;
+import Engine.GFX.DynamicUniformBuffer;
+import Engine.WGPU;
 
 export template <typename T>
 class UniformBuffer {

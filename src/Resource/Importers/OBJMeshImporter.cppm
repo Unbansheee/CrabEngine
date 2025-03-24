@@ -1,17 +1,14 @@
 ﻿module;
 
 #pragma once
-#include <filesystem>
-#include <memory>
-#include <unordered_set>
 
 #include "ReflectionMacros.h"
 
-export module obj_mesh_importer;
-import import_manager;
-import resource_importer;
-import import_settings;
-import class_db;
+export module Engine.Resource.Importer.OBJMesh;
+import Engine.Resource.ImportManager;
+import Engine.Resource.Importer;
+import Engine.Resource.Importer.ImportSettings;
+import Engine.Reflection.ClassDB;
 import std;
 
 export class OBJMeshImporter : public ResourceImporter

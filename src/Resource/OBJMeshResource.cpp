@@ -1,8 +1,8 @@
 ﻿
-module obj_mesh_resource;
-import resource_manager;
-import application;
-import mesh_vertex;
+module Engine.Resource.OBJMesh;
+import Engine.Resource.ResourceManager;
+import Engine.Application;
+import Engine.GFX.MeshVertex;
 //#include <webgpu/webgpu.h>
 
 void OBJMeshResource::Serialize(nlohmann::json& archive)

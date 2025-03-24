@@ -2,9 +2,9 @@
 // Created by Vinnie on 21/03/2025.
 //
 
-export module jolt_conversions;
-import crab_types;
-import jolt;
+export module Engine.Physics.JoltConversions;
+import Engine.Types;
+import Engine.Physics.Jolt;
 
 export Vector3 jolt_to_glm(const JPH::Vec3& v)
 {

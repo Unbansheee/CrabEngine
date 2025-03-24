@@ -1,8 +1,8 @@
-﻿module image_texture_resource;
-import class_db;
-import resource_manager;
-import application;
-import texture_resource;
+﻿module Engine.Resource.ImageTexture;
+import Engine.Reflection.ClassDB;
+import Engine.Resource.ResourceManager;
+import Engine.Application;
+import Engine.Resource.Texture;
 import json;
 
 

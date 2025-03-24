@@ -2,8 +2,8 @@
 // Created by Vinnie on 22/02/2025.
 //
 
-module transform;
-import math_utils;
+module Engine.Transform;
+import Engine.Math;
 
 //#include <glm/gtx/quaternion.hpp>
 //#include <glm/gtx/transform.hpp>

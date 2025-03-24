@@ -10,13 +10,13 @@ module;
 #include "tiny_gltf.h"
 
 
-export module gltf_scene_parser;
-import mesh_resource;
-import material;
-import standard_material;
-import texture_resource;
-import node_3d;
-import wgpu;
+export module Engine.GLTFSceneParser;
+import Engine.Resource.Mesh;
+import Engine.Resource.Material;
+import Engine.Resource.Material.Standard;
+import Engine.Resource.Texture;
+import Engine.Node.Node3D;
+import Engine.WGPU;
 
 export class GLTFSceneParser
 {

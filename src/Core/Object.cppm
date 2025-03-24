@@ -4,12 +4,12 @@
 
 #include <vector>
 
-export module object;
-export import reflection;
+export module Engine.Object;
+export import Engine.Reflection;
 export import uid;
 export import json;
 export import std;
-
+import Engine.Object.ObservableDtor;
 export struct ClassType;
 
 struct BaseObjectRegistrationObject
@@ -18,7 +18,7 @@ struct BaseObjectRegistrationObject
 };
 
 
-export class Object : public IPropertyInterface
+export class Object : public IPropertyInterface, public observable_dtor
 {
 private:
     inline static BaseObjectRegistrationObject ObjectRegistrationObject;
@@ -29,7 +29,7 @@ public:
         return new T();
     }
     
-    virtual ~Object() = default;
+    ~Object() override = default;
 
     // Returns the class properties from an object instance. This indirection is required otherwise if getting properties for a
     // Node3D via a Node*, only the Node*'s properties would be returned. This function is implemented in the BEGIN_PROPERTIES macro

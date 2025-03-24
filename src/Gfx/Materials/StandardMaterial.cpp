@@ -1,8 +1,8 @@
-﻿module standard_material;
-import image_texture_resource;
-import resource_manager;
-import mesh_vertex;
-import wgpu;
+﻿module Engine.Resource.Material.Standard;
+import Engine.Resource.ImageTexture;
+import Engine.Resource.ResourceManager;
+import Engine.GFX.MeshVertex;
+import Engine.WGPU;
 //#include <webgpu/webgpu.hpp>
 
 #include "MaterialHelpers.h"

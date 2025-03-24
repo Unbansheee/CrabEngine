@@ -6,13 +6,15 @@
 #include "imgui.h"
 #include "ImGuizmo/ImGuizmo.h"
 
-module node_imgui_context_window;
-import application;
+module Engine.Node.ImGuiContextWindow;
+import Engine.Application;
 
 
 void NodeImGUIContextWindow::EnterTree()
 {
     NodeWindow::EnterTree();
+    if (GetTree()->IsInEditor()) return;
+
     imguiContext = ImGui::CreateContext();
     ImGui::SetCurrentContext(imguiContext);
     auto& io = ImGui::GetIO();
@@ -46,6 +48,8 @@ void NodeImGUIContextWindow::EnterTree()
 
 void NodeImGUIContextWindow::Update(float dt)
 {
+    if (GetTree()->IsInEditor()) return;
+
     WGPURenderPassColorAttachment color_attachments = {};
     color_attachments.loadOp = wgpu::LoadOp::Load;
     color_attachments.storeOp = wgpu::StoreOp::Store;

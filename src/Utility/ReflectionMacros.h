@@ -1,10 +1,10 @@
 ﻿#pragma once
 #include <vector>
 #include "typeindex"
-import reflection;
-import class_db;
-import class_type;
-import auto_registration;
+import Engine.Reflection;
+import Engine.Reflection.ClassDB;
+import Engine.Reflection.Class;
+import Engine.Reflection.AutoRegistration;
 
 #define BEGIN_PROPERTIES \
 virtual const std::vector<Property>& GetPropertiesFromThis() override { return GetClassProperties(); }\
@@ -12,6 +12,17 @@ static const auto& GetClassProperties() { \
 static const std::vector<Property> props = []{ \
 std::vector<Property> base = Super::GetClassProperties(); \
 std::vector<Property> custom;
+
+#define CRAB_STRUCT(StructType)\
+    using ThisClass = StructType;
+
+#define BEGIN_STRUCT_PROPERTIES \
+    static const auto& GetClassProperties() { \
+    std::vector<Property> custom;
+
+#define END_STRUCT_PROPERTIES \
+    return custom; }
+
 
 #define ADD_PROPERTY_FLAGS(DisplayName, Member, Flags) \
 custom.emplace_back(Property( \

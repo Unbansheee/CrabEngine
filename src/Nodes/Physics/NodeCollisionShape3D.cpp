@@ -1,8 +1,8 @@
 ﻿//
 // Created by Vinnie on 20/03/2025.
 //
-module node_collision_shape_3d;
-import jolt_conversions;
+module Engine.Node.CollisionShape3D;
+import Engine.Physics.JoltConversions;
 
 
 JPH::ShapeRefC NodeBoxShape3D::GetShape() const {

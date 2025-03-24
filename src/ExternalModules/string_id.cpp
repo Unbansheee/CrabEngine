@@ -1,5 +1,5 @@
-﻿module string_id;
-import application;
+﻿module Engine.StringID;
+import Engine.Application;
 
 string_id MakeStringID(const std::string& str)
 {

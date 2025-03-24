@@ -1,9 +1,9 @@
-﻿module render_visitor;
-import node_mesh_instance_3d;
-import uniform_definitions;
-import dynamic_uniform_buffer;
-import dynamic_offset_uniform_buffer;
-import draw_command;
+﻿module Engine.Renderer.Visitor;
+import Engine.Node.MeshInstance3D;
+import Engine.GFX.UniformDefinitions;
+import Engine.GFX.DynamicUniformBuffer;
+import Engine.GFX.DynamicOffsetUniformBuffer;
+import Engine.GFX.DrawCommand;
 
 void RenderVisitor::Visit(const NodeMeshInstance3D& node)
 {

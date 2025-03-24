@@ -1,7 +1,7 @@
 ﻿module;
 
-export module auto_registration;
-import class_db;
+export module Engine.Reflection.AutoRegistration;
+import Engine.Reflection.ClassDB;
 import std;
 import std.compat;
 export class ResourceImporter;
