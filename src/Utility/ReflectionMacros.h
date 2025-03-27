@@ -34,13 +34,13 @@ return props; \
 
 
 #define ADD_PROPERTY_FLAGS(DisplayName, Member, Flags) \
-custom.emplace_back(Property( \
+custom.emplace_back( \
 #Member, \
 DisplayName, \
 &ThisClass::Member, \
 Flags, \
 &ThisClass::StaticOnPropertySet \
-));
+);
 
 #define ADD_NESTED_STRUCT(StructMember, StructType) \
 { \
@@ -89,13 +89,13 @@ Flags \
 );
 
 #define ADD_PROPERTY(DisplayName, Member) \
-custom.emplace_back(Property( \
+custom.emplace_back( \
 #Member, \
 DisplayName, \
 &ThisClass::Member, \
 PropertyFlags::None, \
 &ThisClass::StaticOnPropertySet\
-));
+);
 
 #define END_PROPERTIES \
 base.insert(base.end(), custom.begin(), custom.end()); \

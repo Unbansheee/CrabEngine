@@ -34,10 +34,12 @@ public:
 
     using Ptr = std::shared_ptr<Resource>;
     
-    virtual void Serialize(nlohmann::json& archive) override { Object::Serialize(archive); }
-    virtual void Deserialize(nlohmann::json& archive) override { Object::Deserialize(archive); }
+    void Serialize(nlohmann::json& archive) override { Object::Serialize(archive); }
+    void Deserialize(nlohmann::json& archive) override { Object::Deserialize(archive); }
     virtual void LoadData() { loaded = true; };  // For explicit loading
     virtual bool IsLoaded() const {return loaded;}
+
+    
 
     const std::string& GetName() const {return name;}
     const std::string& GetResourcePath() const { return resourceFilePath; }
