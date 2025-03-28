@@ -14,53 +14,42 @@ import Engine.Types;
 import Engine.WGPU;
 import Engine.Resource.ImportManager;
 import Engine.Reflection.ClassDB;
+import Engine.Assert;
 
 using namespace wgpu;
 
 bool ResourceManager::IsSourceFile(const std::filesystem::path& path)
 {
-    return path.has_extension() && path.extension() != ".res";
-}
-
-std::shared_ptr<Resource> ResourceManager::DeserializeResource(const std::filesystem::path& path)
-{
-    nlohmann::json j;
-    std::ifstream inFile(path);
-    inFile >> j;
-    inFile.close();
-
-    std::string type = j.at("class").get<std::string>();
-    
-    auto classData = ClassDB::Get().GetClassByName(type);
-    auto r = dynamic_cast<Resource*>(classData->Initializer());
-    std::shared_ptr<Resource> resource;
-    resource.reset(r);
-    resource->Deserialize(j);
-    resource->resourceFilePath = path.string();
-    resource->bIsSourceImported = false;
-    resource->bIsInline = false;
-    
-    return resource;
+    return path.has_extension() && ImportManager::Get().IsFileTypeImportable(path.extension());
 }
 
 std::shared_ptr<Resource> ResourceManager::Load(const std::filesystem::path& path)
 {
-    // Existing resource loading logic
-    auto it = resourceCache.find(path.string());
-    if (it != resourceCache.end()) {
-        return it->second;
+    {
+        std::lock_guard lock(cacheMutex);
+        // Existing resource loading logic
+        auto it = resourceCache.find(path.string());
+        if (it != resourceCache.end()) {
+            return it->second;
+        }
     }
 
     if (IsSourceFile(path)) {
-        auto res = ImportManager::Get().ImportOrLoad(path);
-        resourceCache[path.string()] = res;
+        auto res = ImportManager::Get().Import(path);
+        {
+            std::lock_guard lock(cacheMutex);
+            resourceCache[path.string()] = res;
+        }
         return res;
     }
-        
-    // Load from .res file
-    auto resource = DeserializeResource(path);
-    resourceCache[path.string()] = resource;
-    return resource;
+
+    Assert::Verify(false, "Resource Error", "Failed to load resource at: " + path.string());
+    return nullptr;
+}
+
+bool ResourceManager::IsResourceLoaded(const std::filesystem::path &path) {
+    std::lock_guard lock(cacheMutex);
+    return resourceCache.contains(path.string());
 }
 
 void ResourceManager::SaveToFile(const std::filesystem::path& path, nlohmann::json& json)

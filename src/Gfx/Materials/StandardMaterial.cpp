@@ -1,18 +1,21 @@
-﻿module Engine.Resource.Material.Standard;
+﻿module;
+#include "MaterialHelpers.h"
+
+module Engine.Resource.Material.Standard;
 import Engine.Resource.ImageTexture;
 import Engine.Resource.ResourceManager;
 import Engine.GFX.MeshVertex;
 import Engine.WGPU;
-//#include <webgpu/webgpu.hpp>
-
-#include "MaterialHelpers.h"
+import Engine.Resource.ShaderFile;
 
 using namespace Uniforms;
 using namespace MaterialHelpers;
 
 StandardMaterial::StandardMaterial() : MaterialResource()
 {
+    shader_file = ResourceManager::Load<ShaderFileResource>(ENGINE_RESOURCE_DIR"/standard_material.wgsl");
 }
+
 
 void StandardMaterial::Initialize()
 {
@@ -43,6 +46,7 @@ void StandardMaterial::Initialize()
     {
         NormalTextureView = ResourceManager::Load<ImageTextureResource>(ENGINE_RESOURCE_DIR"/null_texture_black.png");
     }
+
     
     MaterialResource::Initialize();
 }

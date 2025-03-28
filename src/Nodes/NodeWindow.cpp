@@ -228,7 +228,7 @@ void NodeWindow::CreateSwapChain(uint32_t width, uint32_t height)
     desc.format = surfaceFormat;
     desc.width = width;
     desc.height = height;
-    desc.presentMode = wgpu::PresentMode::Immediate;
+    desc.presentMode = wgpu::PresentMode::Fifo;
     desc.viewFormats = nullptr;
     desc.viewFormatCount = 0;
     desc.device = Application::Get().GetDevice();

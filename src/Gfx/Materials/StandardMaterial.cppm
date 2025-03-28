@@ -20,6 +20,7 @@ export class StandardMaterial : public MaterialResource
 public:
 
     CRAB_CLASS(StandardMaterial, MaterialResource)
+    CLASS_FLAG(EditorVisible);
     BEGIN_PROPERTIES
         ADD_PROPERTY_FLAGS("Base Colour", BaseColorTextureView, PropertyFlags::MaterialProperty)
         ADD_PROPERTY_FLAGS("Normal", NormalTextureView, PropertyFlags::MaterialProperty)
@@ -53,3 +54,4 @@ public:
     StrongResourceRef BaseColorTextureView;
     StrongResourceRef NormalTextureView;
 };
+

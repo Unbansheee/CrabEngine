@@ -76,6 +76,13 @@ public:
 		T* node = new T();
 		return InitializeNode(node, name);
 	};
+
+	static std::unique_ptr<Node> NewNode(const ClassType& classType, const std::string& name = "Node")
+	{
+		Node* node = static_cast<Node*>(classType.Initializer());
+		return InitializeNode(node, name);
+	};
+
 	//static std::unique_ptr<Node> NewNode(Node* raw, const std::string& name);
 	//static std::unique_ptr<Node> MakeNode()
 	std::unique_ptr<Node> Duplicate();

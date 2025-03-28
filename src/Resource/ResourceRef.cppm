@@ -20,7 +20,7 @@ public:
     template<typename T>
     ResourceRef(const std::shared_ptr<T>& res) : resource(res), typeHash(typeid(T))
     {
-        if(res) resourcePath = res->GetResourcePath();
+        if(res) resourcePath = res->GetSourcePath();
     }
 
     ResourceRef(std::type_index type) : typeHash(type) {};

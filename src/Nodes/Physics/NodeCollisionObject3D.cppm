@@ -48,7 +48,6 @@ protected:
   void InvalidateBody();
   PhysicsBody body;
   PhysicsProperties physicsProperties;
-
 };
 
 

@@ -18,7 +18,7 @@ bool ClassType::IsSubclassOf(const ClassType& parent) const
         if (current == &Object::GetStaticClass()) return false;
 
         // Move up the hierarchy to the parent
-        if (auto c = db.GetParentClass(current->Parent))
+        if (auto c = db.GetClassByName(current->Parent))
         {
             current = c;
         }

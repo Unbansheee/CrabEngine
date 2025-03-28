@@ -134,7 +134,7 @@ static ClassType s\
 .Initializer = nullptr,\
 .Properties = Class::GetClassProperties(),\
 .Parent = MakeStringID(#ParentClass),\
-.Flags = (uint32_t)ClassType::ClassFlags::Abstract\
+.Flags = ClassFlags::Abstract\
 };\
 return s;\
 }\
@@ -143,7 +143,7 @@ virtual const ClassType& GetStaticClassFromThis() override { return GetStaticCla
 
 
 #define CLASS_FLAG(Flag)\
-[[maybe_unused]] inline static AutoClassFlagRegister<ThisClass> AutoFlagRegistrationObject_##Flag = AutoClassFlagRegister<ThisClass>((uint32_t)ClassType::ClassFlags::##Flag);
+[[maybe_unused]] inline static AutoClassFlagRegister<ThisClass> AutoFlagRegistrationObject_##Flag = AutoClassFlagRegister<ThisClass>(ClassFlags::##Flag);
 
 #define REGISTER_RESOURCE_IMPORTER(Type)\
 [[maybe_unused]] inline static AutoRegisterResourceImporter<Type> ImporterRegistrationObject_##Type = AutoRegisterResourceImporter<Type>();

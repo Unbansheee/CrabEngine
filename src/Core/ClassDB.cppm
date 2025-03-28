@@ -39,6 +39,16 @@ public:
         return nullptr;
     }
 
+    const ClassType* GetClassByName(const string_id& name)
+    {
+        for (auto& type : GetClasses())
+        {
+            if (type->Name == name) return type;
+        }
+
+        return nullptr;
+    }
+
     /*
     template <typename T, typename ParentClass>
     void RegisterClass(const std::string& Name) {
@@ -93,12 +103,7 @@ public:
     template<typename T>
     const ClassType* GetParentClass()
     {
-        return T::GetStaticClass().Parent;
-    }
-
-    const ClassType* GetParentClass(string_id id)
-    {
-        return classNameLookup.at(id);
+        return classNameLookup.at(T::GetStaticClass().Parent);
     }
     
 

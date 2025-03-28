@@ -1,5 +1,5 @@
-﻿#include <filesystem>
-#include <fstream>
+﻿module;
+#include "json.hpp"
 
 module Engine.Resource.ImportManager;
 import Engine.Resource.ResourceManager;
@@ -12,20 +12,18 @@ void ImportManager::RegisterImporter(std::unique_ptr<ResourceImporter> importer)
     importers.push_back(std::move(importer));
 }
 
-bool ImportManager::IsEngineResource(std::filesystem::path::iterator::reference path)
-{
-    return false;
-}
 
-std::shared_ptr<Resource> ImportManager::ImportOrLoad(const std::filesystem::path& path)
+
+std::shared_ptr<Resource> ImportManager::Import(const std::filesystem::path& path)
 {
-    if (IsEngineResource(path)) {
-        return ResourceManager::Load(path);
-    }
     return ImportSourceFile(path);
 }
 
-ResourceImporter* ImportManager::GetImporterForExtension(std::filesystem::path extension)
+bool ImportManager::IsFileTypeImportable(std::filesystem::path extension) const {
+    return GetImporterForExtension(extension) != nullptr;
+}
+
+ResourceImporter* ImportManager::GetImporterForExtension(std::filesystem::path extension) const
 {
     for (auto& imp : importers)
     {
@@ -64,8 +62,8 @@ std::shared_ptr<Resource> ImportManager::ImportSourceFile(const std::filesystem:
     auto importer = GetImporterForExtension(path.extension());
     auto settings = LoadOrCreateImportSettings(path, importer);
     auto res = importer->Import(path, *settings);
+    if (settings) res->importSettings = settings;
     res->sourcePath = path.string();
-    res->bIsSourceImported = true;
     res->bIsInline = false;
     res->name = path.stem().string();
     res->LoadData();

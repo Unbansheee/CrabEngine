@@ -8,8 +8,6 @@ export import Engine.StringID;
 export class Object;
 export class Property;
 
-
-
 export class BAD_OBJECT
 {
 };
@@ -21,14 +19,14 @@ struct NoCopy{
     NoCopy(const NoCopy&) = delete;
 };
 
+export namespace ClassFlags {
+    constexpr uint32_t None = 0 << 0;
+    constexpr uint32_t EditorVisible = 1 << 1;
+    constexpr uint32_t Abstract = 1 << 2;
+}
+
 export struct ClassType : NoCopy
 {
-    enum class ClassFlags : uint32_t
-    {
-        None = 0 << 0,
-        EditorVisible = 1 << 1,
-        Abstract = 1 << 2
-    };
     
     using CreateClassFn = std::function<Object*()>;
     string_id Name = MakeStringID("null");

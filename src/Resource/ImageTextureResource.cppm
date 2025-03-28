@@ -11,7 +11,6 @@ export class ImageTextureResource : public TextureResource
 {
 public:
     CRAB_CLASS(ImageTextureResource, TextureResource)
-    CLASS_FLAG(EditorVisible)
 
     BEGIN_PROPERTIES
         ADD_PROPERTY("Texture Path", imageFilePath)

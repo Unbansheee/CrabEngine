@@ -13,3 +13,11 @@ void TextureResource::LoadData()
     loaded = true;
 }
 
+wgpu::TextureView TextureResource::GetThumbnail() {
+    if (view) {
+        return GetInternalTextureView();
+    }
+
+    return Resource::GetThumbnail();
+}
+

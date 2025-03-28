@@ -76,33 +76,23 @@ void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive,
     auto& properties = a[prop.name()];
     if (auto res = val.Get<Resource>())
     {
-        properties["is_source_imported"] = res->IsSourceImported();
-        properties["resource_file_path"] = res->GetResourcePath();
-        properties["source_file_path"] = res->GetSourcePath();
-        properties["is_inline"] = res->IsInline();
         if (res->IsInline())
         {
+            properties["import_type"] = "inline";
             auto& inlineDef = properties["inline_resource"];
             res->Serialize(inlineDef);
+        }
+        else {
+            properties["import_type"] = "file";
+            properties["source_file_path"] = res->GetSourcePath();
+            ResourceManager::SaveResource(res);
         }
     }
     else
     {
-        properties["is_source_imported"] = false;
-        properties["resource_file_path"] = "";
+        properties["import_type"] = "";
         properties["source_file_path"] = "";
-        properties["is_inline"] = false;
     }
-    
-    
-    /*
-    properties["resource_path"] = val.GetResourcePath();
-    if (auto res = val.Get<Resource>())
-    {
-        auto& resource_data = properties["resource_data"];
-        res->Serialize(resource_data);
-    }
-    */
 }
 
 void PropertySerializer::operator()(PropertyView &prop, nlohmann::json *archive, ObjectRef<Object> &val) {
@@ -211,47 +201,27 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
     
     auto& properties = a[prop.name()];
     
-    bool sourceImported =  properties.at("is_source_imported").get<bool>();
-    bool isInline = properties.at("is_inline").get<bool>();
-    std::string resource_file_path = properties.at("resource_file_path").get<std::string>();
-    std::string source_path = properties.at("source_file_path").get<std::string>();
-    auto& load_path = sourceImported ? source_path : resource_file_path;
+    bool isInline = properties.at("import_type").get<std::string>() == "inline";
+    bool isSource = properties.at("import_type").get<std::string>() == "file";
+    if (!isInline && !isSource) return;
 
     if (isInline)
     {
-        if (val)
-        {
-            if (auto res = val.Get<Resource>())
-            {
-                res->Deserialize(a);
-                val = res;
-                prop.set(val);
-                return;
-            }
-        }
-        else
-        {
-            auto& j = properties["inline_resource"];
-            auto res = static_cast<Resource*>(ClassDB::Get().GetClassByName(j.at("class"))->Initializer());
-            std::shared_ptr<Resource> resource;
-            resource.reset(res);
-            resource->Deserialize(j);
-            resource->LoadData();
-            val = resource;
-            prop.set(val);
-            return;
-        }
-    }
-    /*
-
-    */
-
-    if (!load_path.empty())
-    {
-        auto newResource = ResourceManager::Load(load_path);
-        val = newResource;
+        auto& j = properties["inline_resource"];
+        auto res = static_cast<Resource*>(ClassDB::Get().GetClassByName(j.at("class"))->Initializer());
+        std::shared_ptr<Resource> resource;
+        resource.reset(res);
+        resource->Deserialize(j);
+        resource->LoadData();
+        val = resource;
         prop.set(val);
+        return;
     }
+
+    // load from file
+    std::string source_path = properties.at("source_file_path").get<std::string>();
+    val = ResourceManager::Load(source_path);
+    prop.set(val);
 }
 
 void PropertyDeserializer::operator()(PropertyView &prop, nlohmann::json *archive, ObjectRef<Object> &val) {

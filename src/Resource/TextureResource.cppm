@@ -1,8 +1,6 @@
 ﻿module;
 
 #pragma once
-#include <filesystem>
-//#include <webgpu/webgpu.hpp>
 #include "ReflectionMacros.h"
 
 export module Engine.Resource.Texture;
@@ -15,7 +13,6 @@ export class TextureResource : public Resource
 {
 public:
     CRAB_CLASS(TextureResource, Resource)
-    CLASS_FLAG(EditorVisible)
 
     TextureResource() : Resource()
     {
@@ -32,6 +29,8 @@ public:
         }
     }
 
+    wgpu::TextureView GetThumbnail() override;
+
     const wgpu::Texture& GetInternalTexture() const { return texture; }
     const wgpu::TextureView& GetInternalTextureView() const { return view; }
 
@@ -42,5 +41,4 @@ protected:
     wgpu::Texture texture = nullptr;
     wgpu::TextureView view = nullptr;
 
-private:
 };
