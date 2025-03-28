@@ -45,12 +45,11 @@ public:
         delete[] mappedData;
     }
 
-    int Write(const T& value)
+    uint32_t Write(const T& value)
     {
         Assert::Verify(initialized, "initialized == true", "Buffer not initialized before use");
         auto offset = currentCount * stride;
         memcpy(mappedData + offset, &value, sizeof(T));
-        //mappedData[currentCount * stride] = value;
         currentCount ++;
         return offset;
     }

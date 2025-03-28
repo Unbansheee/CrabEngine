@@ -3,15 +3,16 @@
 #include "MaterialHelpers.h"
 #include "GLFW/glfw3.h"
 
-module renderer;
-import Engine.Renderer.Visitor;
+module Engine.GFX.Renderer;
 import Engine.Math;
 import Engine.Application;
-import Engine.Renderer.Visitor;
 import Engine.Node;
 import Engine.Resource.Material;
-
-
+import Engine.GFX.DrawCommand;
+import Engine.Resource.Mesh;
+import Engine.Resource.Material.Standard;
+import Engine.Resource.ShaderFile;
+import Engine.Resource.ResourceManager;
 
 
 void Renderer::Initialize(wgpu::Device device)
@@ -22,9 +23,10 @@ void Renderer::Initialize(wgpu::Device device)
     m_cameraUniformBuffer.Initialize(device);
     m_lightingUniformBuffer.Initialize(device);
     m_objectUniformBuffer.Initialize(device, 512);
-    
-    // Create bind group for model buffer (created once during init)
-    //m_modelBindGroup = CreateModelBindGroup(m_dynamicModelBuffer);
+
+    m_fallbackMaterial = MakeShared<StandardMaterial>();
+    m_fallbackMaterial->shader_file = ResourceManager::Load<ShaderFileResource>(ENGINE_RESOURCE_DIR"/standard_material.wgsl");
+    m_fallbackMaterial->LoadData();
 }
 
 
@@ -32,7 +34,6 @@ void Renderer::RenderNodeTree(Node* rootNode, View& view, wgpu::TextureView& col
                               wgpu::TextureView& depthAttachment)
 {
     CreateBindGroups();
-
 
     Uniforms::ULightingData lightingData;
     lightingData.LightColors = {
@@ -45,24 +46,85 @@ void Renderer::RenderNodeTree(Node* rootNode, View& view, wgpu::TextureView& col
     };
     m_lightingUniformBuffer.SetData(lightingData);
     
-    if (rootNode)
+    GatherDrawCommands(rootNode);
+    
+    // 3. Build and sort batches
+    auto batches = BuildBatches(drawCommandBuffer);
+    SortBatches(batches);
+
+    m_objectUniformBuffer.Upload(m_queue);
+
+    Uniforms::UCameraData cameraData;
+    cameraData.cameraPosition = view.Position;
+    cameraData.projectionMatrix = view.ProjectionMatrix;
+    cameraData.viewMatrix = view.ViewMatrix;
+    m_cameraUniformBuffer.SetData(cameraData);
+    
+    // 4. Execute rendering
+    ExecuteBatches(batches, colorAttachment, depthAttachment);
+
+}
+
+void Renderer::DrawMesh(const std::shared_ptr<MeshResource>& mesh, const std::shared_ptr<MaterialResource>& material,
+    const Matrix4& transform)
+{
+    drawCommandBuffer.push_back(DrawCommand{
+        material ? material.get() : m_fallbackMaterial.get(),
+        mesh->vertexBuffer,
+        mesh->vertexCount,
+    mesh->indexBuffer,
+        mesh->indexCount,
+    transform});
+
+    
+}
+
+std::vector<DrawBatch> Renderer::BuildBatches(const std::vector<DrawCommand> commands)
+{
+    // Group into batches
+    std::vector<DrawBatch> batches;
+    DrawBatch* currentBatch = nullptr;
+    
+    for (const auto& cmd : commands) {
+        if (!currentBatch || 
+            currentBatch->material != cmd.material)
+        {
+            batches.push_back({
+                .material = cmd.material,
+                .drawItems = {},
+            });
+            currentBatch = &batches.back();
+        }
+
+        Uniforms::UObjectData data;
+        data.ModelMatrix = cmd.modelMatrix;
+        uint32_t currentOffset = m_objectUniformBuffer.Write(data);
+        currentBatch->drawItems.push_back({
+            cmd.vertexBuffer,
+            cmd.indexBuffer,
+            cmd.indexCount,
+            cmd.vertexCount,
+            currentOffset,
+        });
+    }
+    return batches;
+}
+
+void Renderer::GatherDrawCommands(Node* rootNode)
+{
+    std::queue<Node*> RenderQueue;
+    RenderQueue.push(rootNode);
+    while (!RenderQueue.empty())
     {
-        RenderVisitor visitor(m_device, m_objectUniformBuffer);
-        rootNode->Render(visitor);
-        // 3. Build and sort batches
-        auto batches = visitor.BuildBatches();
-        SortBatches(batches);
-
-        m_objectUniformBuffer.Upload(m_queue);
-
-        Uniforms::UCameraData cameraData;
-        cameraData.cameraPosition = view.Position;
-        cameraData.projectionMatrix = view.ProjectionMatrix;
-        cameraData.viewMatrix = view.ViewMatrix;
-        m_cameraUniformBuffer.SetData(cameraData);
+        Node* current = RenderQueue.front();
+        RenderQueue.pop();
+        if (current->IsHidden()) continue;
         
-        // 4. Execute rendering
-        ExecuteBatches(batches, colorAttachment, depthAttachment);
+        current->Render(*this);
+        for (auto& child : current->GetChildren())
+        {
+            RenderQueue.push(child);
+        }
     }
 }
 
@@ -213,4 +275,6 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
     pass.release();
     commands.release();
     encoder.release();
+
+    drawCommandBuffer.clear();
 }

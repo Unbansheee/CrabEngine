@@ -1,6 +1,4 @@
 ﻿#pragma once
-#include <vector>
-#include "typeindex"
 import Engine.Reflection;
 import Engine.Reflection.ClassDB;
 import Engine.Reflection.Class;
@@ -20,6 +18,7 @@ std::vector<Property> custom;
 
 #define BEGIN_STRUCT_PROPERTIES(Struct) \
 using ThisClass = Struct; \
+constexpr static inline std::string_view ClassName = #Struct; \
 static const std::vector<Property>& GetStructProperties() { \
 static const auto props = []{ \
 std::vector<Property> custom;
@@ -37,6 +36,7 @@ return props; \
 custom.emplace_back( \
 #Member, \
 DisplayName, \
+std::string(ClassName), \
 &ThisClass::Member, \
 Flags, \
 &ThisClass::StaticOnPropertySet \
@@ -63,6 +63,7 @@ nested_prop.setVariant(struct_ptr, value); \
 custom.emplace_back(Property( \
 full_name, \
 nested_prop.displayName, \
+#StructType, \
 std::function<ValueVariant(void*)>(getter), \
 std::function<void(void*, const ValueVariant&)>(setter), \
 &ThisClass::StaticOnPropertySet, \
@@ -76,6 +77,7 @@ nested_prop.flags \
 custom.emplace_back(\
 #Member, \
 DisplayName, \
+"Struct Property", \
 &ThisClass::Member, \
 PropertyFlags::None \
 );
@@ -84,6 +86,7 @@ PropertyFlags::None \
 custom.emplace_back(\
 #Member, \
 DisplayName, \
+"Struct Property", \
 &ThisClass::Member, \
 Flags \
 );
@@ -92,6 +95,7 @@ Flags \
 custom.emplace_back( \
 #Member, \
 DisplayName, \
+std::string(ClassName), \
 &ThisClass::Member, \
 PropertyFlags::None, \
 &ThisClass::StaticOnPropertySet\
@@ -107,6 +111,7 @@ return props; \
 // Usage: Place this in .cpp files
 #define CRAB_CLASS(Class, ParentClass) \
 public:\
+constexpr static inline std::string_view ClassName = #Class; \
 using ThisClass = Class; \
 using Super = ParentClass; \
 static const ClassType& GetStaticClass() { \
@@ -125,6 +130,7 @@ virtual const ClassType& GetStaticClassFromThis() override { return GetStaticCla
 
 #define CRAB_ABSTRACT_CLASS(Class, ParentClass) \
 public:\
+constexpr static inline std::string_view ClassName = #Class; \
 using ThisClass = Class; \
 using Super = ParentClass; \
 static const ClassType& GetStaticClass() { \

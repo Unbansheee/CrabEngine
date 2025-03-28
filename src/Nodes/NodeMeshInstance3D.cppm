@@ -13,7 +13,6 @@ import Engine.Resource.Material;
 import Engine.Resource.Texture;
 import Engine.Resource.Ref;
 import Engine.Resource.Mesh;
-import Engine.Renderer.Visitor;
 
 export class NodeMeshInstance3D : public Node3D {
 public:
@@ -36,7 +35,7 @@ public:
         return material.Get<MaterialResource>();
     }
 
-    virtual void Render(RenderVisitor& Visitor) override;
+    void Render(Renderer& renderer) override;
     
 protected:
     StrongResourceRef material;

@@ -62,6 +62,9 @@ std::unique_ptr<Node> Node::Duplicate() {
 	return n;
 }
 
+void Node::Render(Renderer& renderer) {
+}
+
 Transform Node::GetTransform() const
 {
 	return Transform::identity();
@@ -84,16 +87,6 @@ void Node::UpdateTransform()
 	ForEachChild([](Node* child)
 	{
 		child->UpdateTransform();
-	});
-}
-
-void Node::Render(RenderVisitor& Visitor)
-{
-	// Depth first walk
-	ForEachChild([&Visitor](Node* child)
-	{
-		if (child->IsHidden()) return;
-		child->Render(Visitor);
 	});
 }
 

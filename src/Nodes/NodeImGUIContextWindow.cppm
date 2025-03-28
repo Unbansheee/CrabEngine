@@ -1,10 +1,6 @@
 ﻿module;
-
-#pragma once
-
-#include "ReflectionMacros.h"
 #include "imgui.h"
-
+#include "ReflectionMacros.h"
 
 export module Engine.Node.ImGuiContextWindow;
 export import Engine.Node.Window;

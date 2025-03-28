@@ -39,14 +39,16 @@ public:
     template <typename T, typename Class>
     Property(const std::string& name,
         const std::string& display_name,
+        const std::string& owner_class,
         T Class::*member_ptr,
         uint32_t flags,
-        PostSetCallback post_set_cb = nullptr // New optional callback
+        PostSetCallback post_set_cb = nullptr
     ) : name(name),
         displayName(display_name),
+        ownerClass(owner_class),
         type(typeid(T)),
         flags(flags),
-        post_set_callback(std::move(post_set_cb)) // Store callback
+        post_set_callback(std::move(post_set_cb))
     {
 
         // Setter with callback invocation
@@ -74,6 +76,7 @@ public:
     Property(
     const std::string& name,
     const std::string& display_name,
+    const std::string& owner_class,
     std::function<ValueVariant(void*)> getter,
     std::function<void(void*, const ValueVariant&)> setter,
     PostSetCallback postSetCallback,
@@ -81,6 +84,7 @@ public:
     uint32_t flags
 ) : name(name),
     displayName(display_name),
+    ownerClass(owner_class),
     type(type),
     flags(flags),
     getter(std::move(getter)),
@@ -132,6 +136,7 @@ public:
 
     std::string displayName;
     std::string name;
+    std::string ownerClass;
     std::type_index type;
     uint32_t flags;
 

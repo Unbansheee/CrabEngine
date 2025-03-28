@@ -8,7 +8,7 @@
 
 export module Engine.Node.Window;
 export import Engine.Node;
-import renderer;
+import Engine.GFX.Renderer;
 import Engine.Object.Ref;
 import Engine.WGPU;
 import Engine.Node.Camera3D;

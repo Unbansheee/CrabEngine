@@ -4,13 +4,13 @@
 
 module Engine.Node.MeshInstance3D;
 import Engine.Application;
-import Engine.Renderer.Visitor;
 import Engine.Resource.Material.Standard;
 import Engine.WGPU;
 import Engine.Types;
 import Engine.Resource.Material;
 import Engine.Resource.ResourceManager;
 import Engine.Resource.ShaderFile;
+import Engine.GFX.Renderer;
 
 NodeMeshInstance3D::NodeMeshInstance3D()
 {
@@ -22,25 +22,12 @@ void NodeMeshInstance3D::SetMesh(const std::shared_ptr<MeshResource> &newMesh) {
     this->Mesh = newMesh;
 }
 
-void NodeMeshInstance3D::Render(RenderVisitor& Visitor)
+void NodeMeshInstance3D::Render(Renderer& renderer)
 {
-    if (!material.Get<Resource>())
-    {
-        auto m = MakeShared<StandardMaterial>();
-        m->shader_file = ResourceManager::Load<ShaderFileResource>(ENGINE_RESOURCE_DIR"/standard_material.wgsl");
-        m->LoadData();
-        material = m;
+    Node3D::Render(renderer);
 
-    }
-    
-    if (Mesh.Get<Resource>())
-    {
-        Visitor.Visit(*this);
-    }
-    
-    Super::Render(Visitor);
-    
+    std::shared_ptr<MeshResource> meshRef = Mesh.Get<MeshResource>();
+    renderer.DrawMesh(meshRef, material.Get<MaterialResource>(), transform.GetWorldModelMatrix());
 }
-
 
 

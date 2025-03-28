@@ -27,7 +27,7 @@ export namespace ClassFlags {
 
 export struct ClassType : NoCopy
 {
-    
+     
     using CreateClassFn = std::function<Object*()>;
     string_id Name = MakeStringID("null");
     CreateClassFn Initializer;

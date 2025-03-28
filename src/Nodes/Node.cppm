@@ -23,10 +23,11 @@ import Engine.SceneTree;
 import Engine.Object.Ref;
 
 export class RenderVisitor;
+export class Renderer;
 
 export class Node : public Object {
 public:
-	CRAB_CLASS(Node, Object)
+	public: constexpr static inline std::string_view ClassName = "Node"; using ThisClass = Node; using Super = Object; static const ClassType& GetStaticClass() { static ClassType s { .Name = MakeStringID("Node"), .Initializer = &Object::Create<Node>, .Properties = Node::GetClassProperties(), .Parent = MakeStringID("Object") }; return s; } virtual const ClassType& GetStaticClassFromThis() override { return GetStaticClass(); } [[maybe_unused]] inline static AutoClassRegister AutoRegistrationObject_Node = AutoClassRegister(GetStaticClass());
 	CLASS_FLAG(EditorVisible)
 	BEGIN_PROPERTIES
 		ADD_PROPERTY("Name", Name)
@@ -48,7 +49,9 @@ protected:
 	// Runs every frame
 	virtual void Update(float dt) {}
 
-	virtual void DrawGUI() {};
+	virtual void DrawGUI()
+	{
+	};
 
 public:
 
@@ -95,6 +98,8 @@ public:
 	virtual void Ready() {};
 	// Called upon initialization
 	virtual void Init() {};
+
+	virtual void Render(Renderer& renderer);
 	
 	// Returns the Transform data of this Node
 	virtual Transform GetTransform() const;
@@ -104,10 +109,6 @@ public:
 
 	// Recalculate the Model Matrix and update the transforms of all children
 	virtual void UpdateTransform();
-
-	// IDrawable
-	virtual void Render(RenderVisitor& Visitor);
-	// ~IDrawable
 
 	// Walk the tree to the root node, and retrieve its Context
 	//Context& GetContext();
