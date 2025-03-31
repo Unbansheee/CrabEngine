@@ -5,7 +5,7 @@
 #include <vector>
 #include <rocket/rocket.hpp>
 
-export module Engine.GFX.Renderer;
+export module Engine.GFX.IDPassRenderer;
 import Engine.Node;
 import Engine.GFX.UniformBuffer;
 import Engine.GFX.DynamicOffsetUniformBuffer;
@@ -13,14 +13,16 @@ import Engine.GFX.UniformDefinitions;
 import Engine.GFX.View;
 import Engine.WGPU;
 import Engine.Object.ObservableDtor;
+import Engine.GFX.IDPassMaterial;
 export import Engine.GFX.DrawCommand;
+import Engine.Object.Ref;
 
 export class MaterialResource;
 export class MeshResource;
 
-export class Renderer : public observable_dtor {
+export class IDPassRenderer : public observable_dtor {
 public:
-    Renderer() = default;
+    IDPassRenderer() = default;
 
     // Initialization
     void Initialize(wgpu::Device device);
@@ -31,13 +33,15 @@ public:
         m_additionalPasses.push_back(command);
     }
 
-    void DrawMesh(const std::shared_ptr<MeshResource>& mesh, const std::shared_ptr<MaterialResource>& material, const Matrix4& transform);
+    void DrawMesh(const std::shared_ptr<MeshResource>& mesh, const std::shared_ptr<MaterialResource>& material, const Matrix4& transform, Node* node);
     
     std::vector<DrawBatch> BuildBatches(const std::vector<DrawCommand> commands);
     void GatherDrawCommands(Node* rootNode);
     
     virtual void CreateBindGroups();
     virtual void UpdateUniforms();
+
+    ObjectRef<Node> GetNode(uint32_t id);
     
     rocket::signal<void(Vector2)> OnResized;
 private:
@@ -52,17 +56,16 @@ private:
     wgpu::BindGroup m_rendererUniformBindGroup = nullptr;
 
     UniformBuffer<Uniforms::UGlobalData> m_globalUniformBuffer;
-    UniformBuffer<Uniforms::ULightingData> m_lightingUniformBuffer;
-    DynamicOffsetUniformBuffer<Uniforms::UObjectData> m_objectUniformBuffer;
-
+    DynamicOffsetUniformBuffer<Uniforms::UIDPassObjectData> m_objectUniformBuffer;
     UniformBuffer<Uniforms::UCameraData> m_cameraUniformBuffer;
-
-    std::shared_ptr<MaterialResource> m_fallbackMaterial;
     
     //wgpu::BindGroup m_modelBindGroup = nullptr;
     std::vector<DrawCommand> drawCommandBuffer;
-    
 
+    std::shared_ptr<IDPassMaterial> IDPassMat;
+
+    std::vector<ObjectRef<Node>> drawnNodes;
+    
     void SortBatches(std::vector<DrawBatch>& batches);
     void ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::TextureView& colorAttachmentView, wgpu::TextureView& depthAttachmentView);
 };

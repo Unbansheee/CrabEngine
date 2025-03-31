@@ -17,4 +17,5 @@ public:
     void LoadData() override;
 
     void LoadFromPixelData(int width, int height, int channels, unsigned char* pixelData);
+    void CreateBlankTexture(wgpu::TextureDescriptor descriptor);
 };

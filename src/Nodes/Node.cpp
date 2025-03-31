@@ -65,6 +65,10 @@ std::unique_ptr<Node> Node::Duplicate() {
 void Node::Render(Renderer& renderer) {
 }
 
+void Node::Render(IDPassRenderer& renderer)
+{
+}
+
 Transform Node::GetTransform() const
 {
 	return Transform::identity();

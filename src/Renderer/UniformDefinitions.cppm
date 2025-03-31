@@ -31,6 +31,15 @@ namespace Uniforms
         Matrix4 LocalMatrix = Matrix4(1.0f);
     };
 
+    
+    export struct UIDPassObjectData
+    {
+        Matrix4 ModelMatrix = Matrix4(1.0f);
+        Matrix4 LocalMatrix = Matrix4(1.0f);
+        uint32_t DrawID = 0;
+        float _pad[3];
+    };
+
     export using PerObjectUniformsLayout = MaterialHelpers::BindGroupLayoutBuilder<
     MaterialHelpers::DynamicOffsetUniformBufferEntry<0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>>; // ObjectData
 
@@ -50,6 +59,10 @@ namespace Uniforms
     = MaterialHelpers::BindGroupLayoutBuilder<
     MaterialHelpers::UniformBufferEntry<0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>, // CameraData
     MaterialHelpers::UniformBufferEntry<1, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>>; // LightingData
+
+    export using IDRendererUniformsLayout
+    = MaterialHelpers::BindGroupLayoutBuilder<
+    MaterialHelpers::UniformBufferEntry<0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>>; // CameraData
     
     export struct UStandardMaterialParameters
     {

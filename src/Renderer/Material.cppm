@@ -14,6 +14,7 @@ import Engine.WGPU;
 import Engine.Object;
 import Engine.Resource;
 import Engine.Resource.Ref;
+import Engine.Application;
 
 
 export class MaterialResource : public Resource
@@ -46,6 +47,7 @@ protected:
         wgpu::PrimitiveTopology PrimitiveTopology = wgpu::PrimitiveTopology::TriangleList;
         wgpu::FrontFace FrontFace = wgpu::FrontFace::CCW;
         wgpu::CullMode CullMode = wgpu::CullMode::None;
+        bool bUseBlending = true;
     };
 
     enum RenderPass
@@ -79,6 +81,7 @@ public:
     virtual void Initialize()
     {
         assert(TargetTextureFormat != wgpu::TextureFormat::Undefined);
+        if (!m_device) m_device = Application::Get().GetDevice();
         m_pipeline = CreateRenderPipeline();
         m_bindGroups = CreateMaterialBindGroups();
     }

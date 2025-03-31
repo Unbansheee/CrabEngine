@@ -22,12 +22,12 @@ public:
     PhysicsWorld& GetPhysicsWorld() {return *physicsWorld.get();}
 
     template<typename T>
-    T* SetRoot(std::unique_ptr<T> root)
+    T* SetRoot(std::unique_ptr<T> newRoot)
     {
         if (this->root) {
             UnregisterNode(this->root.get());
         }
-        this->root = std::move(root);
+        this->root = std::move(newRoot);
         RegisterNode(this->root.get());
 
         return static_cast<T*>(this->root.get());

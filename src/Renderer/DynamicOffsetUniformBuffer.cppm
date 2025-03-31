@@ -64,6 +64,7 @@ public:
 
     uint32_t GetBindingSize() {return sizeof(T);}
     uint32_t GetStride() {return stride;}
+    uint32_t GetCurrentCount() {return currentCount;}
 
     wgpu::Buffer GetInternalBuffer() { return buffer; }
     

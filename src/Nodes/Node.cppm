@@ -24,6 +24,8 @@ import Engine.Object.Ref;
 
 export class RenderVisitor;
 export class Renderer;
+export class IDPassRenderer;
+
 
 export class Node : public Object {
 public:
@@ -100,6 +102,7 @@ public:
 	virtual void Init() {};
 
 	virtual void Render(Renderer& renderer);
+	virtual void Render(IDPassRenderer& renderer);
 	
 	// Returns the Transform data of this Node
 	virtual Transform GetTransform() const;

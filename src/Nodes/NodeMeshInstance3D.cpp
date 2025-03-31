@@ -11,6 +11,7 @@ import Engine.Resource.Material;
 import Engine.Resource.ResourceManager;
 import Engine.Resource.ShaderFile;
 import Engine.GFX.Renderer;
+import Engine.GFX.IDPassRenderer;
 
 NodeMeshInstance3D::NodeMeshInstance3D()
 {
@@ -27,7 +28,21 @@ void NodeMeshInstance3D::Render(Renderer& renderer)
     Node3D::Render(renderer);
 
     std::shared_ptr<MeshResource> meshRef = Mesh.Get<MeshResource>();
-    renderer.DrawMesh(meshRef, material.Get<MaterialResource>(), transform.GetWorldModelMatrix());
+    if (meshRef)
+    {
+        renderer.DrawMesh(meshRef, material.Get<MaterialResource>(), transform.GetWorldModelMatrix());
+    }
+}
+
+void NodeMeshInstance3D::Render(IDPassRenderer& renderer)
+{
+    Node3D::Render(renderer);
+    std::shared_ptr<MeshResource> meshRef = Mesh.Get<MeshResource>();
+    if (meshRef)
+    {
+        renderer.DrawMesh(meshRef, material.Get<MaterialResource>(), transform.GetWorldModelMatrix(), this);
+    }
+
 }
 
 

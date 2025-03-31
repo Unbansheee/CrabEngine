@@ -81,7 +81,10 @@ wgpu::RenderPipeline MaterialResource::CreateRenderPipeline()
     
     wgpu::ColorTargetState colorTarget;
     colorTarget.format = TargetTextureFormat;
-    colorTarget.blend = &blendState;
+    if (m_settings.bUseBlending)
+    {
+        colorTarget.blend = &blendState;
+    }
     colorTarget.writeMask = wgpu::ColorWriteMask::All; // We could write to only some of the color channels.
     
     wgpu::FragmentState fragmentState = {};

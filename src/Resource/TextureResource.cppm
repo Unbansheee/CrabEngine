@@ -31,6 +31,8 @@ public:
 
     wgpu::TextureView GetThumbnail() override;
 
+    wgpu::Texture& GetInternalTexture() { return texture; }
+    wgpu::TextureView& GetInternalTextureView() { return view; }
     const wgpu::Texture& GetInternalTexture() const { return texture; }
     const wgpu::TextureView& GetInternalTextureView() const { return view; }
 
