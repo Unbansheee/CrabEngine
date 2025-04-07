@@ -13,7 +13,7 @@ using namespace MaterialHelpers;
 
 StandardMaterial::StandardMaterial() : MaterialResource()
 {
-    shader_file = ResourceManager::Load<ShaderFileResource>(ENGINE_RESOURCE_DIR"/standard_material.wgsl");
+    shader_file = ResourceManager::Load<ShaderFileResource>(ENGINE_RESOURCE_DIR"/default_standard_material.wgsl");
 }
 
 

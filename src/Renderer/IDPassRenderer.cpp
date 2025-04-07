@@ -51,7 +51,6 @@ void IDPassRenderer::RenderNodeTree(Node* rootNode, View& view, wgpu::TextureVie
     
     // 4. Execute rendering
     ExecuteBatches(batches, colorAttachment, depthAttachment);
-
 }
 
 void IDPassRenderer::DrawMesh(const std::shared_ptr<MeshResource>& mesh, const std::shared_ptr<MaterialResource>& material,

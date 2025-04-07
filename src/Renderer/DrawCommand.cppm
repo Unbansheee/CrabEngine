@@ -12,6 +12,7 @@ export struct DrawCommand
     wgpu::Buffer indexBuffer = nullptr;
     uint32_t indexCount = 0;
     Matrix4 modelMatrix = Matrix4(1.0f);
+    Node* sender;
 };
 
 export struct DrawItem {

@@ -7,6 +7,7 @@ export module Engine.Resource.Texture;
 export import Engine.Resource;
 import Engine.Resource.ResourceManager;
 import Engine.WGPU;
+import Engine.Types;
 
 
 export class TextureResource : public Resource
@@ -35,6 +36,8 @@ public:
     wgpu::TextureView& GetInternalTextureView() { return view; }
     const wgpu::Texture& GetInternalTexture() const { return texture; }
     const wgpu::TextureView& GetInternalTextureView() const { return view; }
+
+    glm::uvec2 GetSize() const {return {width, height};}
 
 protected:
     int width = 0;

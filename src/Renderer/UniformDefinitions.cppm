@@ -29,6 +29,10 @@ namespace Uniforms
     {
         Matrix4 ModelMatrix = Matrix4(1.0f);
         Matrix4 LocalMatrix = Matrix4(1.0f);
+
+        // 0 is invalid. Valid ID's start at 1
+        uint32_t DrawID = 0;
+        float _pad[3];
     };
 
     
@@ -58,7 +62,8 @@ namespace Uniforms
     export using RendererUniformsLayout
     = MaterialHelpers::BindGroupLayoutBuilder<
     MaterialHelpers::UniformBufferEntry<0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>, // CameraData
-    MaterialHelpers::UniformBufferEntry<1, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>>; // LightingData
+    MaterialHelpers::UniformBufferEntry<1, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>, // LightingData
+    MaterialHelpers::TextureStorageEntry<2, wgpu::ShaderStage::Fragment, WGPUTextureFormat_R32Uint>>; // ID Texture
 
     export using IDRendererUniformsLayout
     = MaterialHelpers::BindGroupLayoutBuilder<

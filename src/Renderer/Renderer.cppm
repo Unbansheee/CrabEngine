@@ -25,18 +25,18 @@ public:
     // Initialization
     void Initialize(wgpu::Device device);
     void Flush();
-    void RenderNodeTree(Node* rootNode, View& view, wgpu::TextureView& colorAttachment, wgpu::TextureView& depthAttachment);
+    std::vector<Node*> RenderNodeTree(Node* rootNode, View& view, wgpu::TextureView& colorAttachment, wgpu::TextureView& depthAttachment, wgpu::TextureView& id_texture);
     void AddCommand(wgpu::CommandBuffer command)
     {
         m_additionalPasses.push_back(command);
     }
 
-    void DrawMesh(const std::shared_ptr<MeshResource>& mesh, const std::shared_ptr<MaterialResource>& material, const Matrix4& transform);
+    void DrawMesh(const std::shared_ptr<MeshResource>& mesh, const std::shared_ptr<MaterialResource>& material, const Matrix4& transform, Node* sender = nullptr);
     
-    std::vector<DrawBatch> BuildBatches(const std::vector<DrawCommand> commands);
+    std::vector<DrawBatch> BuildBatches(const std::vector<DrawCommand> commands, std::vector<Node*>& drawnNodes);
     void GatherDrawCommands(Node* rootNode);
     
-    virtual void CreateBindGroups();
+    virtual void CreateBindGroups(wgpu::TextureView& idPassTex);
     virtual void UpdateUniforms();
     
     rocket::signal<void(Vector2)> OnResized;

@@ -36,7 +36,6 @@ public:
     }
 
     void Render(Renderer& renderer) override;
-    void Render(IDPassRenderer& renderer) override;
 
     
 protected:

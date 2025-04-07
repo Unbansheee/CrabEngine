@@ -94,7 +94,7 @@ void NodeWindow::Update(float dt)
             viewData.ViewMatrix = ActiveCamera->GetViewMatrix();
             viewData.ProjectionMatrix = glm::perspectiveRH(ActiveCamera->FOV, GetAspectRatio(), ActiveCamera->NearClippingPlane, ActiveCamera->FarClippingPlane);
         }
-        renderer.RenderNodeTree(this, viewData, SurfaceView, DepthView);
+        renderer.RenderNodeTree(this, viewData, SurfaceView, DepthView, PickingPassTexture->GetInternalTextureView());
     }
     renderer.Flush();
     
@@ -155,6 +155,7 @@ void NodeWindow::RequestResize()
 
 wgpu::TextureView NodeWindow::GetCurrentTextureView()
 {
+    if (m_currentSurfaceView == nullptr)
     if (m_currentSurfaceView == nullptr)
     {
         m_currentSurfaceView = GetNextSurfaceTextureView();
@@ -263,3 +264,21 @@ void NodeWindow::ExecuteResize()
     }
 }
 
+void NodeWindow::CreateIDPassTextures(uint32_t width, uint32_t height)
+{
+    if (!PickingPassTexture)
+    {
+        PickingPassTexture = std::make_shared<RuntimeTextureResource>();
+    }
+    wgpu::TextureDescriptor IDPassDesc = wgpu::Default;
+    IDPassDesc.size.width = width;
+    IDPassDesc.size.height = height;
+    IDPassDesc.size.depthOrArrayLayers = 1;
+    IDPassDesc.usage = wgpu::TextureUsage::StorageBinding | wgpu::TextureUsage::CopySrc;
+    IDPassDesc.format = wgpu::TextureFormat::R32Uint;
+    IDPassDesc.mipLevelCount = 1;
+    IDPassDesc.sampleCount = 1;
+    IDPassDesc.dimension = wgpu::TextureDimension::_2D;
+
+    PickingPassTexture->CreateBlankTexture(IDPassDesc);
+}

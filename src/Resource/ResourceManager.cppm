@@ -21,9 +21,16 @@ import Engine.Resource;
 import Engine.Resource.Importer.ImportSettings;
 import Engine.WGPU;
 import Engine.Types;
+import Engine.MaterialProperties;
 
 export struct MeshVertex;
 export class ImportManager;
+
+
+export struct ShaderModule {
+    wgpu::ShaderModule Module = nullptr;
+    ShaderMetadata Metadata;
+};
 
 export class ResourceManager {
 public:
@@ -80,9 +87,12 @@ public:
     static wgpu::Texture loadTexture(const std::filesystem::path& path, wgpu::Device device, wgpu::TextureView* pTextureView);
     static wgpu::Texture loadTexture(wgpu::Device device, int width, int height, int channels, unsigned char* pixelData, wgpu::TextureView* pTextureView);
     
-    static wgpu::ShaderModule loadShaderModule(
+    static ShaderModule loadShaderModule(
     const std::filesystem::path& path,
     wgpu::Device device);
+
+    static wgpu::ShaderModule loadComputeShaderModule(const std::filesystem::path &path, wgpu::Device device, std::unordered_map<std::string, std::string>& formats);
+
 
     static void populateTextureFrameAttributes(std::vector<MeshVertex> &vertexData, optional_ref<const std::vector<uint16_t>> indices = std::nullopt);
     static void writeMipMaps(

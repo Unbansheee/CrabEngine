@@ -25,16 +25,20 @@ void Renderer::Initialize(wgpu::Device device)
     m_objectUniformBuffer.Initialize(device, 512);
 
     m_fallbackMaterial = MakeShared<StandardMaterial>();
-    m_fallbackMaterial->shader_file = ResourceManager::Load<ShaderFileResource>(ENGINE_RESOURCE_DIR"/standard_material.wgsl");
+    m_fallbackMaterial->shader_file = ResourceManager::Load<ShaderFileResource>(ENGINE_RESOURCE_DIR"/default_standard_material.wgsl");
     m_fallbackMaterial->LoadData();
 }
 
 
-void Renderer::RenderNodeTree(Node* rootNode, View& view, wgpu::TextureView& colorAttachment,
-                              wgpu::TextureView& depthAttachment)
+std::vector<Node*> Renderer::RenderNodeTree(Node* rootNode, View& view, wgpu::TextureView& colorAttachment,
+                              wgpu::TextureView& depthAttachment, wgpu::TextureView& id_texture)
 {
-    CreateBindGroups();
-
+    std::vector<Node*> DrawnNodes;
+    DrawnNodes.push_back(nullptr); // Index 0 is INVALID
+    
+    CreateBindGroups(id_texture);
+    UpdateUniforms();
+    
     Uniforms::ULightingData lightingData;
     lightingData.LightColors = {
         Vector4{ 1.0f, 0.9f, 0.6f, 1.0f },
@@ -49,7 +53,7 @@ void Renderer::RenderNodeTree(Node* rootNode, View& view, wgpu::TextureView& col
     GatherDrawCommands(rootNode);
     
     // 3. Build and sort batches
-    auto batches = BuildBatches(drawCommandBuffer);
+    auto batches = BuildBatches(drawCommandBuffer, DrawnNodes);
     SortBatches(batches);
 
     m_objectUniformBuffer.Upload(m_queue);
@@ -59,14 +63,16 @@ void Renderer::RenderNodeTree(Node* rootNode, View& view, wgpu::TextureView& col
     cameraData.projectionMatrix = view.ProjectionMatrix;
     cameraData.viewMatrix = view.ViewMatrix;
     m_cameraUniformBuffer.SetData(cameraData);
+
     
     // 4. Execute rendering
     ExecuteBatches(batches, colorAttachment, depthAttachment);
 
+    return DrawnNodes;
 }
 
 void Renderer::DrawMesh(const std::shared_ptr<MeshResource>& mesh, const std::shared_ptr<MaterialResource>& material,
-    const Matrix4& transform)
+    const Matrix4& transform, Node* sender)
 {
     drawCommandBuffer.push_back(DrawCommand{
         material ? material.get() : m_fallbackMaterial.get(),
@@ -74,12 +80,14 @@ void Renderer::DrawMesh(const std::shared_ptr<MeshResource>& mesh, const std::sh
         mesh->vertexCount,
     mesh->indexBuffer,
         mesh->indexCount,
-    transform});
+    transform,
+        sender
+        });
 
     
 }
 
-std::vector<DrawBatch> Renderer::BuildBatches(const std::vector<DrawCommand> commands)
+std::vector<DrawBatch> Renderer::BuildBatches(const std::vector<DrawCommand> commands, std::vector<Node*>& drawnNodes)
 {
     // Group into batches
     std::vector<DrawBatch> batches;
@@ -98,6 +106,9 @@ std::vector<DrawBatch> Renderer::BuildBatches(const std::vector<DrawCommand> com
 
         Uniforms::UObjectData data;
         data.ModelMatrix = cmd.modelMatrix;
+        drawnNodes.push_back(cmd.sender);
+        data.DrawID = drawnNodes.size() - 1;
+        
         uint32_t currentOffset = m_objectUniformBuffer.Write(data);
         currentBatch->drawItems.push_back({
             cmd.vertexBuffer,
@@ -128,7 +139,7 @@ void Renderer::GatherDrawCommands(Node* rootNode)
     }
 }
 
-void Renderer::CreateBindGroups()
+void Renderer::CreateBindGroups(wgpu::TextureView& idPassTex)
 {
     auto device = Application::Get().GetDevice();
     if (!m_globalBindGroup)
@@ -147,12 +158,18 @@ void Renderer::CreateBindGroups()
             .Build();
     }
 
+    if (m_rendererUniformBindGroup)
+    {
+        m_rendererUniformBindGroup.release();
+        m_rendererUniformBindGroup = nullptr;
+    }
     if (!m_rendererUniformBindGroup)
     {
         MaterialHelpers::BindGroupCreator<Uniforms::RendererUniformsLayout> BindCreator(device);
         m_rendererUniformBindGroup = BindCreator
             .Set<0, WGPUBuffer>(m_cameraUniformBuffer.GetBuffer())
             .Set<1, WGPUBuffer>(m_lightingUniformBuffer.GetBuffer())
+            .Set<2, WGPUTextureView>(idPassTex)
             .Build();
     }
 }
@@ -234,7 +251,7 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
         // Bind global bind groups
         pass.setBindGroup(MaterialResource::ENamedBindGroup::GLOBAL, m_globalBindGroup, 0, nullptr);
         pass.setBindGroup(MaterialResource::ENamedBindGroup::RENDERER, m_rendererUniformBindGroup, 0, nullptr);
-        
+                
         // Execute draw calls
         for (const auto& item : batch.drawItems) {
             uint32_t dynamicOffset = item.dynamicOffset;

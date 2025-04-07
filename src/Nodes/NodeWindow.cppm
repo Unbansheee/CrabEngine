@@ -13,6 +13,7 @@ import Engine.Object.Ref;
 import Engine.WGPU;
 import Engine.Node.Camera3D;
 import Engine.Types;
+import Engine.Resource.RuntimeTexture;
 
 export class NodeWindow : public Node
 {
@@ -49,6 +50,7 @@ public:
 protected:
     void InitializeRenderer();
     void TerminateSurface();
+    void CreateIDPassTextures(uint32_t width, uint32_t height);
     
     virtual void RequestResize();
     virtual void OnKey(int key, int scancode, int action, int mods)
@@ -77,6 +79,8 @@ protected:
     GLFWwindow* window = nullptr;
     wgpu::Surface surface = nullptr;
     bool bCloseRequested = false;
+
+    std::shared_ptr<RuntimeTextureResource> PickingPassTexture;
     
     wgpu::TextureFormat surfaceFormat = wgpu::TextureFormat::Undefined;
     wgpu::TextureFormat depthFormat = wgpu::TextureFormat::Depth24Plus;

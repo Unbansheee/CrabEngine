@@ -156,7 +156,7 @@ wgpu::RequiredLimits Application::GetRequiredLimits(wgpu::Adapter adapter)
 	requiredLimits.limits.minUniformBufferOffsetAlignment = supportedLimits.limits.minUniformBufferOffsetAlignment;
 	requiredLimits.limits.minStorageBufferOffsetAlignment = supportedLimits.limits.minStorageBufferOffsetAlignment;
 	requiredLimits.limits.maxTextureDimension2D = supportedLimits.limits.maxTextureDimension2D;
-	requiredLimits.limits.maxInterStageShaderComponents = 17;
+	requiredLimits.limits.maxInterStageShaderComponents = 64;
 	requiredLimits.limits.maxBindGroups = 4;
 	requiredLimits.limits.maxUniformBuffersPerShaderStage = 3;
 	requiredLimits.limits.maxUniformBufferBindingSize = 65536;
@@ -167,6 +167,13 @@ wgpu::RequiredLimits Application::GetRequiredLimits(wgpu::Adapter adapter)
 	requiredLimits.limits.maxSampledTexturesPerShaderStage = 4;
 	requiredLimits.limits.maxSamplersPerShaderStage = 4;
 	requiredLimits.limits.maxBindingsPerBindGroup = 5;
+	requiredLimits.limits.maxStorageTexturesPerShaderStage = 2;
+
+	requiredLimits.limits.maxComputeWorkgroupsPerDimension = 65535;
+	requiredLimits.limits.maxComputeInvocationsPerWorkgroup = 32*32;
+	requiredLimits.limits.maxComputeWorkgroupSizeX = 32;
+	requiredLimits.limits.maxComputeWorkgroupSizeY = 32;
+	requiredLimits.limits.maxComputeWorkgroupSizeZ = 32;
 
 
 	return requiredLimits;

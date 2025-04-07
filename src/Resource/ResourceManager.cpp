@@ -4,6 +4,7 @@
 
 #include "stb_image.h"
 #include <tiny_obj_loader.h>
+#include "fmt/format.h"
 
 module Engine.Resource.ResourceManager;
 import Engine.Resource.Mesh;
@@ -15,8 +16,13 @@ import Engine.WGPU;
 import Engine.Resource.ImportManager;
 import Engine.Reflection.ClassDB;
 import Engine.Assert;
+import Engine.ShaderParser;
+import fmt;
 
-using namespace wgpu;
+
+
+
+
 
 bool ResourceManager::IsSourceFile(const std::filesystem::path& path)
 {
@@ -145,32 +151,32 @@ bool ResourceManager::loadGeometryFromObj(const std::filesystem::path &path, std
     return true;
 }
 
-wgpu::Texture ResourceManager::loadTexture(const std::filesystem::path &path, wgpu::Device device, TextureView* pTextureView) {
+wgpu::Texture ResourceManager::loadTexture(const std::filesystem::path &path, wgpu::Device device, wgpu::TextureView* pTextureView) {
     int width, height, channels;
     unsigned char *pixelData = stbi_load(path.string().c_str(), &width, &height, &channels, 4 /* force 4 channels */);
     if (!pixelData) return nullptr;
 
-    TextureDescriptor textureDesc{};
-    textureDesc.dimension = TextureDimension::_2D;
-    textureDesc.format = TextureFormat::RGBA8Unorm; // by convention for bmp, png and jpg file. Be careful with other formats.
+    wgpu::TextureDescriptor textureDesc{};
+    textureDesc.dimension = wgpu::TextureDimension::_2D;
+    textureDesc.format = wgpu::TextureFormat::RGBA8Unorm; // by convention for bmp, png and jpg file. Be careful with other formats.
     textureDesc.sampleCount = 1;
     textureDesc.size = { (unsigned int)width, (unsigned int)height, 1 };
     textureDesc.mipLevelCount = std::bit_width(std::max(textureDesc.size.width, textureDesc.size.height));
-    textureDesc.usage = TextureUsage::TextureBinding | TextureUsage::CopyDst;
+    textureDesc.usage = wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopyDst;
     textureDesc.viewFormatCount = 0;
     textureDesc.viewFormats = nullptr;
-    Texture texture = device.createTexture(textureDesc);
+    wgpu::Texture texture = device.createTexture(textureDesc);
 
     if (pTextureView) {
-        TextureViewDescriptor textureViewDesc{};
-        textureViewDesc.aspect = TextureAspect::All;
+        wgpu::TextureViewDescriptor textureViewDesc{};
+        textureViewDesc.aspect = wgpu::TextureAspect::All;
         textureViewDesc.baseArrayLayer = 0;
         textureViewDesc.arrayLayerCount = 1;
         textureViewDesc.baseMipLevel = 0;
         textureViewDesc.mipLevelCount = textureDesc.mipLevelCount;
-        textureViewDesc.dimension = TextureViewDimension::_2D;
+        textureViewDesc.dimension = wgpu::TextureViewDimension::_2D;
         textureViewDesc.format = textureDesc.format;
-        TextureView view = texture.createView(textureViewDesc);
+        wgpu::TextureView view = texture.createView(textureViewDesc);
         *pTextureView = view;
     }
 
@@ -195,7 +201,7 @@ wgpu::Texture ResourceManager::loadTexture(wgpu::Device device, int width, int h
     textureDesc.usage = wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopyDst;
     textureDesc.viewFormatCount = 0;
     textureDesc.viewFormats = nullptr;
-    Texture texture = device.createTexture(textureDesc);
+    wgpu::Texture texture = device.createTexture(textureDesc);
 
     if (pTextureView)
     {
@@ -214,50 +220,83 @@ wgpu::Texture ResourceManager::loadTexture(wgpu::Device device, int width, int h
     return texture;
 }
 
-wgpu::ShaderModule ResourceManager::loadShaderModule(const std::filesystem::path &path, wgpu::Device device) {
+ShaderModule ResourceManager::loadShaderModule(const std::filesystem::path &path, wgpu::Device device) {
+    ShaderModule m;
     std::ifstream file(path);
-    if (!file.is_open()) {
-        return nullptr;
-    }
+    Assert::Check(file.is_open(), "file.is_open()", path.string());
+
     file.seekg(0, std::ios::end);
     size_t size = file.tellg();
     std::string shaderSource(size, ' ');
     file.seekg(0);
     file.read(shaderSource.data(), size);
 
-    ShaderModuleWGSLDescriptor shaderCodeDesc{};
-    shaderCodeDesc.chain.next = nullptr;
-    shaderCodeDesc.chain.sType = SType::ShaderModuleWGSLDescriptor;
-    shaderCodeDesc.code = shaderSource.c_str();
+    ShaderParser parser;
+    m.Metadata = parser.Parse(shaderSource);
 
-    ShaderModuleDescriptor shaderDesc{};
+    wgpu::ShaderModuleWGSLDescriptor shaderCodeDesc{};
+    shaderCodeDesc.chain.next = nullptr;
+    shaderCodeDesc.chain.sType = wgpu::SType::ShaderModuleWGSLDescriptor;
+    shaderCodeDesc.code = parser.GetProcessedSource().c_str();
+    std::cout << shaderCodeDesc.code;
+
+    wgpu::ShaderModuleDescriptor shaderDesc{};
+#ifdef WEBGPU_BACKEND_WGPU
+    shaderDesc.hintCount = 0;
+    shaderDesc.hints = nullptr;
+#endif
+    shaderDesc.nextInChain = &shaderCodeDesc.chain;
+    m.Module = device.createShaderModule(shaderDesc);
+    return m;
+
+}
+
+wgpu::ShaderModule ResourceManager::loadComputeShaderModule(const std::filesystem::path &path, wgpu::Device device, std::unordered_map<std::string, std::string>& formats)
+{
+    std::ifstream file(path);
+    Assert::Check(file.is_open(), "file.is_open()", path.string());
+
+    file.seekg(0, std::ios::end);
+    size_t size = file.tellg();
+    std::string shaderSource(size, ' ');
+    file.seekg(0);
+    file.read(shaderSource.data(), size);
+    
+    fmt::replace_all(shaderSource, formats);
+    
+    wgpu::ShaderModuleWGSLDescriptor shaderCodeDesc{};
+    shaderCodeDesc.chain.next = nullptr;
+    shaderCodeDesc.chain.sType = wgpu::SType::ShaderModuleWGSLDescriptor;
+    shaderCodeDesc.code = shaderSource.c_str();
+    std::cout << shaderCodeDesc.code;
+
+    wgpu::ShaderModuleDescriptor shaderDesc{};
 #ifdef WEBGPU_BACKEND_WGPU
     shaderDesc.hintCount = 0;
     shaderDesc.hints = nullptr;
 #endif
     shaderDesc.nextInChain = &shaderCodeDesc.chain;
     return device.createShaderModule(shaderDesc);
-
 }
 
 void ResourceManager::writeMipMaps(wgpu::Device device, wgpu::Texture texture, wgpu::Extent3D textureSize,
     uint32_t mipLevelCount, const unsigned char *pixelData) {
-    Queue queue = device.getQueue();
+    wgpu::Queue queue = device.getQueue();
 
     // Arguments telling which part of the texture we upload to
-    ImageCopyTexture destination;
+    wgpu::ImageCopyTexture destination;
     destination.texture = texture;
     destination.origin = { 0, 0, 0 };
-    destination.aspect = TextureAspect::All;
+    destination.aspect = wgpu::TextureAspect::All;
 
     // Arguments telling how the C++ side pixel memory is laid out
-    TextureDataLayout source;
+    wgpu::TextureDataLayout source;
     source.offset = 0;
 
     // Create image data
-    Extent3D mipLevelSize = textureSize;
+    wgpu::Extent3D mipLevelSize = textureSize;
     std::vector<unsigned char> previousLevelPixels;
-    Extent3D previousMipLevelSize;
+    wgpu::Extent3D previousMipLevelSize;
     for (uint32_t level = 0; level < mipLevelCount; ++level) {
         // Pixel data for the current level
         std::vector<unsigned char> pixels(4 * mipLevelSize.width * mipLevelSize.height);

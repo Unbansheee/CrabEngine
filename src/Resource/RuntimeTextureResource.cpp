@@ -39,7 +39,7 @@ void RuntimeTextureResource::CreateBlankTexture(wgpu::TextureDescriptor descript
     width = descriptor.size.width;
     height = descriptor.size.height;
     texture = Application::Get().GetDevice().createTexture(descriptor);
-
+    
     wgpu::TextureViewDescriptor textureViewDesc{};
     textureViewDesc.aspect = wgpu::TextureAspect::All;
     textureViewDesc.baseArrayLayer = 0;

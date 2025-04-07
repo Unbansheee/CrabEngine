@@ -30,19 +30,8 @@ void NodeMeshInstance3D::Render(Renderer& renderer)
     std::shared_ptr<MeshResource> meshRef = Mesh.Get<MeshResource>();
     if (meshRef)
     {
-        renderer.DrawMesh(meshRef, material.Get<MaterialResource>(), transform.GetWorldModelMatrix());
-    }
-}
-
-void NodeMeshInstance3D::Render(IDPassRenderer& renderer)
-{
-    Node3D::Render(renderer);
-    std::shared_ptr<MeshResource> meshRef = Mesh.Get<MeshResource>();
-    if (meshRef)
-    {
         renderer.DrawMesh(meshRef, material.Get<MaterialResource>(), transform.GetWorldModelMatrix(), this);
     }
-
 }
 
 

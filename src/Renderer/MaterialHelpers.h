@@ -1,5 +1,7 @@
 ﻿#pragma once
+
 import Engine.WGPU;
+import std;
 
 enum EShaderStageVisibility : uint8_t
 {
@@ -57,6 +59,22 @@ namespace MaterialHelpers
             return entry;
         }
     };
+
+    template <uint32_t Binding, uint8_t Visibility, WGPUTextureFormat Format>
+    struct TextureStorageEntry {
+            static wgpu::BindGroupLayoutEntry LayoutEntry() {
+                wgpu::StorageTextureBindingLayout tex;
+                tex.access = WGPUStorageTextureAccess_WriteOnly;
+                tex.format = Format;
+                tex.viewDimension = wgpu::TextureViewDimension::_2D;
+                
+                wgpu::BindGroupLayoutEntry entry;
+                entry.visibility = Visibility;
+                entry.binding = Binding;
+                entry.storageTexture = tex;
+                return entry;
+            }
+        };
 
     template <uint32_t Binding, uint8_t Visibility>
     struct SamplerEntry {
@@ -152,3 +170,5 @@ namespace MaterialHelpers
         std::array<wgpu::BindGroupEntry, Layout::EntryCount> m_entries{};
     };
 }
+
+
