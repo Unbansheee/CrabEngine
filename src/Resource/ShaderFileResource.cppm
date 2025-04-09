@@ -1,4 +1,5 @@
-﻿#include "ReflectionMacros.h"
+﻿module;
+#include "ReflectionMacros.h"
 
 export module Engine.Resource.ShaderFile;
 import std;

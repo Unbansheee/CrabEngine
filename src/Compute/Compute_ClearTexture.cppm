@@ -71,8 +71,8 @@ public:
         wgpu::ShaderModule computeShaderModule = ResourceManager::loadComputeShaderModule(ENGINE_RESOURCE_DIR "/Compute/clear_texture.wsl", device, formats);
         
         // Create compute pipeline
-        wgpu::ComputePipelineDescriptor computePipelineDesc = wgpu::Default;
-        computePipelineDesc.compute.entryPoint = "clearTexture";
+        wgpu::ComputePipelineDescriptor computePipelineDesc;
+        computePipelineDesc.compute.entryPoint = {"clearTexture", wgpu::STRLEN};
         computePipelineDesc.compute.module = computeShaderModule;
 
         wgpu::StorageTextureBindingLayout t;
@@ -80,7 +80,7 @@ public:
         t.viewDimension = WGPUTextureViewDimension_2D;
         t.access = Access;
         
-        std::vector<wgpu::BindGroupLayoutEntry> bindings(1, wgpu::Default);
+        std::vector<wgpu::BindGroupLayoutEntry> bindings(1);
         bindings[0].binding = 0;
         bindings[0].storageTexture = t;
         bindings[0].visibility = wgpu::ShaderStage::Compute;

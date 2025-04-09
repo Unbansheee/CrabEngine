@@ -50,7 +50,7 @@ public:
     wgpu::Device GetDevice() const { return wgpuDevice; }
     wgpu::Queue GetQueue() const { return wgpuDeviceGetQueue(wgpuDevice); }
 
-    static wgpu::RequiredLimits GetRequiredLimits(wgpu::Adapter adapter);
+    static wgpu::Limits GetRequiredLimits(wgpu::Adapter adapter);
 
     SceneTree& GetSceneTree() {return sceneTree;}
     
@@ -75,7 +75,6 @@ protected:
     wgpu::Instance wgpuInstance = nullptr;
     wgpu::Device wgpuDevice = nullptr;
 
-    std::unique_ptr<wgpu::ErrorCallback> errorCallbackHandle;
     sid::default_database defaultStringDatabase;
 
     int maxConcurrentJobs = std::thread::hardware_concurrency();		// How many jobs to run in parallel

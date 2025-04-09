@@ -150,7 +150,7 @@ void MaterialResource::InitializeProperties() {
         wgpu::BufferBindingLayout b;
         b.type = wgpu::BufferBindingType::Uniform;
 
-        wgpu::BindGroupLayoutEntry e = wgpu::Default;
+        wgpu::BindGroupLayoutEntry e;
         e.binding = bindingIndex;
         e.visibility = wgpu::ShaderStage::Fragment;
         e.buffer = b;
@@ -180,10 +180,10 @@ void MaterialResource::InitializeProperties() {
         // Initialize with white pixel
         const uint32_t white = 0xFFFFFFFF;
         queue.writeTexture(
-            WGPUImageCopyTexture{.texture = texture},
+            WGPUTexelCopyTextureInfo{.texture = texture},
             &white,
             sizeof(uint32_t),
-            WGPUTextureDataLayout{.bytesPerRow = 4},
+            WGPUTexelCopyBufferLayout{.bytesPerRow = 4},
             WGPUExtent3D{1, 1}
         );
 
@@ -261,7 +261,7 @@ wgpu::RenderPipeline MaterialResource::CreateRenderPipeline()
     wgpu::RenderPipelineDescriptor pipelineDesc = {};
     pipelineDesc.vertex.bufferCount = 1;
     pipelineDesc.vertex.buffers = &vertexBufferLayout;
-    pipelineDesc.vertex.entryPoint = "vs_main";
+    pipelineDesc.vertex.entryPoint = {"vs_main", wgpu::STRLEN};
     pipelineDesc.vertex.constantCount = 0;
     pipelineDesc.vertex.constants = nullptr;
     pipelineDesc.vertex.module = m_shaderModule;
@@ -291,7 +291,7 @@ wgpu::RenderPipeline MaterialResource::CreateRenderPipeline()
     
     wgpu::FragmentState fragmentState = {};
     fragmentState.module = m_shaderModule;
-    fragmentState.entryPoint = "fs_main";
+    fragmentState.entryPoint = {"fs_main", wgpu::STRLEN};
     fragmentState.constantCount = 0;
     fragmentState.constants = nullptr;
     fragmentState.targetCount = 1;
@@ -300,7 +300,7 @@ wgpu::RenderPipeline MaterialResource::CreateRenderPipeline()
     
     wgpu::DepthStencilState depthStencilState = wgpu::Default;
     depthStencilState.depthCompare = wgpu::CompareFunction::Less;
-    depthStencilState.depthWriteEnabled = true;
+    depthStencilState.depthWriteEnabled = WGPUOptionalBool_True;
     depthStencilState.format = DepthTextureFormat;
     depthStencilState.stencilReadMask = 0;
     depthStencilState.stencilWriteMask = 0;

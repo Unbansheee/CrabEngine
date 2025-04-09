@@ -25,9 +25,9 @@ public:
     
     void Init(wgpu::Device device, uint32_t size) {
         internalDevice = device;
-        wgpu::SupportedLimits supportedLimits;
+        wgpu::Limits supportedLimits;
         device.getLimits(&supportedLimits);
-        wgpu::Limits deviceLimits = supportedLimits.limits;
+        wgpu::Limits deviceLimits = supportedLimits;
         alignment = deviceLimits.minUniformBufferOffsetAlignment;
         auto s = Align(size, deviceLimits.minUniformBufferOffsetAlignment);
         

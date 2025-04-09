@@ -21,16 +21,16 @@ public:
     void Initialize(wgpu::Device device, uint32_t uniformCount = 1024)
     {
         internalDevice = device;
-        wgpu::SupportedLimits supportedLimits;
+        wgpu::Limits supportedLimits;
         device.getLimits(&supportedLimits);
-        wgpu::Limits deviceLimits = supportedLimits.limits;
+        wgpu::Limits deviceLimits = supportedLimits;
         stride = MathUtils::Align(sizeof(T), deviceLimits.minUniformBufferOffsetAlignment);
 
         wgpu::BufferDescriptor descriptor = wgpu::Default;
         descriptor.size = stride * uniformCount;
         descriptor.usage = wgpu::BufferUsage::Uniform | wgpu::BufferUsage::CopyDst;
         descriptor.mappedAtCreation = false;
-        descriptor.label = "DynamicOffsetUniformBuffer";
+        descriptor.label = {"DynamicOffsetUniformBuffer", wgpu::STRLEN};
         buffer = internalDevice.createBuffer(descriptor);
 
         initialized = true;

@@ -62,32 +62,31 @@ Application::Application()
 	wgpu::Adapter adapter = wgpuInstance.requestAdapter(adapterOpts);
 	std::cout << "Got adapter: " << adapter << std::endl;
 
-	wgpu::AdapterProperties p;
-	adapter.getProperties(&p);
-	wgpuDevice.
-
 	std::cout << "Requesting device..." << std::endl;
-	wgpu::RequiredLimits requiredLimits = GetRequiredLimits(adapter);
+	wgpu::Limits requiredLimits = GetRequiredLimits(adapter);
 	wgpu::DeviceDescriptor deviceDesc = {};
-	deviceDesc.label = "My Device";
+	deviceDesc.label = {"My Device", wgpu::STRLEN};
 	deviceDesc.requiredFeatureCount = 0;
 	deviceDesc.requiredLimits = &requiredLimits;
 	deviceDesc.defaultQueue.nextInChain = nullptr;
-	deviceDesc.defaultQueue.label = "The default queue";
-	deviceDesc.deviceLostCallback = [](WGPUDeviceLostReason reason, char const* message, void*) {
+	deviceDesc.defaultQueue.label = {"The default queue", wgpu::STRLEN};
+
+	wgpu::DeviceLostCallbackInfo deviceLostCallbackInfo;
+	deviceLostCallbackInfo.callback = [](WGPUDevice const * device, WGPUDeviceLostReason reason, WGPUStringView message, void*, void*)  {
 		std::cout << "Device lost: reason " << reason;
-		if (message) std::cout << " (" << message << ")";
+		if (message.data) std::cout << " (" << message.data << ")";
 		std::cout << std::endl;
 	};
+
+	deviceDesc.deviceLostCallbackInfo = deviceLostCallbackInfo;
+	deviceDesc.uncapturedErrorCallbackInfo.callback = [](WGPUDevice const * device, WGPUErrorType type, WGPUStringView message, void* userdata1, void* userdata2) {
+		Assert::Check(false, "Uncaptured device error: type" + std::to_string((type)), message.data);
+	}
+	;
 	wgpuDevice = adapter.requestDevice(deviceDesc);
 	std::cout << "Got device: " << wgpuDevice << std::endl;
 
-	errorCallbackHandle = wgpuDevice.setUncapturedErrorCallback([](wgpu::ErrorType type, char const* message) {
-		//std::cout << "Uncaptured device error: type " << type;
-		//if (message) std::cout << " (" << message << ")";
-		//std::cout << std::endl;
-		Assert::Check(false, "Uncaptured device error: type" + std::to_string((type)), message);
-	});
+
 	NFD::Init();
 
 	JPH::RegisterDefaultAllocator();
@@ -133,9 +132,9 @@ void Application::Close()
 	bShouldClose = true; 
 }
 
-wgpu::RequiredLimits Application::GetRequiredLimits(wgpu::Adapter adapter)
+wgpu::Limits Application::GetRequiredLimits(wgpu::Adapter adapter)
 {
-	wgpu::SupportedLimits supportedLimits;
+	wgpu::Limits supportedLimits;
 	adapter.getLimits(&supportedLimits);
 
 	int monitorCount;
@@ -152,32 +151,32 @@ wgpu::RequiredLimits Application::GetRequiredLimits(wgpu::Adapter adapter)
 		largestHeight += height;
 	}
 
-	wgpu::RequiredLimits requiredLimits = wgpu::Default;
-	requiredLimits.limits.maxVertexAttributes = 6;
-	requiredLimits.limits.maxVertexBuffers = 1;
-	requiredLimits.limits.maxBufferSize = 10000000 * sizeof(MeshVertex);
-	requiredLimits.limits.maxVertexBufferArrayStride = sizeof(MeshVertex);
-	requiredLimits.limits.minUniformBufferOffsetAlignment = supportedLimits.limits.minUniformBufferOffsetAlignment;
-	requiredLimits.limits.minStorageBufferOffsetAlignment = supportedLimits.limits.minStorageBufferOffsetAlignment;
-	requiredLimits.limits.maxTextureDimension2D = supportedLimits.limits.maxTextureDimension2D;
-	requiredLimits.limits.maxInterStageShaderComponents = 64;
-	requiredLimits.limits.maxBindGroups = 4;
-	requiredLimits.limits.maxUniformBuffersPerShaderStage = 3;
-	requiredLimits.limits.maxUniformBufferBindingSize = 65536;
-	requiredLimits.limits.maxDynamicUniformBuffersPerPipelineLayout = 1;
-	requiredLimits.limits.maxTextureDimension1D = std::max(largestWidth, largestHeight);
-	requiredLimits.limits.maxTextureDimension2D = std::max(largestWidth, largestHeight);
-	requiredLimits.limits.maxTextureArrayLayers = 1;
-	requiredLimits.limits.maxSampledTexturesPerShaderStage = 4;
-	requiredLimits.limits.maxSamplersPerShaderStage = 4;
-	requiredLimits.limits.maxBindingsPerBindGroup = 5;
-	requiredLimits.limits.maxStorageTexturesPerShaderStage = 2;
+	wgpu::Limits requiredLimits = wgpu::Default;
+	requiredLimits.maxVertexAttributes = 6;
+	requiredLimits.maxVertexBuffers = 1;
+	requiredLimits.maxBufferSize = 10000000 * sizeof(MeshVertex);
+	requiredLimits.maxVertexBufferArrayStride = sizeof(MeshVertex);
+	requiredLimits.minUniformBufferOffsetAlignment = supportedLimits.minUniformBufferOffsetAlignment;
+	requiredLimits.minStorageBufferOffsetAlignment = supportedLimits.minStorageBufferOffsetAlignment;
+	requiredLimits.maxTextureDimension2D = supportedLimits.maxTextureDimension2D;
+	requiredLimits.maxInterStageShaderVariables = 64;
+	requiredLimits.maxBindGroups = 4;
+	requiredLimits.maxUniformBuffersPerShaderStage = 3;
+	requiredLimits.maxUniformBufferBindingSize = 65536;
+	requiredLimits.maxDynamicUniformBuffersPerPipelineLayout = 1;
+	requiredLimits.maxTextureDimension1D = std::max(largestWidth, largestHeight);
+	requiredLimits.maxTextureDimension2D = std::max(largestWidth, largestHeight);
+	requiredLimits.maxTextureArrayLayers = 1;
+	requiredLimits.maxSampledTexturesPerShaderStage = 4;
+	requiredLimits.maxSamplersPerShaderStage = 4;
+	requiredLimits.maxBindingsPerBindGroup = 5;
+	requiredLimits.maxStorageTexturesPerShaderStage = 2;
 
-	requiredLimits.limits.maxComputeWorkgroupsPerDimension = 65535;
-	requiredLimits.limits.maxComputeInvocationsPerWorkgroup = 32*32;
-	requiredLimits.limits.maxComputeWorkgroupSizeX = 32;
-	requiredLimits.limits.maxComputeWorkgroupSizeY = 32;
-	requiredLimits.limits.maxComputeWorkgroupSizeZ = 32;
+	requiredLimits.maxComputeWorkgroupsPerDimension = 65535;
+	requiredLimits.maxComputeInvocationsPerWorkgroup = 32*32;
+	requiredLimits.maxComputeWorkgroupSizeX = 32;
+	requiredLimits.maxComputeWorkgroupSizeY = 32;
+	requiredLimits.maxComputeWorkgroupSizeZ = 32;
 
 
 	return requiredLimits;

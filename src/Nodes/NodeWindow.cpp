@@ -38,7 +38,9 @@ void NodeWindow::EnterTree()
     adapterOpts.compatibleSurface = surface;
     wgpu::Adapter adapter = instance.requestAdapter(adapterOpts);
 #ifdef WEBGPU_BACKEND_WGPU
-    surfaceFormat = surface.getPreferredFormat(adapter);
+    SurfaceCapabilities capabilities;
+    surface.getCapabilities(adapter, &capabilities);
+    surfaceFormat = capabilities.formats[0];
 #else
     surfaceFormat = TextureFormat::BGRA8Unorm;
 #endif
@@ -71,6 +73,7 @@ void NodeWindow::EnterTree()
     auto size = GetWindowSize();
     CreateSwapChain(size.x, size.y);
     CreateDepthTexture(size.x, size.y);
+    CreateIDPassTextures(size.x, size.y);
     InitializeRenderer();
 }
 
@@ -156,7 +159,6 @@ void NodeWindow::RequestResize()
 wgpu::TextureView NodeWindow::GetCurrentTextureView()
 {
     if (m_currentSurfaceView == nullptr)
-    if (m_currentSurfaceView == nullptr)
     {
         m_currentSurfaceView = GetNextSurfaceTextureView();
     }
@@ -168,14 +170,14 @@ wgpu::TextureView NodeWindow::GetNextSurfaceTextureView() const
     // Get the surface texture
     wgpuSurfaceGetCurrentTexture(surface, &m_surfaceTexture);
     
-    if (m_surfaceTexture.status != wgpu::SurfaceGetCurrentTextureStatus::Success) {
+    if (m_surfaceTexture.status != wgpu::SurfaceGetCurrentTextureStatus::SuccessOptimal && m_surfaceTexture.status != wgpu::SurfaceGetCurrentTextureStatus::SuccessSuboptimal) {
         return nullptr;
     }
     wgpu::Texture texture = m_surfaceTexture.texture;
     
     // Create a view for this surface texture
     wgpu::TextureViewDescriptor viewDescriptor;
-    viewDescriptor.label = "Surface texture view";
+    viewDescriptor.label = {"Surface texture view", wgpu::STRLEN};
     viewDescriptor.format = texture.getFormat();
     viewDescriptor.dimension = wgpu::TextureViewDimension::_2D;
     viewDescriptor.baseMipLevel = 0;

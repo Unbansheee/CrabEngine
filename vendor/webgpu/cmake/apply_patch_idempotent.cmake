@@ -22,40 +22,28 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-cmake_minimum_required(VERSION 3.0.0...3.24 FATAL_ERROR)
-project(webgpu VERSION 1.0.0)
+# This is a CMake file meant to be called in script mode. It applies a patch in
+# a way that is robust to re-applying it multiple times.
+#
+# Usage:
+#   cmake -DPATCH_FILE=path/to/patch.diff -P apply_patch_idempotent.cmake
+#
+# Patch is applied in the current working directory.
 
-set(WEBGPU_BACKEND "WGPU" CACHE STRING "Backend implementation of WebGPU. Possible values are EMSCRIPTEN, WGPU and DAWN (it does not matter when using emcmake)")
-option(WEBGPU_BUILD_FROM_SOURCE "When ON, fetch the source code of the backend and build it. When OFF, fetch a precompiled version of the backend." OFF)
-set_property(CACHE WEBGPU_BACKEND PROPERTY STRINGS EMSCRIPTEN WGPU DAWN)
+message(STATUS "Applying patch from '${PATCH_FILE}'...")
 
-# NB: There are also backend-specific options in <backend>/CMakeLists.txt
+set(PATCH_CMD git apply --ignore-space-change --ignore-whitespace ${PATCH_FILE})
 
-if (TARGET webgpu)
-	message(STATUS "Target 'webgpu' already exists.")
-	return()
-endif()
+# Test reverse patch
+execute_process(
+	RESULT_VARIABLE EXIT_CODE
+	ERROR_VARIABLE STDERR
+	COMMAND git apply --ignore-space-change --ignore-whitespace "${PATCH_FILE}" --reverse --check
+)
 
-# A couple of utility functions
-include("${CMAKE_CURRENT_LIST_DIR}/cmake/utils.cmake")
-
-# Convert to uppercase, so that users can provide value with any case they like
-string(TOUPPER ${WEBGPU_BACKEND} WEBGPU_BACKEND_U)
-
-if (EMSCRIPTEN OR WEBGPU_BACKEND_U STREQUAL "EMSCRIPTEN")
-
-	add_subdirectory(emscripten)
-
-elseif (WEBGPU_BACKEND_U STREQUAL "WGPU")
-
-	add_subdirectory(wgpu-native)
-
-elseif (WEBGPU_BACKEND_U STREQUAL "DAWN")
-
-	add_subdirectory(dawn)
-
+if (EXIT_CODE EQUAL 0)
+	# Reverse patch can be applied, which means the patch has already been applied.
+	message(STATUS "Patch was already applied")
 else()
-
-	message(FATAL_ERROR "Invalid value for WEBGPU_BACKEND: possible values are EMSCRIPTEN, WGPU, end DAWN, but '${WEBGPU_BACKEND_U}' was provided.")
-
+	execute_process(COMMAND git apply --ignore-space-change --ignore-whitespace ${PATCH_FILE})
 endif()

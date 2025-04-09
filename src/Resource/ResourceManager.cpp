@@ -234,17 +234,13 @@ ShaderModule ResourceManager::loadShaderModule(const std::filesystem::path &path
     ShaderParser parser;
     m.Metadata = parser.Parse(shaderSource);
 
-    wgpu::ShaderModuleWGSLDescriptor shaderCodeDesc{};
+    wgpu::ShaderSourceWGSL shaderCodeDesc{};
     shaderCodeDesc.chain.next = nullptr;
-    shaderCodeDesc.chain.sType = wgpu::SType::ShaderModuleWGSLDescriptor;
-    shaderCodeDesc.code = parser.GetProcessedSource().c_str();
+    shaderCodeDesc.chain.sType = wgpu::SType::ShaderSourceWGSL;
+    shaderCodeDesc.code = {parser.GetProcessedSource().c_str(), parser.GetProcessedSource().length()};
     //std::cout << shaderCodeDesc.code;
 
     wgpu::ShaderModuleDescriptor shaderDesc{};
-#ifdef WEBGPU_BACKEND_WGPU
-    shaderDesc.hintCount = 0;
-    shaderDesc.hints = nullptr;
-#endif
     shaderDesc.nextInChain = &shaderCodeDesc.chain;
     m.Module = device.createShaderModule(shaderDesc);
     return m;
@@ -264,17 +260,13 @@ wgpu::ShaderModule ResourceManager::loadComputeShaderModule(const std::filesyste
     
     fmt::replace_all(shaderSource, formats);
     
-    wgpu::ShaderModuleWGSLDescriptor shaderCodeDesc{};
+    wgpu::ShaderSourceWGSL shaderCodeDesc{};
     shaderCodeDesc.chain.next = nullptr;
-    shaderCodeDesc.chain.sType = wgpu::SType::ShaderModuleWGSLDescriptor;
-    shaderCodeDesc.code = shaderSource.c_str();
+    shaderCodeDesc.chain.sType = wgpu::SType::ShaderSourceWGSL;
+    shaderCodeDesc.code = {shaderSource.c_str(), shaderSource.length()};
     //std::cout << shaderCodeDesc.code;
 
     wgpu::ShaderModuleDescriptor shaderDesc{};
-#ifdef WEBGPU_BACKEND_WGPU
-    shaderDesc.hintCount = 0;
-    shaderDesc.hints = nullptr;
-#endif
     shaderDesc.nextInChain = &shaderCodeDesc.chain;
     return device.createShaderModule(shaderDesc);
 }
@@ -284,13 +276,13 @@ void ResourceManager::writeMipMaps(wgpu::Device device, wgpu::Texture texture, w
     wgpu::Queue queue = device.getQueue();
 
     // Arguments telling which part of the texture we upload to
-    wgpu::ImageCopyTexture destination;
+    wgpu::TexelCopyTextureInfo destination;
     destination.texture = texture;
     destination.origin = { 0, 0, 0 };
     destination.aspect = wgpu::TextureAspect::All;
 
     // Arguments telling how the C++ side pixel memory is laid out
-    wgpu::TextureDataLayout source;
+    wgpu::TexelCopyBufferLayout source;
     source.offset = 0;
 
     // Create image data

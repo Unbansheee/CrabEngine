@@ -18,13 +18,13 @@ namespace MaterialHelpers
     #define TEXTURE(binding, visibility) TextureEntry<binding, visibility> v##binding;
     #define END_LAYOUT(...) using Type = MaterialHelpers::BindGroupLayoutBuilder<__VA_ARGS__>; };
     
-    template <uint32_t Binding, WGPUShaderStageFlags Visibility>
+    template <uint32_t Binding, WGPUShaderStage Visibility>
     struct UniformBufferEntry {
         static wgpu::BindGroupLayoutEntry LayoutEntry() {
-            wgpu::BufferBindingLayout buf = wgpu::Default;
+            wgpu::BufferBindingLayout buf;
             buf.type = wgpu::BufferBindingType::Uniform;
             buf.hasDynamicOffset = false;
-            wgpu::BindGroupLayoutEntry entry = wgpu::Default;
+            wgpu::BindGroupLayoutEntry entry;
             entry.visibility = Visibility;
             entry.binding = Binding;
             entry.buffer = buf;
@@ -32,13 +32,13 @@ namespace MaterialHelpers
         }
     };
 
-    template <uint32_t Binding, WGPUShaderStageFlags Visibility>
+    template <uint32_t Binding, WGPUShaderStage Visibility>
     struct DynamicOffsetUniformBufferEntry {
         static wgpu::BindGroupLayoutEntry LayoutEntry() {
-            wgpu::BufferBindingLayout buf = wgpu::Default;
+            wgpu::BufferBindingLayout buf;
             buf.type = wgpu::BufferBindingType::Uniform;
             buf.hasDynamicOffset = true;
-            wgpu::BindGroupLayoutEntry entry = wgpu::Default;
+            wgpu::BindGroupLayoutEntry entry;
             entry.visibility = Visibility;
             entry.binding = Binding;
             entry.buffer = buf;
@@ -79,7 +79,7 @@ namespace MaterialHelpers
     template <uint32_t Binding, uint8_t Visibility>
     struct SamplerEntry {
             static wgpu::BindGroupLayoutEntry LayoutEntry() {
-                wgpu::SamplerBindingLayout samp = wgpu::Default;
+                wgpu::SamplerBindingLayout samp;
                 samp.type = wgpu::SamplerBindingType::Filtering;
                 wgpu::BindGroupLayoutEntry entry;
                 entry.visibility = Visibility;
@@ -118,14 +118,14 @@ namespace MaterialHelpers
         template <uint32_t Binding, typename T>
         BindGroupCreator& Set(const T& resource) {
             if constexpr (std::is_same_v<T, WGPUTextureView>) {
-                wgpu::BindGroupEntry entry = wgpu::Default;
+                wgpu::BindGroupEntry entry;
                 entry.binding = Binding;
                 entry.textureView = resource;
                 m_entries[Binding] = entry;
             }
             else if constexpr (std::is_same_v<T, WGPUBuffer>)
             {
-                wgpu::BindGroupEntry entry = wgpu::Default;
+                wgpu::BindGroupEntry entry;
                 entry.binding = Binding;
                 entry.buffer = resource;
                 entry.size = wgpuBufferGetSize(resource);
@@ -133,7 +133,7 @@ namespace MaterialHelpers
             }
             else if constexpr (std::is_same_v<T, WGPUSampler>)
             {
-                wgpu::BindGroupEntry entry = wgpu::Default;
+                wgpu::BindGroupEntry entry;
                 entry.binding = Binding;
                 entry.sampler = resource;
                 m_entries[Binding] = entry;
@@ -146,7 +146,7 @@ namespace MaterialHelpers
         template <uint32_t Binding>
         BindGroupCreator& SetDynamicBuffer(const WGPUBuffer& resource, uint32_t bindingSize)
         {
-            wgpu::BindGroupEntry entry = wgpu::Default;
+            wgpu::BindGroupEntry entry;
             entry.binding = Binding;
             entry.buffer = resource;
             entry.size = bindingSize;

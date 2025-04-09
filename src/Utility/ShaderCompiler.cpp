@@ -26,7 +26,6 @@ ShaderCompiler::ShaderCompiler(const std::string &shader_name) {
     TargetDesc targetDesc;
     targetDesc.format = SlangCompileTarget::SLANG_WGSL;
     targetDesc.profile = globalSession->findProfile("sm_6_5");
-    globalSession->findProfile()
 
     SessionDesc sessionDesc;
     sessionDesc.searchPaths = shaderSources.data();
@@ -73,21 +72,19 @@ ShaderCompiler::ShaderCompiler(const std::string &shader_name) {
     code += std::string(static_cast<const char*>(e->getBufferPointer()));
 
     std::cout << "Shader compile successful" << std::endl;
-    wgpu::ShaderModuleWGSLDescriptor shaderCodeDesc = wgpu::Default;
-    shaderCodeDesc.chain.next = nullptr;
-    shaderCodeDesc.chain.sType = wgpu::SType::ShaderModuleWGSLDescriptor;
-    shaderCodeDesc.code = code.c_str();
 
-    std::cout << shaderCodeDesc.code << std::endl;
+    wgpu::ShaderSourceWGSL shaderCodeDesc = wgpu::Default;
+    shaderCodeDesc.chain.next = nullptr;
+    shaderCodeDesc.chain.sType = wgpu::SType::ShaderSourceWGSL;
+    shaderCodeDesc.code = {code.c_str(), code.length()};
+
+    std::cout << code << std::endl;
 
     wgpu::ShaderModuleDescriptor shaderDesc = wgpu::Default;
 
-#ifdef WEBGPU_BACKEND_WGPU
-    shaderDesc.hintCount = 0;
-    shaderDesc.hints = nullptr;
-#endif
+
     shaderDesc.nextInChain = &shaderCodeDesc.chain;
-    shaderDesc.label = shader_name.c_str();
+    shaderDesc.label = {shader_name.c_str(), shader_name.length()};
     auto device = Application::Get().GetDevice();
     auto module = device.createShaderModule(shaderDesc);
 

@@ -8,7 +8,7 @@
 
 module Engine.Node.ImGuiContextWindow;
 import Engine.Application;
-
+import Engine.WGPU;
 
 void NodeImGUIContextWindow::EnterTree()
 {
@@ -49,12 +49,14 @@ void NodeImGUIContextWindow::EnterTree()
 void NodeImGUIContextWindow::Update(float dt)
 {
     if (GetTree()->IsInEditor()) return;
+    auto next = GetCurrentTextureView();
+    if (next == nullptr) return;
 
     WGPURenderPassColorAttachment color_attachments = {};
     color_attachments.loadOp = wgpu::LoadOp::Load;
     color_attachments.storeOp = wgpu::StoreOp::Store;
     color_attachments.clearValue = { 0, 0, 0, 0 };
-    color_attachments.view = GetCurrentTextureView();
+    color_attachments.view = next;
 	
     WGPURenderPassDescriptor render_pass_desc = {};
     render_pass_desc.colorAttachmentCount = 1;
@@ -81,11 +83,12 @@ void NodeImGUIContextWindow::Update(float dt)
     
     ImGui::EndFrame();
     ImGui::Render();
+
     ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), pass);
 
     pass.end();
     wgpu::CommandBufferDescriptor cmd_buffer_desc = {};
-    cmd_buffer_desc.label = "ImGUI Draw Command Buffer";
+    cmd_buffer_desc.label = {"ImGUI Draw Command Buffer", wgpu::STRLEN};
     wgpu::CommandBuffer cmd = gui_encoder.finish(cmd_buffer_desc);
 
     renderer.AddCommand(cmd);

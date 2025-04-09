@@ -50,4 +50,13 @@ IMGUI_IMPL_API void ImGui_ImplWGPU_RenderDrawData(ImDrawData* draw_data, WGPURen
 IMGUI_IMPL_API void ImGui_ImplWGPU_InvalidateDeviceObjects();
 IMGUI_IMPL_API bool ImGui_ImplWGPU_CreateDeviceObjects();
 
+// [BETA] Selected render state data shared with callbacks.
+// This is temporarily stored in GetPlatformIO().Renderer_RenderState during the ImGui_ImplWGPU_RenderDrawData() call.
+// (Please open an issue if you feel you need access to more data)
+struct ImGui_ImplWGPU_RenderState
+{
+    WGPUDevice                  Device;
+    WGPURenderPassEncoder       RenderPassEncoder;
+};
+
 #endif // #ifndef IMGUI_DISABLE

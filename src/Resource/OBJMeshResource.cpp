@@ -1,9 +1,12 @@
 ﻿
+module;
+
+
 module Engine.Resource.OBJMesh;
 import Engine.Resource.ResourceManager;
 import Engine.Application;
 import Engine.GFX.MeshVertex;
-//#include <webgpu/webgpu.h>
+import Engine.WGPU;
 
 void OBJMeshResource::Serialize(nlohmann::json& archive)
 {
@@ -43,7 +46,7 @@ void OBJMeshResource::LoadOBJFromPath(const std::string& path)
     WGPUBufferDescriptor vertexBufferDesc = {
         .nextInChain = nullptr,
         .label = "Vertex Buffer",
-        .usage = WGPUBufferUsage_CopyDst | WGPUBufferUsage_Vertex,
+        .usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Vertex,
         .size = vertices.size() * sizeof(MeshVertex),
         .mappedAtCreation = false
     };
