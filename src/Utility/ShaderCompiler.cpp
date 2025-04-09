@@ -81,8 +81,6 @@ ShaderCompiler::ShaderCompiler(const std::string &shader_name) {
     std::cout << code << std::endl;
 
     wgpu::ShaderModuleDescriptor shaderDesc = wgpu::Default;
-
-
     shaderDesc.nextInChain = &shaderCodeDesc.chain;
     shaderDesc.label = {shader_name.c_str(), shader_name.length()};
     auto device = Application::Get().GetDevice();

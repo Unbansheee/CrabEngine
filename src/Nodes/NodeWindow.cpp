@@ -22,7 +22,7 @@ void NodeWindow::EnterTree()
     if (GetTree()->IsInEditor()) return;
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    window = glfwCreateWindow(640, 480, Name.c_str(), nullptr, nullptr);
+    window = glfwCreateWindow(1280, 960, Name.c_str(), nullptr, nullptr);
     std::cout << "Window: " << window << std::endl;
     if (!window) {
         std::cerr << "Could not create window!" << std::endl;
@@ -231,7 +231,7 @@ void NodeWindow::CreateSwapChain(uint32_t width, uint32_t height)
     desc.format = surfaceFormat;
     desc.width = width;
     desc.height = height;
-    desc.presentMode = wgpu::PresentMode::Fifo;
+    desc.presentMode = wgpu::PresentMode::Immediate;
     desc.viewFormats = nullptr;
     desc.viewFormatCount = 0;
     desc.device = Application::Get().GetDevice();

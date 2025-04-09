@@ -21,6 +21,6 @@ VertexOutput vertexMain()
 [shader("fragment")]
 float4 fragmentMain()
 {
-    //return FunnyTexture.Load({0,0,0}) + TestUniform;
-    return {0,0,0,0};
+    return FunnyTexture.Load({0,0,0}) + TestUniform;
+    //return {0,0,0,0};
 };

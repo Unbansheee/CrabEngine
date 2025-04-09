@@ -31,7 +31,7 @@ void NodeImGUIContextWindow::EnterTree()
     info.RenderTargetFormat = surfaceFormat;
     info.DepthStencilFormat = wgpu::TextureFormat::Undefined;
     info.NumFramesInFlight = 3;
-    info.ViewportPresentMode = wgpu::PresentMode::Fifo;
+    info.ViewportPresentMode = wgpu::PresentMode::Immediate;
     info.CreateViewportWindowFn = [](ImGuiViewport* viewport) {
         auto that = reinterpret_cast<NodeWindow*>(ImGui::GetIO().UserData);
         auto* window = static_cast<GLFWwindow*>(viewport->PlatformHandle);
@@ -49,20 +49,20 @@ void NodeImGUIContextWindow::EnterTree()
 void NodeImGUIContextWindow::Update(float dt)
 {
     if (GetTree()->IsInEditor()) return;
-    auto next = GetCurrentTextureView();
-    if (next == nullptr) return;
+    //auto next = GetCurrentTextureView();
+    //if (next == nullptr) return;
 
     WGPURenderPassColorAttachment color_attachments = {};
     color_attachments.loadOp = wgpu::LoadOp::Load;
     color_attachments.storeOp = wgpu::StoreOp::Store;
     color_attachments.clearValue = { 0, 0, 0, 0 };
-    color_attachments.view = next;
-	
+    color_attachments.view = GetCurrentTextureView();
+
     WGPURenderPassDescriptor render_pass_desc = {};
     render_pass_desc.colorAttachmentCount = 1;
     render_pass_desc.colorAttachments = &color_attachments;
     render_pass_desc.depthStencilAttachment = nullptr;
-    
+
     WGPUCommandEncoderDescriptor enc_desc = {};
     wgpu::CommandEncoder gui_encoder = Application::Get().GetDevice().createCommandEncoder(enc_desc);
     wgpu::RenderPassEncoder pass = gui_encoder.beginRenderPass(render_pass_desc);
@@ -97,7 +97,7 @@ void NodeImGUIContextWindow::Update(float dt)
     gui_encoder.release();
 
     NodeWindow::Update(dt);
-    
+
     if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
