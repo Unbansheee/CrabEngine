@@ -62,7 +62,11 @@ add_subdirectory(vendor/nativefiledialog-extended)
 add_subdirectory(vendor/string_id)
 add_subdirectory(vendor/jolt)
 add_subdirectory(vendor/fmt)
-target_link_libraries(CrabEngine PRIVATE glfw glfw3webgpu nfd Jolt)
+
+find_library(LIB_slang slang ${CMAKE_CURRENT_SOURCE_DIR}/vendor/slang/lib)
+find_library(LIB_slangGFX gfx ${CMAKE_CURRENT_SOURCE_DIR}/vendor/slang/lib)
+
+target_link_libraries(CrabEngine PRIVATE glfw glfw3webgpu nfd Jolt ${LIB_slang} ${LIB_slangGFX})
 target_link_libraries(CrabEngine PUBLIC webgpu imgui foonathan_string_id fmt)
 target_copy_webgpu_binaries(CrabEngine)
 set_target_properties(CrabEngine PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
@@ -114,11 +118,15 @@ endif (MSVC)
 target_include_directories(CrabEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor)
 target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui)
+target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/slang)
 target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nativefiledialog-extended/src/include)
 target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_include_directories(CrabEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Nodes)
 target_include_directories(CrabEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer)
 target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/Utility)
+
+
+
 
 target_sources(CrabEngine
   PUBLIC

@@ -238,7 +238,7 @@ ShaderModule ResourceManager::loadShaderModule(const std::filesystem::path &path
     shaderCodeDesc.chain.next = nullptr;
     shaderCodeDesc.chain.sType = wgpu::SType::ShaderModuleWGSLDescriptor;
     shaderCodeDesc.code = parser.GetProcessedSource().c_str();
-    std::cout << shaderCodeDesc.code;
+    //std::cout << shaderCodeDesc.code;
 
     wgpu::ShaderModuleDescriptor shaderDesc{};
 #ifdef WEBGPU_BACKEND_WGPU
@@ -268,7 +268,7 @@ wgpu::ShaderModule ResourceManager::loadComputeShaderModule(const std::filesyste
     shaderCodeDesc.chain.next = nullptr;
     shaderCodeDesc.chain.sType = wgpu::SType::ShaderModuleWGSLDescriptor;
     shaderCodeDesc.code = shaderSource.c_str();
-    std::cout << shaderCodeDesc.code;
+    //std::cout << shaderCodeDesc.code;
 
     wgpu::ShaderModuleDescriptor shaderDesc{};
 #ifdef WEBGPU_BACKEND_WGPU

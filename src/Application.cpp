@@ -62,6 +62,10 @@ Application::Application()
 	wgpu::Adapter adapter = wgpuInstance.requestAdapter(adapterOpts);
 	std::cout << "Got adapter: " << adapter << std::endl;
 
+	wgpu::AdapterProperties p;
+	adapter.getProperties(&p);
+	wgpuDevice.
+
 	std::cout << "Requesting device..." << std::endl;
 	wgpu::RequiredLimits requiredLimits = GetRequiredLimits(adapter);
 	wgpu::DeviceDescriptor deviceDesc = {};
