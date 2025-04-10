@@ -7,13 +7,15 @@ import Engine.Resource.ResourceManager;
 import Engine.GFX.MeshVertex;
 import Engine.WGPU;
 import Engine.Resource.ShaderFile;
+import Engine.ShaderCompiler;
 
 using namespace Uniforms;
 using namespace MaterialHelpers;
 
 StandardMaterial::StandardMaterial() : MaterialResource()
 {
-    shader_file = ResourceManager::Load<ShaderFileResource>(ENGINE_RESOURCE_DIR"/default_standard_material.wgsl");
+    //ShaderCompiler c("dumbTestShader");
+    //shader_file = ResourceManager::Load<ShaderFileResource>(ENGINE_RESOURCE_DIR"/default_standard_material.wgsl");
 }
 
 

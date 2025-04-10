@@ -63,6 +63,8 @@ public:
         float _pad[3];
     };
 
+    float DeltaTime() {return dt;};
+
     sid::default_database& GetStringDB() {return defaultStringDatabase;}
 
     JPH::TempAllocator* GetPhysicsAllocator() const {return tempAllocator;}
@@ -70,6 +72,7 @@ public:
 protected:
     SceneTree sceneTree;
     DeltaTicker deltaTime;
+    float dt;
     bool bShouldClose = false;
     
     wgpu::Instance wgpuInstance = nullptr;

@@ -61,7 +61,7 @@ protected:
     
 public:
     wgpu::RenderPipeline m_pipeline = nullptr;
-    wgpu::ShaderModule m_shaderModule = nullptr;
+    wgpu::raii::ShaderModule m_shaderModule ;
     wgpu::Device m_device = nullptr;
     wgpu::BindGroupLayout m_bindGroupLayouts = nullptr;
     std::vector<MaterialBindGroup> m_bindGroups = {};

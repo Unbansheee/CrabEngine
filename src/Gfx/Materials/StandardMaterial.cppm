@@ -37,7 +37,6 @@ public:
     
     StandardMaterial(const wgpu::Device& device, const std::filesystem::path& shaderPath, const MaterialSettings& settings = MaterialSettings())
         : MaterialResource(device, shaderPath, settings)
-          
     {
     }
 

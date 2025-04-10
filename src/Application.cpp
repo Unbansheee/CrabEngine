@@ -59,14 +59,20 @@ Application::Application()
 	wgpu::RequestAdapterOptions adapterOpts = {};
 	//surface = glfwGetWGPUSurface(wgpuInstance, window);
 	//adapterOpts.compatibleSurface = surface;
+	adapterOpts.featureLevel = WGPUFeatureLevel_Core;
+
 	wgpu::Adapter adapter = wgpuInstance.requestAdapter(adapterOpts);
 	std::cout << "Got adapter: " << adapter << std::endl;
+
+	std::vector<WGPUFeatureName> requiredFeatures;
+	requiredFeatures.push_back((WGPUFeatureName)wgpu::NativeFeature::TextureAdapterSpecificFormatFeatures);
 
 	std::cout << "Requesting device..." << std::endl;
 	wgpu::Limits requiredLimits = GetRequiredLimits(adapter);
 	wgpu::DeviceDescriptor deviceDesc = {};
 	deviceDesc.label = {"My Device", wgpu::STRLEN};
-	deviceDesc.requiredFeatureCount = 0;
+	deviceDesc.requiredFeatureCount = requiredFeatures.size();
+	deviceDesc.requiredFeatures = requiredFeatures.data();
 	deviceDesc.requiredLimits = &requiredLimits;
 	deviceDesc.defaultQueue.nextInChain = nullptr;
 	deviceDesc.defaultQueue.label = {"The default queue", wgpu::STRLEN};
@@ -88,6 +94,7 @@ Application::Application()
 
 
 	NFD::Init();
+
 
 	JPH::RegisterDefaultAllocator();
 	JPH::Trace = TraceImpl;
@@ -123,7 +130,7 @@ bool Application::ShouldClose() const
 
 void Application::Update()
 {
-	float dt = deltaTime.Tick((float)glfwGetTime());
+	dt = deltaTime.Tick((float)glfwGetTime());
 	sceneTree.Update(dt);
 }
 
@@ -177,7 +184,6 @@ wgpu::Limits Application::GetRequiredLimits(wgpu::Adapter adapter)
 	requiredLimits.maxComputeWorkgroupSizeX = 32;
 	requiredLimits.maxComputeWorkgroupSizeY = 32;
 	requiredLimits.maxComputeWorkgroupSizeZ = 32;
-
 
 	return requiredLimits;
 }

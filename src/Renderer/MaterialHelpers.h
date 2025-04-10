@@ -64,7 +64,7 @@ namespace MaterialHelpers
     struct TextureStorageEntry {
             static wgpu::BindGroupLayoutEntry LayoutEntry() {
                 wgpu::StorageTextureBindingLayout tex;
-                tex.access = WGPUStorageTextureAccess_WriteOnly;
+                tex.access = WGPUStorageTextureAccess_ReadWrite;
                 tex.format = Format;
                 tex.viewDimension = wgpu::TextureViewDimension::_2D;
                 

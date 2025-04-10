@@ -3,7 +3,7 @@ import Engine.GFX.MeshVertex;
 import Engine.Resource.ShaderFile;
 import Engine.Application;
 import Engine.Resource.ShaderFile;
-
+import Engine.ShaderCompiler;
 void MaterialResource::Apply(wgpu::RenderPassEncoder renderPass)
 {
     renderPass.setPipeline(GetPipeline());
@@ -59,9 +59,11 @@ void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::filesy
 {
     m_device = device;
     m_settings = settings;
-    auto ret = ResourceManager::loadShaderModule(shaderPath, device);
-    m_shaderModule = ret.Module;
-    m_metadata = ret.Metadata;
+    //auto ret = ResourceManager::loadShaderModule(shaderPath, device);
+    ShaderCompiler c("dumbTestShader");
+    m_shaderModule = c.GetCompiledShaderModule();
+    //m_shaderModule = ret.Module;
+    //m_metadata = ret.Metadata;
     InitializeProperties();
     Initialize();
     loaded = true;
@@ -76,7 +78,7 @@ void MaterialResource::InitializeProperties() {
     auto queue = Application::Get().GetQueue();
     auto device = Application::Get().GetDevice();
 
-
+    /*
     // First pass: Calculate uniform buffer layout
     size_t currentOffset = 0;
     for (const auto& [name, prop] : m_metadata.Properties) {
@@ -238,6 +240,7 @@ void MaterialResource::InitializeProperties() {
     m_layoutInfo = std::move(layoutInfo);
     m_textureViews = std::move(textureViews);
     m_bindGroupEntries = std::move(bindGroupEntries);
+    */
 }
 
 
@@ -264,7 +267,7 @@ wgpu::RenderPipeline MaterialResource::CreateRenderPipeline()
     pipelineDesc.vertex.entryPoint = {"vs_main", wgpu::STRLEN};
     pipelineDesc.vertex.constantCount = 0;
     pipelineDesc.vertex.constants = nullptr;
-    pipelineDesc.vertex.module = m_shaderModule;
+    pipelineDesc.vertex.module = *m_shaderModule;
     pipelineDesc.primitive.topology = m_settings.PrimitiveTopology;
     pipelineDesc.primitive.frontFace = m_settings.FrontFace;
     pipelineDesc.primitive.cullMode = m_settings.CullMode;
@@ -290,7 +293,7 @@ wgpu::RenderPipeline MaterialResource::CreateRenderPipeline()
     colorTarget.writeMask = wgpu::ColorWriteMask::All; // We could write to only some of the color channels.
     
     wgpu::FragmentState fragmentState = {};
-    fragmentState.module = m_shaderModule;
+    fragmentState.module = *m_shaderModule;
     fragmentState.entryPoint = {"fs_main", wgpu::STRLEN};
     fragmentState.constantCount = 0;
     fragmentState.constants = nullptr;
