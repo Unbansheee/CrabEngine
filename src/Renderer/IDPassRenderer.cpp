@@ -84,6 +84,7 @@ std::vector<DrawBatch> IDPassRenderer::BuildBatches(const std::vector<DrawComman
             currentBatch = &batches.back();
         }
 
+        /*
         Uniforms::UIDPassObjectData data;
         data.ModelMatrix = cmd.modelMatrix;
         data.DrawID = m_objectUniformBuffer.GetCurrentCount() + 1;
@@ -95,6 +96,7 @@ std::vector<DrawBatch> IDPassRenderer::BuildBatches(const std::vector<DrawComman
             cmd.vertexCount,
             currentOffset,
         });
+        */
     }
     return batches;
 }
@@ -130,10 +132,10 @@ void IDPassRenderer::CreateBindGroups()
 
     if (!m_objectUniformBindGroup)
     {
-        MaterialHelpers::BindGroupCreator<Uniforms::PerObjectUniformsLayout> BindCreator(device);
-        m_objectUniformBindGroup = BindCreator
-            .SetDynamicBuffer<0>(m_objectUniformBuffer.GetInternalBuffer(), m_objectUniformBuffer.GetBindingSize())
-            .Build();
+        //MaterialHelpers::BindGroupCreator<Uniforms::PerObjectUniformsLayout> BindCreator(device);
+        //m_objectUniformBindGroup = BindCreator
+       //     .SetDynamicBuffer<0>(m_objectUniformBuffer.GetInternalBuffer(), m_objectUniformBuffer.GetBindingSize())
+        //    .Build();
     }
 
     if (!m_rendererUniformBindGroup)
@@ -224,7 +226,7 @@ void IDPassRenderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu:
         
         // Execute draw calls
         for (const auto& item : batch.drawItems) {
-            uint32_t dynamicOffset = item.dynamicOffset;
+            uint32_t dynamicOffset = 0;
 
             pass.setBindGroup(MaterialResource::ENamedBindGroup::OBJECT, m_objectUniformBindGroup, 1, &dynamicOffset);
             pass.setVertexBuffer(0, item.vertexBuffer, 0, WGPU_WHOLE_SIZE);

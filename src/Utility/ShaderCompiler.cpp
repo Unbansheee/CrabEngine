@@ -118,7 +118,7 @@ ShaderCompiler::ShaderCompiler(const std::string &shader_name, SlangTargetCompil
     compiledShaderModule = device.createShaderModule(shaderDesc);
     Assert::Check(*compiledShaderModule != nullptr, "module != nullptr", "Error compiling module");
 
-    bindings = ComposeBindingData(composedProgram);
+    compiledLayout = ComposeBindingData(composedProgram);
 
     for (auto dir : dirs) {
         delete[] dir;
@@ -127,6 +127,10 @@ ShaderCompiler::ShaderCompiler(const std::string &shader_name, SlangTargetCompil
 
 wgpu::raii::ShaderModule ShaderCompiler::GetCompiledShaderModule() {
     return compiledShaderModule;
+}
+
+wgpu::raii::PipelineLayout ShaderCompiler::GetPipelineLayout() {
+    return compiledLayout;
 }
 
 std::vector<const char*> ShaderCompiler::GetShaderDirectories() {
@@ -150,17 +154,19 @@ std::vector<const char*> ShaderCompiler::GetShaderDirectories() {
     return result;
 }
 
-ShaderBindings ShaderCompiler::ComposeBindingData(ComPtr<slang::IComponentType> program) {
-    ShaderBindings PipelineLayout;
-    // METADATA GATHERING
+wgpu::raii::PipelineLayout ShaderCompiler::ComposeBindingData(ComPtr<slang::IComponentType> program) {
     slang::ProgramLayout* programLayout = program->getLayout(0);
+    ShaderObjectLayoutBuilder builder;
+
     for (int i = 0; i < programLayout->getParameterCount(); i++) {
         auto p = programLayout->getParameterByIndex(i);
 
-        PipelineLayout.Entries.push_back(ParseShaderParameter(p));
-    }
+        auto entry = ParseShaderParameter(p);
+        slang::TypeLayoutReflection* ref = p->getTypeLayout();
+        builder.AddBindingsFrom(&entry, ref, 0);
 
-    return PipelineLayout;
+    }
+    return builder.CreatePipelineLayout();;
 }
 
 ShaderBindings::Entry ShaderCompiler::ParseShaderParameter(slang::VariableLayoutReflection *p) {
@@ -172,37 +178,38 @@ ShaderBindings::Entry ShaderCompiler::ParseShaderParameter(slang::VariableLayout
     auto access = type->getResourceAccess();
     auto category = p->getCategory();
 
+    uint32_t bindGroup = 0;
+    uint32_t bindSlot = 0;
+    bindGroup = p->getOffset(SlangParameterCategory::SLANG_PARAMETER_CATEGORY_REGISTER_SPACE);
+    bindSlot = p->getOffset(SlangParameterCategory::SLANG_PARAMETER_CATEGORY_DESCRIPTOR_TABLE_SLOT);
+
+    WGPUShaderStage stage = wgpu::ShaderStage::None;
+    /*
+    auto slangStage = p->getStage();
+    if (slangStage & SlangStage::SLANG_STAGE_VERTEX) {
+        stage |= wgpu::ShaderStage::Vertex;
+    }
+    if (slangStage & SlangStage::SLANG_STAGE_FRAGMENT) {
+        stage |= wgpu::ShaderStage::Fragment;
+    }
+    if (slangStage & SlangStage::SLANG_STAGE_COMPUTE) {
+        stage |= wgpu::ShaderStage::Compute;
+    };
+    */
+    stage |= wgpu::ShaderStage::Vertex;
+    stage |= wgpu::ShaderStage::Fragment;
+
+    Assert::Check(stage != wgpu::ShaderStage::None, "stage != None", "No shader stages defined for " + std::string(p->getName()));
+
     ShaderBindings::Entry entry;
     entry.Name = p->getName();
-    entry.Location = p->getBindingIndex();
     entry.SizeInBytes = p->getTypeLayout()->getSize();
-    entry.Group = p->getBindingSpace();
+    entry.Location = p->getBindingIndex();
+    entry.Group = p->getBindingSpace(DescriptorTableSlot);
+    entry.Visibility = stage;
 
-    if (category == ParameterCategory::DescriptorTableSlot) {
-        if (shape == SlangResourceShape::SLANG_TEXTURE_2D) {
-
-        }
-        else if (kind == slang::TypeReflection::Kind::SamplerState) {
-            entry.SamplerBindingType = WGPUSamplerBindingType::WGPUSamplerBindingType_Filtering;
-        }
-        else if (shape == SlangResourceShape::SLANG_STRUCTURED_BUFFER) {
-            if (access == SLANG_RESOURCE_ACCESS_READ) entry.BufferBindingType = WGPUBufferBindingType_ReadOnlyStorage;
-            else if (access == SLANG_RESOURCE_ACCESS_READ_WRITE) entry.BufferBindingType = WGPUBufferBindingType_Storage;
-            else Assert::Fail("SlangResourceAccess specified is not supported");
-        }
-    }
-    else if (category == ParameterCategory::Uniform) {
-        size_t byteOffset = p->getBindingIndex();
-        size_t byteSize = p->getTypeLayout()->getSize((SlangParameterCategory)category);
-    }
-    else if (category == ParameterCategory::SubElementRegisterSpace) {
-        size_t byteOffset = p->getBindingIndex();
-        size_t byteSize = p->getTypeLayout()->getSize((SlangParameterCategory)category);
-    }
 
     return entry;
 }
 
-wgpu::BindGroupLayout ShaderBindings::CreateBindGroupLayout() {
-    return nullptr;
-}
+

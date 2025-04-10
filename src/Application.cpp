@@ -66,9 +66,16 @@ Application::Application()
 
 	std::vector<WGPUFeatureName> requiredFeatures;
 	requiredFeatures.push_back((WGPUFeatureName)wgpu::NativeFeature::TextureAdapterSpecificFormatFeatures);
+	requiredFeatures.push_back((WGPUFeatureName)wgpu::NativeFeature::VertexWritableStorage);
+	requiredFeatures.push_back((WGPUFeatureName)wgpu::NativeFeature::PushConstants);
+
 
 	std::cout << "Requesting device..." << std::endl;
 	wgpu::Limits requiredLimits = GetRequiredLimits(adapter);
+	wgpu::NativeLimits nativeLimits = wgpu::Default;
+	nativeLimits.maxPushConstantSize = 256;
+	requiredLimits.nextInChain = &nativeLimits.chain;
+
 	wgpu::DeviceDescriptor deviceDesc = {};
 	deviceDesc.label = {"My Device", wgpu::STRLEN};
 	deviceDesc.requiredFeatureCount = requiredFeatures.size();
@@ -90,6 +97,8 @@ Application::Application()
 	}
 	;
 	wgpuDevice = adapter.requestDevice(deviceDesc);
+	Assert::Check(wgpuDevice, "wgpuDevice != nullptr", "Failed to initialize WGPU Device");
+
 	std::cout << "Got device: " << wgpuDevice << std::endl;
 
 

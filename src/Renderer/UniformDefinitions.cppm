@@ -44,8 +44,10 @@ namespace Uniforms
         float _pad[3];
     };
 
+
     export using PerObjectUniformsLayout = MaterialHelpers::BindGroupLayoutBuilder<
-    MaterialHelpers::DynamicOffsetUniformBufferEntry<0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>>; // ObjectData
+    MaterialHelpers::UniformBufferEntry<0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>>; // ObjectData
+
 
     export struct UGlobalData
     {
@@ -63,7 +65,7 @@ namespace Uniforms
     = MaterialHelpers::BindGroupLayoutBuilder<
     MaterialHelpers::UniformBufferEntry<0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>, // CameraData
     MaterialHelpers::UniformBufferEntry<1, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>, // LightingData
-    MaterialHelpers::TextureStorageEntry<2, wgpu::ShaderStage::Fragment, WGPUTextureFormat_R32Uint>>; // ID Texture
+    MaterialHelpers::TextureStorageEntry<2, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment, WGPUTextureFormat_R32Uint>>; // ID Texture
 
     export using IDRendererUniformsLayout
     = MaterialHelpers::BindGroupLayoutBuilder<

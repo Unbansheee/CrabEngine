@@ -29,7 +29,7 @@ std::vector<wgpu::BindGroupLayout> IDPassMaterial::CreateMaterialBindGroupLayout
     return {
         GlobalUniformsLayout::Create(m_device), //0
         IDRendererUniformsLayout::Create(m_device), // 1
-        PerObjectUniformsLayout::Create(m_device), // 2
+        //PerObjectUniformsLayout::Create(m_device), // 2
     };   
 }
 

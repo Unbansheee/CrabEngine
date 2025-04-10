@@ -62,6 +62,8 @@ void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::filesy
     //auto ret = ResourceManager::loadShaderModule(shaderPath, device);
     ShaderCompiler c("dumbTestShader");
     m_shaderModule = c.GetCompiledShaderModule();
+    m_pipelineLayout = c.GetPipelineLayout();
+
     //m_shaderModule = ret.Module;
     //m_metadata = ret.Metadata;
     InitializeProperties();
@@ -309,11 +311,13 @@ wgpu::RenderPipeline MaterialResource::CreateRenderPipeline()
     depthStencilState.stencilWriteMask = 0;
     pipelineDesc.depthStencil = &depthStencilState;
     
-    auto bindGroupLayouts = CreateMaterialBindGroupLayouts();
-    wgpu::PipelineLayoutDescriptor layoutDesc{};
-    layoutDesc.bindGroupLayoutCount = bindGroupLayouts.size();
-    layoutDesc.bindGroupLayouts = (WGPUBindGroupLayout*)bindGroupLayouts.data();
-    pipelineDesc.layout = m_device.createPipelineLayout(layoutDesc);
+    //auto bindGroupLayouts = CreateMaterialBindGroupLayouts();
+    //wgpu::PipelineLayoutDescriptor layoutDesc{};
+    //layoutDesc.bindGroupLayoutCount = bindGroupLayouts.size();
+    //layoutDesc.bindGroupLayouts = (WGPUBindGroupLayout*)bindGroupLayouts.data();
+    pipelineDesc.layout = *m_pipelineLayout;
+
+
     
 
     return m_device.createRenderPipeline(pipelineDesc);

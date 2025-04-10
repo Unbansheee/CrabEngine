@@ -31,9 +31,9 @@ export class MaterialResource : public Resource
 
     enum ENamedBindGroup
     {
-        GLOBAL = 0,
-        RENDERER = 1,
-        OBJECT = 2,
+        OBJECT = 0,
+        GLOBAL = 1,
+        RENDERER = 2,
         MATERIAL = 3,
         Count
     };
@@ -81,6 +81,8 @@ public:
     std::vector<uint8_t> m_uniformData;
     std::unordered_map<std::string, PropertyLayoutInfo> m_layoutInfo;
     std::vector<wgpu::TextureView> m_textureViews;
+
+    wgpu::raii::PipelineLayout m_pipelineLayout;
 
 
     void LoadData() override;

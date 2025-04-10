@@ -20,7 +20,8 @@ export struct DrawItem {
     wgpu::Buffer indexBuffer;   // Mesh index data
     uint32_t indexCount;        // Number of indices to draw
     uint32_t vertexCount;       // Number of vertices to draw
-    uint32_t dynamicOffset;     // Offset into a dynamic uniform buffer (e.g., model matrix)
+    Matrix4 modelMatrix = Matrix4(1.0f);
+    uint32_t drawID;     // Offset into a dynamic uniform buffer (e.g., model matrix)
 };
 
 export struct DrawBatch {

@@ -53,7 +53,7 @@ private:
 
     UniformBuffer<Uniforms::UGlobalData> m_globalUniformBuffer;
     UniformBuffer<Uniforms::ULightingData> m_lightingUniformBuffer;
-    DynamicOffsetUniformBuffer<Uniforms::UObjectData> m_objectUniformBuffer;
+    UniformBuffer<Uniforms::UObjectData> m_objectUniformBuffer;
 
     UniformBuffer<Uniforms::UCameraData> m_cameraUniformBuffer;
 

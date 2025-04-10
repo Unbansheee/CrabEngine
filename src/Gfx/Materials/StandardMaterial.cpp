@@ -56,9 +56,9 @@ void StandardMaterial::Initialize()
 std::vector<wgpu::BindGroupLayout> StandardMaterial::CreateMaterialBindGroupLayouts()
 {
     return {
-        GlobalUniformsLayout::Create(m_device), //0
         RendererUniformsLayout::Create(m_device), // 1
-        PerObjectUniformsLayout::Create(m_device), // 2
+        //PerObjectUniformsLayout::Create(m_device), // 2
+        GlobalUniformsLayout::Create(m_device), //0
         StandardMaterialUniformsLayout::Create(m_device) // 3 
     };   
 }
@@ -69,9 +69,9 @@ std::vector<MaterialResource::MaterialBindGroup> StandardMaterial::CreateMateria
     
     auto matGroup = materialBindsCreator
         .Set<0, WGPUBuffer>(MaterialParameters.GetBuffer())
-        .Set<1, WGPUSampler>(TextureSampler)
-        .Set<2, WGPUTextureView>(BaseColorTextureView.Get<TextureResource>()->GetInternalTextureView())
-        .Set<3, WGPUTextureView>(NormalTextureView.Get<TextureResource>()->GetInternalTextureView())
+        //.Set<1, WGPUSampler>(TextureSampler)
+        //.Set<2, WGPUTextureView>(BaseColorTextureView.Get<TextureResource>()->GetInternalTextureView())
+        //.Set<3, WGPUTextureView>(NormalTextureView.Get<TextureResource>()->GetInternalTextureView())
         .Build();
     
     return {{MATERIAL, matGroup}};

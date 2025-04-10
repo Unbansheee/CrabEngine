@@ -28,10 +28,10 @@ public:
     END_PROPERTIES
     
     using StandardMaterialUniformsLayout = MaterialHelpers::BindGroupLayoutBuilder<
-        MaterialHelpers::UniformBufferEntry<0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>, // UStandardMaterialParameters
-        MaterialHelpers::SamplerEntry<1, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>, // TextureSampler
-        MaterialHelpers::TextureEntry<2, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>, // BaseColorTexture
-        MaterialHelpers::TextureEntry<3, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>>; // NormalTexture
+        MaterialHelpers::UniformBufferEntry<0, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>>; // UStandardMaterialParameters
+        //MaterialHelpers::SamplerEntry<1, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>, // TextureSampler
+        //MaterialHelpers::TextureEntry<2, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>, // BaseColorTexture
+        //MaterialHelpers::TextureEntry<3, wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment>>; // NormalTexture
 
     StandardMaterial();
     
