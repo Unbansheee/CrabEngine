@@ -4,9 +4,15 @@ import Engine.Resource.ShaderFile;
 import Engine.Application;
 import Engine.Resource.ShaderFile;
 import Engine.ShaderCompiler;
+import Engine.Resource.Texture;
+import Engine.Resource.RuntimeTexture;
+
+
 void MaterialResource::Apply(wgpu::RenderPassEncoder renderPass)
 {
     renderPass.setPipeline(GetPipeline());
+
+    /*
     if (bBindGroupsDirty)
     {
         for (auto grp : m_bindGroups)
@@ -21,37 +27,87 @@ void MaterialResource::Apply(wgpu::RenderPassEncoder renderPass)
     {
         renderPass.setBindGroup(grp.BindGroupIndex, grp.BindGroup, 0, nullptr);
     }
+    */
+    UpdateBindGroups();
+    for (auto& grp : m_bindGroups) {
+        renderPass.setBindGroup(grp.first, grp.second, 0, nullptr);
+    }
 }
 
-// Helper to get texture index in property order
-uint32_t MaterialResource::GetTextureIndex(const std::string& name) const {
-    size_t index = 0;
-    for (const auto& [propName, prop] : m_metadata.Properties) {
-        if (prop.Type == MaterialPropertyType::Texture2D) {
-            if (propName == name) return index;
-            index++;
+void MaterialResource::UpdateBindGroups() {
+    for (auto& [group, dirty] : m_dirtyGroups) {
+        if (!dirty) continue;
+        std::vector<WGPUBindGroupEntry> entries;
+
+        // Collect all bindings for this group
+        for (auto& [uniformName, meta] : m_uniformMetadata) {
+            if (meta.Group != group) continue;
+
+            WGPUBindGroupEntry entry = {};
+            entry.binding = meta.Location;
+
+            if (meta.BindingType == Buffer) {
+                auto& buffer = m_buffers.at(uniformName);
+                entry.buffer = buffer.buffer;
+                entry.offset = 0;
+                entry.size = buffer.size;
+            }
+            else if (meta.BindingType == Texture) {
+                auto& texture = m_textures.at(uniformName);
+                entry.textureView = texture.texture->GetInternalTextureView();
+            }
+            else if (meta.BindingType == StorageTexture) {
+                auto& texture = m_textures.at(uniformName);
+                entry.textureView = texture.texture->GetInternalTextureView();
+            }
+            else if (meta.BindingType == Sampler) {
+                //auto& texture = m_textures.at(name);
+                //entry.sampler = texture.sampler;
+            }
+
+            entries.push_back(entry);
         }
+
+        // Sort entries by binding index
+        std::sort(entries.begin(), entries.end(),
+            [](auto& a, auto& b) { return a.binding < b.binding; });
+
+        // Create new bind group
+        WGPUBindGroupDescriptor desc = {
+            .layout = *m_bindGroupLayouts.at(group),
+            .entryCount = entries.size(),
+            .entries = entries.data()
+        };
+
+        if (m_bindGroups[group]) {
+            wgpuBindGroupRelease(m_bindGroups[group]);
+        }
+
+        m_bindGroups[group] = wgpuDeviceCreateBindGroup(Application::Get().GetDevice(), &desc);
+        m_dirtyGroups[group] = false;
     }
-    Assert::Fail("Texture property not found: " + name);
 }
 
-uint32_t MaterialResource::GetTextureBindingIndex(uint32_t textureIndex) const
-{
-    size_t index = 0;
-    for (const auto& [propName, prop] : m_metadata.Properties) {
-        if (prop.Type == MaterialPropertyType::Texture2D) {
-            if (index == textureIndex) return index;
-            index++;
-        }
+void MaterialResource::SetUniform(const std::string& uniformName, void* data, uint32_t size) {
+    Assert::Check(m_buffers.contains(uniformName), "Buffers.contains(uniformName)", "Parameter does not exist");
+    auto buff = m_buffers.at(uniformName);
+    Application::Get().GetQueue().writeBuffer(buff.buffer, 0, data, size);
+}
+
+
+void MaterialResource::SetTexture(const std::string &uniformName, const std::shared_ptr<TextureResource>& texture) {
+    if (m_uniformMetadata.contains(uniformName)) {
+        auto& meta = m_uniformMetadata.at(uniformName);
+        m_textures[uniformName] = {texture};
+        m_dirtyGroups[meta.Group] = true;
     }
-    Assert::Fail("No texture binding found at index" + textureIndex);
 }
 
 void MaterialResource::LoadData()
 {
     LoadFromShaderPath(Application::Get().GetDevice(), shader_file.Get<ShaderFileResource>()->shaderFilePath);
     Resource::LoadData();
-    MarkBindGroupsDirty();
+    //MarkBindGroupsDirty();
 }
 
 void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::filesystem::path& shaderPath,
@@ -59,190 +115,70 @@ void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::filesy
 {
     m_device = device;
     m_settings = settings;
-    //auto ret = ResourceManager::loadShaderModule(shaderPath, device);
-    ShaderCompiler c("dumbTestShader");
-    m_shaderModule = c.GetCompiledShaderModule();
-    m_pipelineLayout = c.GetPipelineLayout();
 
-    //m_shaderModule = ret.Module;
-    //m_metadata = ret.Metadata;
+    ShaderCompiler c("dumbTestShader");
+
+    m_shaderModule = c.GetCompiledShaderModule();
+    auto l = c.GetPipelineLayout();
+    m_pipelineLayout = l.PipelineLayout;
+    m_bindGroupLayouts = l.BindGroupLayouts;
+
+    for (auto& entry : c.GetUniformMetadata()) {
+        m_uniformMetadata.insert({entry.Name, entry});
+    }
+
+    for (auto& grp : m_bindGroupLayouts) {
+        m_dirtyGroups.insert({grp.first, true});
+    }
+
     InitializeProperties();
     Initialize();
     loaded = true;
 }
 
 void MaterialResource::InitializeProperties() {
-    std::vector<wgpu::BindGroupLayoutEntry> layoutEntries;
-    std::vector<wgpu::BindGroupEntry> bindGroupEntries;
-    std::vector<uint8_t> uniformData;
-    std::unordered_map<std::string, PropertyLayoutInfo> layoutInfo;
-
     auto queue = Application::Get().GetQueue();
     auto device = Application::Get().GetDevice();
 
-    /*
-    // First pass: Calculate uniform buffer layout
-    size_t currentOffset = 0;
-    for (const auto& [name, prop] : m_metadata.Properties) {
-        if (prop.Type == MaterialPropertyType::Texture2D) continue;
+    // Create initial buffers based on reflection data
+    for (auto& [uniformName, meta] : m_uniformMetadata) {
+        if (meta.BindingType == Buffer) {
+            WGPUBufferDescriptor desc = {
+                .label = {meta.Name.c_str(), meta.Name.length()},
+                .usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform,
+                .size = meta.SizeInBytes
+            };
+            BufferBinding binding {
+                .buffer = wgpuDeviceCreateBuffer(device, &desc),
+                .size = meta.SizeInBytes,
+                .isDynamic = meta.IsDynamic
+            };
+            m_buffers.emplace(uniformName, binding);
+        }
 
-        const size_t alignment = WGSLAligner::AlignOf(prop.Type);
-        currentOffset = (currentOffset + alignment - 1) / alignment * alignment;
+        if (meta.BindingType == Texture) {
+            TextureBinding binding = {
+                ResourceManager::Load<TextureResource>(ENGINE_RESOURCE_DIR"/null_texture_black.png")
+            };
+            m_textures.emplace(uniformName, binding);
+        }
 
-        layoutInfo[name] = {
-            .Offset = currentOffset,
-            .Size = WGSLAligner::SizeOf(prop.Type)
-        };
+        if (meta.BindingType == StorageTexture) {
+            auto storageTex = std::make_shared<RuntimeTextureResource>();
+            wgpu::TextureDescriptor desc{};
+            desc.format = meta.Format;
+            desc.size = WGPUExtent3D{1,1,1};
+            desc.usage = wgpu::TextureUsage::StorageBinding | wgpu::TextureUsage::CopyDst | wgpu::TextureUsage::CopySrc;
+            desc.sampleCount = 1;
+            desc.mipLevelCount = 1;
+            storageTex->CreateBlankTexture(desc);
+            TextureBinding binding = {
+                storageTex
+            };
+            m_textures.emplace(uniformName, binding);
 
-        currentOffset += layoutInfo[name].Size;
-    }
-
-    // Create uniform buffer
-    const size_t bufferSize = (currentOffset + 15) / 16 * 16; // Round up to 16 bytes
-    uniformData.resize(bufferSize);
-
-    // Second pass: Initialize default values
-    for (const auto& [name, prop] : m_metadata.Properties) {
-        if (prop.Type == MaterialPropertyType::Texture2D) continue;
-
-        if (!prop.DefaultValue.has_value()) continue;
-        const auto& info = layoutInfo[name];
-        switch(prop.Type) {
-            case MaterialPropertyType::Float:
-                *reinterpret_cast<float*>(uniformData.data() + info.Offset) =
-                    std::any_cast<float>(prop.DefaultValue);
-                break;
-            case MaterialPropertyType::Int:
-                *reinterpret_cast<int*>(uniformData.data() + info.Offset) =
-                    std::any_cast<int>(prop.DefaultValue);
-            break;
-            case MaterialPropertyType::UInt:
-                *reinterpret_cast<uint32_t*>(uniformData.data() + info.Offset) =
-                    std::any_cast<uint32_t>(prop.DefaultValue);
-            break;
-            case MaterialPropertyType::Vector2:
-                *reinterpret_cast<glm::vec2*>(uniformData.data() + info.Offset) =
-                    std::any_cast<glm::vec2>(prop.DefaultValue);
-            break;
-            case MaterialPropertyType::Vector3:
-                *reinterpret_cast<glm::vec3*>(uniformData.data() + info.Offset) =
-                    std::any_cast<glm::vec3>(prop.DefaultValue);
-            break;
-            case MaterialPropertyType::Vector4:
-                *reinterpret_cast<glm::vec4*>(uniformData.data() + info.Offset) =
-                    std::any_cast<glm::vec4>(prop.DefaultValue);
-            break;
-            default: break;
         }
     }
-
-    // Create GPU buffer
-    WGPUBufferDescriptor bufferDesc{
-        .usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::Uniform,
-        .size = bufferSize
-    };
-
-    uniformBuffer = device.createBuffer(bufferDesc);
-    queue.writeBuffer(uniformBuffer, 0, uniformData.data(), bufferSize);
-
-    // Create texture resources
-    std::vector<wgpu::TextureView> textureViews;
-    uint32_t bindingIndex = 0;
-
-    // Add uniform buffer to bind group
-    if (bufferSize > 0) {
-        wgpu::BufferBindingLayout b;
-        b.type = wgpu::BufferBindingType::Uniform;
-
-        wgpu::BindGroupLayoutEntry e;
-        e.binding = bindingIndex;
-        e.visibility = wgpu::ShaderStage::Fragment;
-        e.buffer = b;
-
-        layoutEntries.push_back(e);
-
-        wgpu::BindGroupEntry groupEntry;
-        groupEntry.binding = bindingIndex++;
-        groupEntry.buffer = uniformBuffer;
-        groupEntry.size = bufferSize;
-
-        bindGroupEntries.push_back(groupEntry);
-    }
-
-    // Process textures
-    for (const auto& [name, prop] : m_metadata.Properties) {
-        if (prop.Type != MaterialPropertyType::Texture2D) continue;
-
-        // Create default white texture
-        WGPUTextureDescriptor texDesc{
-            .usage = wgpu::TextureUsage::TextureBinding,
-            .size = {1, 1},
-            .format = wgpu::TextureFormat::RGBA8Unorm,
-        };
-        wgpu::Texture texture = device.createTexture(texDesc);
-
-        // Initialize with white pixel
-        const uint32_t white = 0xFFFFFFFF;
-        queue.writeTexture(
-            WGPUTexelCopyTextureInfo{.texture = texture},
-            &white,
-            sizeof(uint32_t),
-            WGPUTexelCopyBufferLayout{.bytesPerRow = 4},
-            WGPUExtent3D{1, 1}
-        );
-
-        textureViews.push_back(texture.createView());
-
-        // Add texture and sampler to bind group
-        layoutEntries.push_back(WGPUBindGroupLayoutEntry{
-            .binding = bindingIndex,
-            .visibility = wgpu::ShaderStage::Fragment,
-            .texture = WGPUTextureBindingLayout{
-                .sampleType = wgpu::TextureSampleType::Float
-            }
-        });
-
-        bindGroupEntries.push_back(WGPUBindGroupEntry{
-            .binding = bindingIndex++,
-            .textureView = textureViews.back()
-        });
-
-        layoutEntries.push_back(WGPUBindGroupLayoutEntry{
-            .binding = bindingIndex,
-            .visibility = wgpu::ShaderStage::Fragment,
-            .sampler = WGPUSamplerBindingLayout{
-                .type = wgpu::SamplerBindingType::Filtering
-            }
-        });
-
-        wgpu::SamplerDescriptor samplerDesc{};
-        bindGroupEntries.push_back(WGPUBindGroupEntry{
-            .binding = bindingIndex++,
-            .sampler = device.createSampler(samplerDesc)
-        });
-    }
-
-    // Create bind group layout
-    WGPUBindGroupLayoutDescriptor layoutDesc{
-        .entryCount = layoutEntries.size(),
-        .entries = layoutEntries.data(),
-    };
-    bindGroupLayout = device.createBindGroupLayout(layoutDesc);
-
-    // Create bind group
-    WGPUBindGroupDescriptor bindGroupDesc{
-        .layout = bindGroupLayout,
-        .entryCount = bindGroupEntries.size(),
-        .entries = bindGroupEntries.data(),
-    };
-    bindGroup = device.createBindGroup(bindGroupDesc);
-
-    // Store layout information
-    m_uniformData = std::move(uniformData);
-    m_layoutInfo = std::move(layoutInfo);
-    m_textureViews = std::move(textureViews);
-    m_bindGroupEntries = std::move(bindGroupEntries);
-    */
 }
 
 
@@ -252,7 +188,7 @@ void MaterialResource::OnPropertySet(Property& prop)
 
     if ((prop.flags & PropertyFlags::MaterialProperty))
     {
-        MarkBindGroupsDirty();
+        //MarkBindGroupsDirty();
     }
 }
 

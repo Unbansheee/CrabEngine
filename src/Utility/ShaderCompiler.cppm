@@ -11,19 +11,9 @@ module;
 export module Engine.ShaderCompiler;
 import std;
 import Engine.WGPU;
-import Engine.Application;
+//import Engine.Application;
 import Engine.Assert;
-
-export struct ShaderBindings {
-     struct Entry {
-          std::string Name = "Binding";
-          uint8_t Group = 0;
-          uint8_t Location = 0;
-          uint32_t SizeInBytes = 0;
-          WGPUShaderStage Visibility;
-          bool IsPushConstant = false;
-     };
-};
+import Engine.ShaderCompiler.Types;
 
 export class ShaderCompiler {
 public:
@@ -34,27 +24,35 @@ public:
 
      ShaderCompiler(const std::string& shader_name, SlangTargetCompileFlag target = SPIRV);
      wgpu::raii::ShaderModule GetCompiledShaderModule();
-     wgpu::raii::PipelineLayout GetPipelineLayout();
+     BindingLayouts GetPipelineLayout();
+     std::vector<UniformMetadata> GetUniformMetadata();
+
+     static WGPUTextureSampleType MapSlangToTextureSampleFormat(slang::TypeReflection::ScalarType fmt);
+     static WGPUTextureFormat MapSlangToTextureFormat(slang::TypeReflection::ScalarType fmt, int elemCount);
+
 private:
-     wgpu::raii::PipelineLayout ComposeBindingData(Slang::ComPtr<slang::IComponentType> program);
+     BindingLayouts ComposeBindingData(Slang::ComPtr<slang::IComponentType> program);
      std::vector<const char*> GetShaderDirectories();
-     ShaderBindings::Entry ParseShaderParameter(slang::VariableLayoutReflection* var);
+     UniformMetadata ParseShaderParameter(slang::VariableLayoutReflection* var);
 
      Slang::ComPtr<slang::ISession> session;
      static inline std::vector<const char*> shaderSources = {ENGINE_RESOURCE_DIR};
 
      wgpu::raii::ShaderModule compiledShaderModule;
-     wgpu::raii::PipelineLayout compiledLayout;
+     BindingLayouts compiledLayout;
+     std::vector<UniformMetadata> compiledMetadata;
 
      Slang::ComPtr<slang::IBlob> spirv;
      std::string wgsl;
 };
 
+
+
 class ShaderObjectLayoutBuilder {
 public:
-     void AddBindingsFrom(ShaderBindings::Entry* entry, slang::TypeLayoutReflection* typeLayout, uint32_t descriptorCount);
-     std::vector<wgpu::raii::BindGroupLayout> CreateBindGroupLayouts();
-     wgpu::raii::PipelineLayout CreatePipelineLayout();
+     void AddBindingsFrom(UniformMetadata* entry, slang::TypeLayoutReflection* typeLayout, uint32_t descriptorCount);
+     std::unordered_map<uint32_t, wgpu::raii::BindGroupLayout> CreateBindGroupLayouts();
+     BindingLayouts CreatePipelineLayout();
 
      std::unordered_map<uint32_t, std::vector<wgpu::BindGroupLayoutEntry>> entries;
      uint32_t m_bindingIndex = 0;
@@ -68,46 +66,10 @@ public:
 };
 
 
-wgpu::raii::PipelineLayout ShaderObjectLayoutBuilder::CreatePipelineLayout() {
-     auto device = Application::Get().GetDevice();
-
-     wgpu::PipelineLayoutDescriptor desc;
-     auto bgLayouts = CreateBindGroupLayouts();
-     desc.bindGroupLayouts = (WGPUBindGroupLayout*)bgLayouts.data();
-     desc.bindGroupLayoutCount = bgLayouts.size();
-
-     if (pushConstant.has_value()) {
-          auto pc = pushConstant.value();
-          wgpu::PushConstantRange pcRange;
-          pcRange.start = 0;
-          pcRange.end = pc.Size;
-          pcRange.stages = pc.Visibility;
-
-          wgpu::PipelineLayoutExtras extras = wgpu::Default;
-          extras.pushConstantRanges = &pcRange;
-          extras.pushConstantRangeCount = 1;
-
-          desc.nextInChain = &extras.chain;
-          return device.createPipelineLayout(desc);
-     }
-
-     return device.createPipelineLayout(desc);
-}
-
-std::vector<wgpu::raii::BindGroupLayout> ShaderObjectLayoutBuilder::CreateBindGroupLayouts() {
-     auto device = Application::Get().GetDevice();
-     std::vector<wgpu::raii::BindGroupLayout> layouts;
-     for (auto e : entries) {
-          wgpu::BindGroupLayoutDescriptor desc;
-          desc.entries = (WGPUBindGroupLayoutEntry*)e.second.data();
-          desc.entryCount = e.second.size();
-          layouts.emplace_back(device.createBindGroupLayout(desc));
-     }
-     return layouts;
-}
 
 
-WGPUTextureSampleType MapSlangToTextureSampleFormat(slang::TypeReflection::ScalarType fmt) {
+
+WGPUTextureSampleType ShaderCompiler::MapSlangToTextureSampleFormat(slang::TypeReflection::ScalarType fmt) {
      switch (fmt) {
           case slang::TypeReflection::None:
           case slang::TypeReflection::Void:
@@ -138,7 +100,7 @@ WGPUTextureSampleType MapSlangToTextureSampleFormat(slang::TypeReflection::Scala
                return WGPUTextureSampleType_Uint;
      }
 }
-WGPUTextureFormat MapSlangToTextureFormat(slang::TypeReflection::ScalarType fmt, int elemCount) {
+WGPUTextureFormat ShaderCompiler::MapSlangToTextureFormat(slang::TypeReflection::ScalarType fmt, int elemCount) {
      switch (fmt) {
           case slang::TypeReflection::Int32:
                if (elemCount == 1 || elemCount == 0) return WGPUTextureFormat_R32Sint;
@@ -206,15 +168,12 @@ WGPUTextureFormat MapSlangToTextureFormat(slang::TypeReflection::ScalarType fmt,
 
 
 
-void ShaderObjectLayoutBuilder::AddBindingsFrom(ShaderBindings::Entry* entry, slang::TypeLayoutReflection *typeLayout, uint32_t descriptorCount) {
+void ShaderObjectLayoutBuilder::AddBindingsFrom(UniformMetadata* entry, slang::TypeLayoutReflection *typeLayout, uint32_t descriptorCount) {
      int bindingRangeCount = typeLayout->getBindingRangeCount();
      uint32_t bindingGroup = 0;
      uint32_t bindingSlot = 0;
 
-
-     auto bindingType = typeLayout->getBindingRangeType(bindingGroup);
-     bool bIsPushConstant = bindingType == slang::BindingType::PushConstant;
-     if (bIsPushConstant) {
+     if (entry->IsPushConstant) {
           auto elemType = typeLayout->getElementTypeLayout();
           auto elemSize = elemType->getSize();
           pushConstant = PushConstantData{
@@ -262,15 +221,15 @@ void ShaderObjectLayoutBuilder::AddBindingsFrom(ShaderBindings::Entry* entry, sl
                     auto elemCount = t->getElementCount();
                     auto elementType = t->getScalarType();
 
-                    auto format = MapSlangToTextureFormat(elementType, elemCount);
-                    auto sampleType = MapSlangToTextureSampleFormat(elementType);
+                    //auto format = MapSlangToTextureFormat(elementType, elemCount);
+                    //auto sampleType = MapSlangToTextureSampleFormat(elementType);
 
 
                     if (isStorageTexture) {
                          WGPUStorageTextureBindingLayout storageTextureBinding;
                          auto fmt = typeLayout->getBindingRangeImageFormat(entry->Location);
-                         storageTextureBinding.format = format;
-                         storageTextureBinding.viewDimension = wgpu::TextureViewDimension::_2D;
+                         storageTextureBinding.format = entry->Format;
+                         storageTextureBinding.viewDimension = entry->Dimension;
                          storageTextureBinding.access = typeLayout->getResourceAccess() & SlangResourceAccess::SLANG_RESOURCE_ACCESS_WRITE ? WGPUStorageTextureAccess_ReadWrite : WGPUStorageTextureAccess_ReadOnly;
                          e.storageTexture = storageTextureBinding;
                          break;
@@ -278,9 +237,9 @@ void ShaderObjectLayoutBuilder::AddBindingsFrom(ShaderBindings::Entry* entry, sl
                     else {
                          WGPUTextureBindingLayout textureBinding;
                          auto fmt = typeLayout->getBindingRangeImageFormat(typeLayout->getBindingRangeCount());
-                         textureBinding.sampleType = sampleType;
+                         textureBinding.sampleType = entry->SampleType;
                          textureBinding.multisampled = typeLayout->getResourceShape() & SlangResourceShape::SLANG_TEXTURE_2D_MULTISAMPLE || typeLayout->getResourceShape() & SlangResourceShape::SLANG_TEXTURE_MULTISAMPLE_FLAG ? WGPUOptionalBool_True : WGPUOptionalBool_False;
-                         textureBinding.viewDimension = wgpu::TextureViewDimension::_2D;
+                         textureBinding.viewDimension = entry->Dimension;
                          e.texture = textureBinding;
                          break;
                     }

@@ -1,4 +1,4 @@
-﻿#include <webgpu/webgpu.h>
+﻿module;
 
 #include "MaterialHelpers.h"
 #include "GLFW/glfw3.h"
@@ -36,8 +36,8 @@ std::vector<Node*> Renderer::RenderNodeTree(Node* rootNode, View& view, wgpu::Te
     std::vector<Node*> DrawnNodes;
     DrawnNodes.push_back(nullptr); // Index 0 is INVALID
     
-    CreateBindGroups(id_texture);
-    UpdateUniforms();
+    //CreateBindGroups(id_texture);
+    //UpdateUniforms();
     
     Uniforms::ULightingData lightingData;
     lightingData.LightColors = {
@@ -249,23 +249,24 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
         }
 
         // Bind global bind groups
-        pass.setBindGroup(MaterialResource::ENamedBindGroup::GLOBAL, m_globalBindGroup, 0, nullptr);
-        pass.setBindGroup(MaterialResource::ENamedBindGroup::RENDERER, m_rendererUniformBindGroup, 0, nullptr);
-        pass.setBindGroup(MaterialResource::ENamedBindGroup::OBJECT, m_objectUniformBindGroup, 0, nullptr);
+        //pass.setBindGroup(MaterialResource::ENamedBindGroup::GLOBAL, m_globalBindGroup, 0, nullptr);
+        //pass.setBindGroup(MaterialResource::ENamedBindGroup::RENDERER, m_rendererUniformBindGroup, 0, nullptr);
+        //pass.setBindGroup(MaterialResource::ENamedBindGroup::OBJECT, m_objectUniformBindGroup, 0, nullptr);
 
-                
+        currentMaterial->SetUniform("uCameraData", m_cameraUniformBuffer.GetData());
+
         // Execute draw calls
         for (const auto& item : batch.drawItems) {
             Uniforms::UObjectData d;
             d.DrawID = item.drawID;
             d.ModelMatrix = item.modelMatrix;
             pass.setPushConstants(wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment, 0, sizeof(d), &d);
-            pass.setVertexBuffer(0, item.vertexBuffer, 0, WGPU_WHOLE_SIZE);
+            pass.setVertexBuffer(0, item.vertexBuffer, 0, wgpu::WHOLE_SIZE);
 
 
             if (item.indexCount > 0)
             {
-                pass.setIndexBuffer(item.indexBuffer, wgpu::IndexFormat::Uint16, 0, WGPU_WHOLE_SIZE);
+                pass.setIndexBuffer(item.indexBuffer, wgpu::IndexFormat::Uint16, 0, wgpu::WHOLE_SIZE);
                 pass.drawIndexed(
                     item.indexCount,
                     1,  // instanceCount

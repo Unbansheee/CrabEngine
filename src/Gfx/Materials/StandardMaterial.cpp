@@ -53,6 +53,7 @@ void StandardMaterial::Initialize()
     MaterialResource::Initialize();
 }
 
+/*
 std::vector<wgpu::BindGroupLayout> StandardMaterial::CreateMaterialBindGroupLayouts()
 {
     return {
@@ -62,7 +63,9 @@ std::vector<wgpu::BindGroupLayout> StandardMaterial::CreateMaterialBindGroupLayo
         StandardMaterialUniformsLayout::Create(m_device) // 3 
     };   
 }
+*/
 
+/*
 std::vector<MaterialResource::MaterialBindGroup> StandardMaterial::CreateMaterialBindGroups()
 {
     BindGroupCreator<StandardMaterialUniformsLayout> materialBindsCreator(m_device);
@@ -76,21 +79,26 @@ std::vector<MaterialResource::MaterialBindGroup> StandardMaterial::CreateMateria
     
     return {{MATERIAL, matGroup}};
 }
+*/
 
+/*
 void StandardMaterial::CreateVertexBufferLayouts(std::vector<Vertex::VertexBufferLayout>& Layouts)
 {
     auto& a = Layouts.emplace_back();
     Vertex::CreateVertexBufferLayout<MeshVertex>(a);
 }
+*/
 
+/*
 void StandardMaterial::UpdateUniforms()
 {
 }
+*/
 
 void StandardMaterial::OnPropertySet(Property &prop) {
     MaterialResource::OnPropertySet(prop);
 
     if (prop.flags & PropertyFlags::MaterialProperty) {
-        MarkBindGroupsDirty();
+        //MarkBindGroupsDirty();
     }
 }

@@ -41,10 +41,10 @@ public:
     }
 
     void Initialize() override;
-    std::vector<wgpu::BindGroupLayout> CreateMaterialBindGroupLayouts() override;
-    std::vector<MaterialBindGroup> CreateMaterialBindGroups() override;
-    void CreateVertexBufferLayouts(std::vector<Vertex::VertexBufferLayout>& Layouts) override;
-    void UpdateUniforms() override;
+    //std::vector<wgpu::BindGroupLayout> CreateMaterialBindGroupLayouts() override;
+    //std::vector<MaterialBindGroup> CreateMaterialBindGroups() override;
+    //void CreateVertexBufferLayouts(std::vector<Vertex::VertexBufferLayout>& Layouts) override;
+    //void UpdateUniforms() override;
     void OnPropertySet(Property &prop) override;
 
 public:

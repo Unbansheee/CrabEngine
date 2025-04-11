@@ -11,7 +11,6 @@ import Engine.Resource.Material;
 import Engine.Resource.ResourceManager;
 import Engine.Resource.ShaderFile;
 import Engine.GFX.Renderer;
-import Engine.GFX.IDPassRenderer;
 
 NodeMeshInstance3D::NodeMeshInstance3D()
 {

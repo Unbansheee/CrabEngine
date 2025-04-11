@@ -129,8 +129,12 @@ wgpu::raii::ShaderModule ShaderCompiler::GetCompiledShaderModule() {
     return compiledShaderModule;
 }
 
-wgpu::raii::PipelineLayout ShaderCompiler::GetPipelineLayout() {
+BindingLayouts ShaderCompiler::GetPipelineLayout() {
     return compiledLayout;
+}
+
+std::vector<UniformMetadata> ShaderCompiler::GetUniformMetadata() {
+    return compiledMetadata;
 }
 
 std::vector<const char*> ShaderCompiler::GetShaderDirectories() {
@@ -154,7 +158,7 @@ std::vector<const char*> ShaderCompiler::GetShaderDirectories() {
     return result;
 }
 
-wgpu::raii::PipelineLayout ShaderCompiler::ComposeBindingData(ComPtr<slang::IComponentType> program) {
+BindingLayouts ShaderCompiler::ComposeBindingData(ComPtr<slang::IComponentType> program) {
     slang::ProgramLayout* programLayout = program->getLayout(0);
     ShaderObjectLayoutBuilder builder;
 
@@ -164,12 +168,13 @@ wgpu::raii::PipelineLayout ShaderCompiler::ComposeBindingData(ComPtr<slang::ICom
         auto entry = ParseShaderParameter(p);
         slang::TypeLayoutReflection* ref = p->getTypeLayout();
         builder.AddBindingsFrom(&entry, ref, 0);
-
+        compiledMetadata.push_back(entry);
     }
-    return builder.CreatePipelineLayout();;
+
+    return builder.CreatePipelineLayout();
 }
 
-ShaderBindings::Entry ShaderCompiler::ParseShaderParameter(slang::VariableLayoutReflection *p) {
+UniformMetadata ShaderCompiler::ParseShaderParameter(slang::VariableLayoutReflection *p) {
     auto group = p->getBindingSpace();
     auto binding = p->getBindingIndex();
     auto type = p->getType();
@@ -177,6 +182,7 @@ ShaderBindings::Entry ShaderCompiler::ParseShaderParameter(slang::VariableLayout
     auto shape = type->getResourceShape();
     auto access = type->getResourceAccess();
     auto category = p->getCategory();
+    auto typeLayout = p->getTypeLayout();
 
     uint32_t bindGroup = 0;
     uint32_t bindSlot = 0;
@@ -184,32 +190,103 @@ ShaderBindings::Entry ShaderCompiler::ParseShaderParameter(slang::VariableLayout
     bindSlot = p->getOffset(SlangParameterCategory::SLANG_PARAMETER_CATEGORY_DESCRIPTOR_TABLE_SLOT);
 
     WGPUShaderStage stage = wgpu::ShaderStage::None;
-    /*
-    auto slangStage = p->getStage();
-    if (slangStage & SlangStage::SLANG_STAGE_VERTEX) {
-        stage |= wgpu::ShaderStage::Vertex;
-    }
-    if (slangStage & SlangStage::SLANG_STAGE_FRAGMENT) {
-        stage |= wgpu::ShaderStage::Fragment;
-    }
-    if (slangStage & SlangStage::SLANG_STAGE_COMPUTE) {
-        stage |= wgpu::ShaderStage::Compute;
-    };
-    */
     stage |= wgpu::ShaderStage::Vertex;
     stage |= wgpu::ShaderStage::Fragment;
 
     Assert::Check(stage != wgpu::ShaderStage::None, "stage != None", "No shader stages defined for " + std::string(p->getName()));
 
-    ShaderBindings::Entry entry;
+    UniformMetadata entry;
     entry.Name = p->getName();
     entry.SizeInBytes = p->getTypeLayout()->getSize();
+
     entry.Location = p->getBindingIndex();
     entry.Group = p->getBindingSpace(DescriptorTableSlot);
     entry.Visibility = stage;
+
+    uint32_t bindingGroup = 0; // entry.Group
+    auto bindingType = p->getTypeLayout()->getBindingRangeType(bindingGroup);
+    entry.IsPushConstant = bindingType == slang::BindingType::PushConstant;
+
+    switch (kind) {
+        case slang::TypeReflection::Kind::ConstantBuffer:
+            entry.BindingType = WGPUBindingType::Buffer;
+            entry.SizeInBytes = p->getTypeLayout()->getElementTypeLayout()->getSize();
+        case slang::TypeReflection::Kind::ParameterBlock:
+            entry.BindingType = WGPUBindingType::Buffer;
+            entry.SizeInBytes = p->getTypeLayout()->getElementTypeLayout()->getSize();
+            break;
+        case slang::TypeReflection::Kind::Resource: // Texture, StructuredBuffer
+            if (typeLayout->getResourceShape() & SlangResourceShape::SLANG_STRUCTURED_BUFFER && typeLayout->getResourceShape() &! SlangResourceShape::SLANG_TEXTURE_2D) {
+                entry.BindingType = WGPUBindingType::Buffer;
+            }
+            else if (typeLayout->getResourceShape() & SlangResourceShape::SLANG_TEXTURE_2D) {
+                SlangResourceAccess access = typeLayout->getResourceAccess();
+
+                auto t = typeLayout->getResourceResultType();
+                auto elemCount = t->getElementCount();
+                auto elementType = t->getScalarType();
+
+                bool isStorageTexture =
+                    (access & SLANG_RESOURCE_ACCESS_READ_WRITE) ||
+                    (access & SLANG_RESOURCE_ACCESS_WRITE);
+                entry.BindingType = isStorageTexture ? WGPUBindingType::StorageTexture : WGPUBindingType::Texture;
+                entry.Format = ShaderCompiler::MapSlangToTextureFormat(elementType, (int)elemCount);
+                entry.SampleType = ShaderCompiler::MapSlangToTextureSampleFormat(elementType);
+                entry.Dimension = WGPUTextureViewDimension_2D;
+            }
+            break;
+        default: break;
+    }
 
 
     return entry;
 }
 
 
+
+BindingLayouts ShaderObjectLayoutBuilder::CreatePipelineLayout() {
+    auto device = Application::Get().GetDevice();
+
+    BindingLayouts out;
+
+    wgpu::PipelineLayoutDescriptor desc;
+    out.BindGroupLayouts = CreateBindGroupLayouts();
+    std::vector<wgpu::raii::BindGroupLayout> bgLayouts;
+    for (auto& l : out.BindGroupLayouts) {
+        bgLayouts.push_back(l.second);
+    }
+
+    desc.bindGroupLayouts = (WGPUBindGroupLayout*)bgLayouts.data();
+    desc.bindGroupLayoutCount = bgLayouts.size();
+
+    if (pushConstant.has_value()) {
+        auto pc = pushConstant.value();
+        wgpu::PushConstantRange pcRange;
+        pcRange.start = 0;
+        pcRange.end = pc.Size;
+        pcRange.stages = pc.Visibility;
+
+        wgpu::PipelineLayoutExtras extras = wgpu::Default;
+        extras.pushConstantRanges = &pcRange;
+        extras.pushConstantRangeCount = 1;
+
+        desc.nextInChain = &extras.chain;
+        out.PipelineLayout = device.createPipelineLayout(desc);
+        return out;
+    }
+
+    out.PipelineLayout = device.createPipelineLayout(desc);
+    return out;
+}
+
+std::unordered_map<uint32_t, wgpu::raii::BindGroupLayout> ShaderObjectLayoutBuilder::CreateBindGroupLayouts() {
+    auto device = Application::Get().GetDevice();
+    std::unordered_map<uint32_t, wgpu::raii::BindGroupLayout> layouts;
+    for (auto e : entries) {
+        wgpu::BindGroupLayoutDescriptor desc;
+        desc.entries = (WGPUBindGroupLayoutEntry*)e.second.data();
+        desc.entryCount = e.second.size();
+        layouts.insert({(uint32_t)e.first, device.createBindGroupLayout(desc)});
+    }
+    return layouts;
+}

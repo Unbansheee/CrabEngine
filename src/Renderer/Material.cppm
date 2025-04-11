@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <cassert>
-#include <filesystem>
 #include "ReflectionMacros.h"
 //#include <webgpu/webgpu.hpp>
 
@@ -17,8 +15,20 @@ import Engine.Resource.Ref;
 import Engine.Application;
 import Engine.Assert;
 import Engine.MaterialProperties;
+import Engine.ShaderCompiler.Types;
 
 
+// Storage for resources
+struct BufferBinding {
+    WGPUBuffer buffer;
+    uint32_t size;
+    bool isDynamic;
+};
+
+struct TextureBinding {
+    std::shared_ptr<TextureResource> texture;
+    //WGPUSampler sampler;
+};
 
 export class MaterialResource : public Resource
 {
@@ -43,6 +53,7 @@ protected:
     {
         uint8_t BindGroupIndex = 0;
         wgpu::BindGroup BindGroup;
+        wgpu::BindGroupLayout Layout;
     };
 
     struct MaterialSettings
@@ -60,30 +71,37 @@ protected:
     };
     
 public:
+    wgpu::Device m_device = nullptr;
     wgpu::RenderPipeline m_pipeline = nullptr;
     wgpu::raii::ShaderModule m_shaderModule ;
-    wgpu::Device m_device = nullptr;
-    wgpu::BindGroupLayout m_bindGroupLayouts = nullptr;
-    std::vector<MaterialBindGroup> m_bindGroups = {};
+
+    // TODO: Replace
     wgpu::TextureFormat TargetTextureFormat = WGPUTextureFormat::WGPUTextureFormat_BGRA8UnormSrgb;
     wgpu::TextureFormat DepthTextureFormat = wgpu::TextureFormat::Depth24Plus;
+
     MaterialSettings m_settings;
-    bool bBindGroupsDirty = false;
     StrongResourceRef shader_file;
 
+    std::unordered_map<std::string, BufferBinding> m_buffers;
+    std::unordered_map<std::string, TextureBinding> m_textures;
+
+    std::unordered_map<std::string, UniformMetadata> m_uniformMetadata;
+    std::unordered_map<uint32_t, WGPUBindGroup> m_bindGroups;
+    std::unordered_map<uint32_t, bool> m_dirtyGroups;
+    std::unordered_map<uint32_t, wgpu::raii::BindGroupLayout> m_bindGroupLayouts;
+    void UpdateBindGroups();
 
     // NEW
-    ShaderMetadata m_metadata;
-    wgpu::BindGroup bindGroup = nullptr;
-    wgpu::Buffer uniformBuffer = nullptr;
-    wgpu::BindGroupLayout bindGroupLayout = nullptr;
-    std::vector<wgpu::BindGroupEntry> m_bindGroupEntries;
-    std::vector<uint8_t> m_uniformData;
-    std::unordered_map<std::string, PropertyLayoutInfo> m_layoutInfo;
-    std::vector<wgpu::TextureView> m_textureViews;
+    template<typename T>
+    void SetUniform(const std::string& uniformName, T& data) {
+        Assert::Check(m_buffers.contains(uniformName), "Buffers.contains(uniformName)", "Parameter does not exist");
+        auto buff = m_buffers.at(uniformName);
+        Application::Get().GetQueue().writeBuffer(buff.buffer, 0, &data, sizeof(T));
+    };
+    void SetUniform(const std::string& uniformName, void* data, uint32_t size);
+    void SetTexture(const std::string& uniformName, const std::shared_ptr<TextureResource>& texture);
 
     wgpu::raii::PipelineLayout m_pipelineLayout;
-
 
     void LoadData() override;
     MaterialResource() : Resource() {};
@@ -97,13 +115,10 @@ public:
 
     virtual void Initialize()
     {
-        assert(TargetTextureFormat != wgpu::TextureFormat::Undefined);
+        //assert(TargetTextureFormat != wgpu::TextureFormat::Undefined);
         if (!m_device) m_device = Application::Get().GetDevice();
         m_pipeline = CreateRenderPipeline();
-        m_bindGroups = CreateMaterialBindGroups();
     }
-
-    void MarkBindGroupsDirty() { bBindGroupsDirty = true;}
 
     virtual void OnPropertySet(Property& prop) override;
 
@@ -111,62 +126,12 @@ public:
 
     wgpu::RenderPipeline GetPipeline() const { return m_pipeline; }
     virtual wgpu::RenderPipeline CreateRenderPipeline();
-    virtual std::vector<wgpu::BindGroupLayout> CreateMaterialBindGroupLayouts() = 0;
-    virtual std::vector<MaterialBindGroup> CreateMaterialBindGroups() = 0;
-    virtual void CreateVertexBufferLayouts(std::vector<Vertex::VertexBufferLayout>& Layouts) = 0;
-    virtual void UpdateUniforms() = 0;
+
     virtual void Apply(wgpu::RenderPassEncoder renderPass);
 
-    uint32_t GetTextureIndex(const std::string& name) const;
-    uint32_t GetTextureBindingIndex(uint32_t textureIndex) const;
 
-    template<typename T>
-    void SetProperty(const std::string& name, const T& value) {
-        auto device = Application::Get().GetDevice();
-        auto queue = Application::Get().GetQueue();
 
-        auto propIt = m_metadata.Properties.find(name);
-        if (propIt == m_metadata.Properties.end()) {
-            throw std::runtime_error("Property not found: " + name);
-        }
-
-        const MaterialProperty& prop = propIt->second;
-        if (!ValidateType<T>(prop.Type)) {
-            throw std::runtime_error("Type mismatch for property: " + name);
-        }
-
-        if (prop.Type == MaterialPropertyType::Texture2D) {
-            // Handle texture updates
-            const size_t textureIndex = GetTextureIndex(name);
-            m_textureViews[textureIndex] = value; // Assuming value is TextureView
-
-            // Recreate bind group with new texture
-            std::vector<wgpu::BindGroupEntry>& entries = m_bindGroupEntries;
-            entries[GetTextureBindingIndex(textureIndex)] = WGPUBindGroupEntry{
-                .binding = GetTextureBindingIndex(textureIndex),
-                .textureView = m_textureViews[textureIndex]
-            };
-
-            bindGroup = device.createBindGroup(WGPUBindGroupDescriptor{
-                .layout = bindGroupLayout,
-                .entries = entries.data(),
-                .entryCount = entries.size()
-            });
-        } else {
-            // Handle uniform updates
-            const auto& layout = m_layoutInfo.at(name);
-            memcpy(m_uniformData.data() + layout.Offset, &value, sizeof(T));
-
-            // Partial buffer update
-            queue.writeBuffer(
-                uniformBuffer,
-                layout.Offset,
-                m_uniformData.data() + layout.Offset,
-                layout.Size
-            );
-        }
-    }
-
+    /*
     template<typename T>
     bool ValidateType(MaterialPropertyType type) {
         switch (type) {
@@ -201,5 +166,6 @@ public:
 
         return false;
     }
+    */
 };
 
