@@ -33,7 +33,11 @@ public:
 private:
      BindingLayouts ComposeBindingData(Slang::ComPtr<slang::IComponentType> program);
      std::vector<const char*> GetShaderDirectories();
-     UniformMetadata ParseShaderParameter(slang::VariableLayoutReflection* var);
+     std::vector<UniformMetadata> ParseShaderParameter(slang::VariableLayoutReflection* var);
+
+     std::vector<UniformMetadata> ParseShaderVar(slang::TypeLayoutReflection *typeLayout, int group, int slot);
+     UniformMetadata ParseResource(slang::TypeLayoutReflection *typeLayout, int group, int slot);
+     std::vector<UniformMetadata> ParseParameterBlock(slang::TypeLayoutReflection *paramBlock, int group, int slot);
 
      Slang::ComPtr<slang::ISession> session;
      static inline std::vector<const char*> shaderSources = {ENGINE_RESOURCE_DIR};
@@ -50,7 +54,7 @@ private:
 
 class ShaderObjectLayoutBuilder {
 public:
-     void AddBindingsFrom(UniformMetadata* entry, slang::TypeLayoutReflection* typeLayout, uint32_t descriptorCount);
+     void AddBindingsFrom(UniformMetadata* entry, slang::TypeLayoutReflection* typeLayout);
      std::unordered_map<uint32_t, wgpu::raii::BindGroupLayout> CreateBindGroupLayouts();
      BindingLayouts CreatePipelineLayout();
 
@@ -166,16 +170,12 @@ WGPUTextureFormat ShaderCompiler::MapSlangToTextureFormat(slang::TypeReflection:
 }
 
 
-
-
-void ShaderObjectLayoutBuilder::AddBindingsFrom(UniformMetadata* entry, slang::TypeLayoutReflection *typeLayout, uint32_t descriptorCount) {
+void ShaderObjectLayoutBuilder::AddBindingsFrom(UniformMetadata* entry, slang::TypeLayoutReflection *typeLayout) {
      int bindingRangeCount = typeLayout->getBindingRangeCount();
-     uint32_t bindingGroup = 0;
-     uint32_t bindingSlot = 0;
 
      if (entry->IsPushConstant) {
           auto elemType = typeLayout->getElementTypeLayout();
-          auto elemSize = elemType->getSize();
+          auto elemSize = entry->SizeInBytes;
           pushConstant = PushConstantData{
                (uint32_t)elemSize,
                entry->Visibility
@@ -187,21 +187,41 @@ void ShaderObjectLayoutBuilder::AddBindingsFrom(UniformMetadata* entry, slang::T
      e.visibility = entry->Visibility;
      auto n = typeLayout->getResourceResultType()->getName();
      auto kind = typeLayout->getKind();
-     switch (kind) {
-          case slang::TypeReflection::Kind::ConstantBuffer:
+     switch (entry->BindingType) {
+          default:
+               Assert::Fail("Not Implemented");
+          case Buffer:
                WGPUBufferBindingLayout constBufferBinding;
                constBufferBinding.type = WGPUBufferBindingType_Uniform;
                constBufferBinding.minBindingSize = entry->SizeInBytes;
                constBufferBinding.hasDynamicOffset = false;
                e.buffer = constBufferBinding;
                break;
-          case slang::TypeReflection::Kind::ParameterBlock:
-               WGPUBufferBindingLayout paramBlockBinding;
-               paramBlockBinding.type = WGPUBufferBindingType_Uniform;
-               paramBlockBinding.minBindingSize = entry->SizeInBytes;
-               paramBlockBinding.hasDynamicOffset = false;
-               e.buffer = paramBlockBinding;
+          case StorageTexture:
+               WGPUStorageTextureBindingLayout storageTextureBinding;
+               storageTextureBinding.format = entry->Format;
+               storageTextureBinding.viewDimension = entry->Dimension;
+               storageTextureBinding.access = entry->StorageTextureAccess;
+               e.storageTexture = storageTextureBinding;
                break;
+
+          case Texture:
+               WGPUTextureBindingLayout textureBinding;
+               //auto texfmt = typeLayout->getBindingRangeImageFormat(typeLayout->getBindingRangeCount());
+               textureBinding.sampleType = entry->SampleType;
+               textureBinding.multisampled = 0;//typeLayout->getResourceShape() & SlangResourceShape::SLANG_TEXTURE_2D_MULTISAMPLE || typeLayout->getResourceShape() & SlangResourceShape::SLANG_TEXTURE_MULTISAMPLE_FLAG ? WGPUOptionalBool_True : WGPUOptionalBool_False;
+               textureBinding.viewDimension = entry->Dimension;
+               e.texture = textureBinding;
+               break;
+
+          case Sampler:
+               WGPUSamplerBindingLayout samplerBinding;
+               samplerBinding.type = entry->SamplerBindingType;
+               e.sampler = samplerBinding;
+     }
+     /*
+     switch (kind) {
+
           case slang::TypeReflection::Kind::Resource: // Texture, StructuredBuffer
                if (typeLayout->getResourceShape() & SlangResourceShape::SLANG_STRUCTURED_BUFFER && typeLayout->getResourceShape() &! SlangResourceShape::SLANG_TEXTURE_2D) {
                     WGPUBufferBindingLayout storageBinding;
@@ -247,6 +267,7 @@ void ShaderObjectLayoutBuilder::AddBindingsFrom(UniformMetadata* entry, slang::T
           default:
                Assert::Fail("Not Implemented");
      }
+     */
 
      entries[entry->Group].push_back(e);
 }

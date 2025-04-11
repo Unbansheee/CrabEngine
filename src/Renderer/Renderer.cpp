@@ -31,7 +31,7 @@ void Renderer::Initialize(wgpu::Device device)
 
 
 std::vector<Node*> Renderer::RenderNodeTree(Node* rootNode, View& view, wgpu::TextureView& colorAttachment,
-                              wgpu::TextureView& depthAttachment, wgpu::TextureView& id_texture)
+                              wgpu::TextureView& depthAttachment, const std::shared_ptr<TextureResource>& idTexture)
 {
     std::vector<Node*> DrawnNodes;
     DrawnNodes.push_back(nullptr); // Index 0 is INVALID
@@ -40,14 +40,11 @@ std::vector<Node*> Renderer::RenderNodeTree(Node* rootNode, View& view, wgpu::Te
     //UpdateUniforms();
     
     Uniforms::ULightingData lightingData;
-    lightingData.LightColors = {
-        Vector4{ 1.0f, 0.9f, 0.6f, 1.0f },
-        Vector4{ 0.6f, 0.9f, 1.0f, 1.0f }
+    lightingData.DirectionalLights = {
+        Uniforms::ULightingData::DirectionalLight{Vector4{0.5f, -0.9f, 0.1f, 0.0f}, Vector4{ 1.0f, 0.9f, 0.6f, 1.0f }},
+        Uniforms::ULightingData::DirectionalLight{Vector4{0.2f, 0.4f, 0.3f, 0.0f}, {Vector4{ 0.6f, 0.9f, 1.0f, 1.0f }}}
     };
-    lightingData.LightDirections = {
-        Vector4{0.5f, -0.9f, 0.1f, 0.0f},
-        Vector4{0.2f, 0.4f, 0.3f, 0.0f}
-    };
+    lightingData.DirectionalLightCount = 2;
     m_lightingUniformBuffer.SetData(lightingData);
     
     GatherDrawCommands(rootNode);
@@ -66,7 +63,7 @@ std::vector<Node*> Renderer::RenderNodeTree(Node* rootNode, View& view, wgpu::Te
 
     
     // 4. Execute rendering
-    ExecuteBatches(batches, colorAttachment, depthAttachment);
+    ExecuteBatches(batches, colorAttachment, depthAttachment, idTexture);
 
     return DrawnNodes;
 }
@@ -208,7 +205,7 @@ void Renderer::SortBatches(std::vector<DrawBatch>& batches)
         */
 }
 
-void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::TextureView& colorAttachmentView, wgpu::TextureView& depthAttachmentView)
+void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::TextureView& colorAttachmentView, wgpu::TextureView& depthAttachmentView, const std::shared_ptr<TextureResource>& idTexture)
 {
     // 1. Begin frame
     // Color attachments
@@ -238,13 +235,33 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
         
     // 2. Track current state
     MaterialResource* currentMaterial = nullptr;
-        
+    auto cobblestone = ResourceManager::Load<TextureResource>(ENGINE_RESOURCE_DIR"/Textures/cobblestone_floor_08_diff_2k.jpg");
+    auto cobblestone_N = ResourceManager::Load<TextureResource>(ENGINE_RESOURCE_DIR"/Textures/cobblestone_floor_08_nor_gl_2k.png");
+
     for (const auto& batch : batches) {
         // Pipeline state change
 
         // Switch pipeline and Bind material bind groups
         if (batch.material != currentMaterial) {
             currentMaterial = batch.material;
+
+            currentMaterial->SetUniform("uCameraData", m_cameraUniformBuffer.GetData());
+            currentMaterial->SetUniform("uLightingData", m_lightingUniformBuffer.GetData());
+            Uniforms::UStandardMaterialParameters stParams;
+            stParams.Hardness = 16.0f;
+            stParams.Kd = 1.0f;
+            stParams.Ks = 1.0f;
+            stParams.NormalStrength = 1.0f;
+            stParams.BaseColorFactor = {1,1,1};
+
+            currentMaterial->SetUniform("uMaterialProperties", stParams);
+            if (idTexture) {
+                currentMaterial->SetTexture("idPassTexture", idTexture);
+            }
+
+            currentMaterial->SetTexture("AlbedoTexture", cobblestone);
+            currentMaterial->SetTexture("NormalTexture", cobblestone_N);
+
             currentMaterial->Apply(pass);
         }
 
@@ -253,7 +270,7 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
         //pass.setBindGroup(MaterialResource::ENamedBindGroup::RENDERER, m_rendererUniformBindGroup, 0, nullptr);
         //pass.setBindGroup(MaterialResource::ENamedBindGroup::OBJECT, m_objectUniformBindGroup, 0, nullptr);
 
-        currentMaterial->SetUniform("uCameraData", m_cameraUniformBuffer.GetData());
+
 
         // Execute draw calls
         for (const auto& item : batch.drawItems) {

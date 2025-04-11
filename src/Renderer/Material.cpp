@@ -12,22 +12,6 @@ void MaterialResource::Apply(wgpu::RenderPassEncoder renderPass)
 {
     renderPass.setPipeline(GetPipeline());
 
-    /*
-    if (bBindGroupsDirty)
-    {
-        for (auto grp : m_bindGroups)
-        {
-            grp.BindGroup.release();
-        }
-        
-        m_bindGroups = CreateMaterialBindGroups();
-        bBindGroupsDirty = false;
-    }
-    for (auto& grp : m_bindGroups)
-    {
-        renderPass.setBindGroup(grp.BindGroupIndex, grp.BindGroup, 0, nullptr);
-    }
-    */
     UpdateBindGroups();
     for (auto& grp : m_bindGroups) {
         renderPass.setBindGroup(grp.first, grp.second, 0, nullptr);
@@ -61,8 +45,8 @@ void MaterialResource::UpdateBindGroups() {
                 entry.textureView = texture.texture->GetInternalTextureView();
             }
             else if (meta.BindingType == Sampler) {
-                //auto& texture = m_textures.at(name);
-                //entry.sampler = texture.sampler;
+                auto sampler = m_samplers.at(uniformName);
+                entry.sampler = *sampler.sampler;
             }
 
             entries.push_back(entry);
@@ -99,6 +83,14 @@ void MaterialResource::SetTexture(const std::string &uniformName, const std::sha
     if (m_uniformMetadata.contains(uniformName)) {
         auto& meta = m_uniformMetadata.at(uniformName);
         m_textures[uniformName] = {texture};
+        m_dirtyGroups[meta.Group] = true;
+    }
+}
+
+void MaterialResource::SetSampler(const std::string &uniformName, wgpu::raii::Sampler sampler) {
+    if (m_uniformMetadata.contains(uniformName)) {
+        auto& meta = m_uniformMetadata.at(uniformName);
+        m_samplers[uniformName] = {sampler};
         m_dirtyGroups[meta.Group] = true;
     }
 }
@@ -161,6 +153,25 @@ void MaterialResource::InitializeProperties() {
                 ResourceManager::Load<TextureResource>(ENGINE_RESOURCE_DIR"/null_texture_black.png")
             };
             m_textures.emplace(uniformName, binding);
+        }
+
+        if (meta.BindingType == Sampler) {
+            wgpu::SamplerDescriptor samplerDesc;
+            samplerDesc.addressModeU = wgpu::AddressMode::Repeat;
+            samplerDesc.addressModeV = wgpu::AddressMode::Repeat;
+            samplerDesc.addressModeW = wgpu::AddressMode::Repeat;
+            samplerDesc.magFilter = wgpu::FilterMode::Linear;
+            samplerDesc.minFilter = wgpu::FilterMode::Linear;
+            samplerDesc.mipmapFilter = wgpu::MipmapFilterMode::Linear;
+            samplerDesc.lodMinClamp = 0.0f;
+            samplerDesc.lodMaxClamp = 8.0f;
+            samplerDesc.compare = wgpu::CompareFunction::Undefined;
+            samplerDesc.maxAnisotropy = 1;
+            wgpu::raii::Sampler s = m_device.createSampler(samplerDesc);
+            SamplerBinding binding = {
+                 s
+            };
+            m_samplers.emplace(uniformName, binding);
         }
 
         if (meta.BindingType == StorageTexture) {

@@ -27,7 +27,10 @@ struct BufferBinding {
 
 struct TextureBinding {
     std::shared_ptr<TextureResource> texture;
-    //WGPUSampler sampler;
+};
+
+struct SamplerBinding {
+    wgpu::raii::Sampler sampler;
 };
 
 export class MaterialResource : public Resource
@@ -84,6 +87,7 @@ public:
 
     std::unordered_map<std::string, BufferBinding> m_buffers;
     std::unordered_map<std::string, TextureBinding> m_textures;
+    std::unordered_map<std::string, SamplerBinding> m_samplers;
 
     std::unordered_map<std::string, UniformMetadata> m_uniformMetadata;
     std::unordered_map<uint32_t, WGPUBindGroup> m_bindGroups;
@@ -98,8 +102,10 @@ public:
         auto buff = m_buffers.at(uniformName);
         Application::Get().GetQueue().writeBuffer(buff.buffer, 0, &data, sizeof(T));
     };
+
     void SetUniform(const std::string& uniformName, void* data, uint32_t size);
     void SetTexture(const std::string& uniformName, const std::shared_ptr<TextureResource>& texture);
+    void SetSampler(const std::string& uniformName, wgpu::raii::Sampler sampler);
 
     wgpu::raii::PipelineLayout m_pipelineLayout;
 
@@ -115,6 +121,7 @@ public:
 
     virtual void Initialize()
     {
+
         //assert(TargetTextureFormat != wgpu::TextureFormat::Undefined);
         if (!m_device) m_device = Application::Get().GetDevice();
         m_pipeline = CreateRenderPipeline();

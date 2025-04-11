@@ -97,7 +97,7 @@ void NodeWindow::Update(float dt)
             viewData.ViewMatrix = ActiveCamera->GetViewMatrix();
             viewData.ProjectionMatrix = glm::perspectiveRH(ActiveCamera->FOV, GetAspectRatio(), ActiveCamera->NearClippingPlane, ActiveCamera->FarClippingPlane);
         }
-        renderer.RenderNodeTree(this, viewData, SurfaceView, DepthView, PickingPassTexture->GetInternalTextureView());
+        renderer.RenderNodeTree(this, viewData, SurfaceView, DepthView, PickingPassTexture);
     }
     renderer.Flush();
     

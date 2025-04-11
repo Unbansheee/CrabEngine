@@ -114,11 +114,11 @@ ShaderCompiler::ShaderCompiler(const std::string &shader_name, SlangTargetCompil
         shaderDesc.nextInChain = &shaderCodeDesc.chain;
         std::cout << wgsl << std::endl;
     }
+    compiledLayout = ComposeBindingData(composedProgram);
 
     compiledShaderModule = device.createShaderModule(shaderDesc);
     Assert::Check(*compiledShaderModule != nullptr, "module != nullptr", "Error compiling module");
 
-    compiledLayout = ComposeBindingData(composedProgram);
 
     for (auto dir : dirs) {
         delete[] dir;
@@ -165,56 +165,71 @@ BindingLayouts ShaderCompiler::ComposeBindingData(ComPtr<slang::IComponentType> 
     for (int i = 0; i < programLayout->getParameterCount(); i++) {
         auto p = programLayout->getParameterByIndex(i);
 
-        auto entry = ParseShaderParameter(p);
-        slang::TypeLayoutReflection* ref = p->getTypeLayout();
-        builder.AddBindingsFrom(&entry, ref, 0);
-        compiledMetadata.push_back(entry);
+        auto entries = ParseShaderParameter(p);
+        for (auto& entry : entries) {
+            slang::TypeLayoutReflection* ref = p->getTypeLayout();
+            builder.AddBindingsFrom(&entry, ref);
+            compiledMetadata.push_back(entry);
+        }
     }
 
     return builder.CreatePipelineLayout();
 }
 
-UniformMetadata ShaderCompiler::ParseShaderParameter(slang::VariableLayoutReflection *p) {
-    auto group = p->getBindingSpace();
-    auto binding = p->getBindingIndex();
-    auto type = p->getType();
-    auto kind = type->getKind();
-    auto shape = type->getResourceShape();
-    auto access = type->getResourceAccess();
-    auto category = p->getCategory();
+std::vector<UniformMetadata> ShaderCompiler::ParseShaderParameter(slang::VariableLayoutReflection *p) {
     auto typeLayout = p->getTypeLayout();
 
-    uint32_t bindGroup = 0;
-    uint32_t bindSlot = 0;
-    bindGroup = p->getOffset(SlangParameterCategory::SLANG_PARAMETER_CATEGORY_REGISTER_SPACE);
-    bindSlot = p->getOffset(SlangParameterCategory::SLANG_PARAMETER_CATEGORY_DESCRIPTOR_TABLE_SLOT);
+    auto group = p->getOffset(ParameterCategory::SubElementRegisterSpace);
+    auto location = p->getType()->getKind() == slang::TypeReflection::Kind::ParameterBlock ? 0 : p->getBindingIndex();
 
-    WGPUShaderStage stage = wgpu::ShaderStage::None;
-    stage |= wgpu::ShaderStage::Vertex;
-    stage |= wgpu::ShaderStage::Fragment;
+    auto entries = ParseShaderVar(typeLayout, group, location);
+    auto isPC = p->getTypeLayout()->getBindingRangeType(0) == slang::BindingType::PushConstant;
 
-    Assert::Check(stage != wgpu::ShaderStage::None, "stage != None", "No shader stages defined for " + std::string(p->getName()));
 
+
+    if (entries.size() == 1) {
+        WGPUShaderStage stage = wgpu::ShaderStage::None;
+        stage |= wgpu::ShaderStage::Vertex;
+        stage |= wgpu::ShaderStage::Fragment;
+
+        auto& entry = entries.front();
+        entry.Name = p->getName();
+        //entry.SizeInBytes = typeLayout->getSize();
+        entry.Visibility = stage;
+    }
+
+    return entries;
+}
+
+std::vector<UniformMetadata> ShaderCompiler::ParseShaderVar(slang::TypeLayoutReflection *typeLayout, int group, int slot) {
+    if (typeLayout->getKind() == TypeReflection::Kind::ParameterBlock) {
+        return ParseParameterBlock(typeLayout, group, slot);
+    }
+    else return { ParseResource(typeLayout, group, slot) };
+}
+
+UniformMetadata ShaderCompiler::ParseResource(slang::TypeLayoutReflection *typeLayout, int group, int slot) {
     UniformMetadata entry;
-    entry.Name = p->getName();
-    entry.SizeInBytes = p->getTypeLayout()->getSize();
 
-    entry.Location = p->getBindingIndex();
-    entry.Group = p->getBindingSpace(DescriptorTableSlot);
-    entry.Visibility = stage;
+    auto kind = typeLayout->getKind();
 
     uint32_t bindingGroup = 0; // entry.Group
-    auto bindingType = p->getTypeLayout()->getBindingRangeType(bindingGroup);
+    auto bindingType = typeLayout->getBindingRangeType(bindingGroup);
     entry.IsPushConstant = bindingType == slang::BindingType::PushConstant;
+
+    slang::TypeReflection::Kind k;
+    slang::TypeLayoutReflection* l;
 
     switch (kind) {
         case slang::TypeReflection::Kind::ConstantBuffer:
             entry.BindingType = WGPUBindingType::Buffer;
-            entry.SizeInBytes = p->getTypeLayout()->getElementTypeLayout()->getSize();
-        case slang::TypeReflection::Kind::ParameterBlock:
-            entry.BindingType = WGPUBindingType::Buffer;
-            entry.SizeInBytes = p->getTypeLayout()->getElementTypeLayout()->getSize();
+            if (typeLayout->getElementTypeLayout()->getKind() == slang::TypeReflection::Kind::ParameterBlock) {
+                return ParseParameterBlock(typeLayout->getElementTypeLayout(), group, slot).front();
+            }
+
+            entry.SizeInBytes = typeLayout->getElementTypeLayout()->getSize();
             break;
+
         case slang::TypeReflection::Kind::Resource: // Texture, StructuredBuffer
             if (typeLayout->getResourceShape() & SlangResourceShape::SLANG_STRUCTURED_BUFFER && typeLayout->getResourceShape() &! SlangResourceShape::SLANG_TEXTURE_2D) {
                 entry.BindingType = WGPUBindingType::Buffer;
@@ -229,19 +244,68 @@ UniformMetadata ShaderCompiler::ParseShaderParameter(slang::VariableLayoutReflec
                 bool isStorageTexture =
                     (access & SLANG_RESOURCE_ACCESS_READ_WRITE) ||
                     (access & SLANG_RESOURCE_ACCESS_WRITE);
+                entry.StorageTextureAccess = isStorageTexture ? wgpu::StorageTextureAccess::ReadWrite : wgpu::StorageTextureAccess::Undefined;
                 entry.BindingType = isStorageTexture ? WGPUBindingType::StorageTexture : WGPUBindingType::Texture;
                 entry.Format = ShaderCompiler::MapSlangToTextureFormat(elementType, (int)elemCount);
                 entry.SampleType = ShaderCompiler::MapSlangToTextureSampleFormat(elementType);
                 entry.Dimension = WGPUTextureViewDimension_2D;
             }
             break;
-        default: break;
+        case slang::TypeReflection::Kind::SamplerState: // Texture, StructuredBuffer
+            entry.BindingType = Sampler;
+            entry.SamplerBindingType = WGPUSamplerBindingType_Filtering;
+            break;
+        default:
+            Assert::Fail("Invalid Resource Type");
     }
 
+    entry.Group = group;
+    entry.Location = slot;
+    WGPUShaderStage stage = wgpu::ShaderStage::None;
+    stage |= wgpu::ShaderStage::Vertex;
+    stage |= wgpu::ShaderStage::Fragment;
+    entry.Visibility = stage;
 
     return entry;
 }
 
+std::vector<UniformMetadata> ShaderCompiler::ParseParameterBlock(slang::TypeLayoutReflection *paramBlock, int group, int slot) {
+    slang::TypeLayoutReflection* typeLayout = paramBlock;
+    slang::TypeLayoutReflection* elementTypeLayout = typeLayout->getElementTypeLayout();
+
+    std::vector<UniformMetadata> subEntries;
+
+    // TODO: Construct buffer uniform
+    if (elementTypeLayout->getSize() > 0) {
+        UniformMetadata subBuf;
+        subBuf.Name = paramBlock->getName();
+        subBuf.SizeInBytes = elementTypeLayout->getSize();
+        subBuf.BindingType = WGPUBindingType::Buffer;
+        subBuf.Visibility = wgpu::ShaderStage::Fragment | wgpu::ShaderStage::Vertex;
+        subBuf.Group = group;
+        subBuf.Location = slot;
+        subEntries.push_back(subBuf);
+    }
+
+    int subObjectRangeCount = elementTypeLayout->getBindingRangeCount();
+    for (int subObjectRangeIndex = 0; subObjectRangeIndex < subObjectRangeCount;
+         ++subObjectRangeIndex)
+    {
+        auto bindingRangeIndex = subObjectRangeIndex;
+           //elementTypeLayout->getSubObjectRangeBindingRangeIndex(subObjectRangeIndex);
+        auto bindingType = elementTypeLayout->getBindingRangeType(bindingRangeIndex);
+        auto leaf = elementTypeLayout->getBindingRangeLeafTypeLayout(bindingRangeIndex);
+        auto nextVar = elementTypeLayout->getBindingRangeLeafVariable(bindingRangeIndex);
+
+        auto v = ParseShaderVar(leaf, group, slot + subObjectRangeIndex);
+        if (v.size() == 1) {
+            v.front().Name = nextVar->getName();
+        }
+        subEntries.insert(subEntries.end(), v.begin(), v.end());
+    }
+
+    return subEntries;
+}
 
 
 BindingLayouts ShaderObjectLayoutBuilder::CreatePipelineLayout() {

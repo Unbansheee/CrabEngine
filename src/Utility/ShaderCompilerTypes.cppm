@@ -20,6 +20,8 @@ export struct UniformMetadata {
     WGPUTextureViewDimension Dimension = WGPUTextureViewDimension_Undefined; // For textures
     WGPUTextureFormat Format = WGPUTextureFormat_Undefined; // For textures
     WGPUTextureSampleType SampleType = WGPUTextureSampleType_Undefined; // For textures
+    WGPUStorageTextureAccess StorageTextureAccess = WGPUStorageTextureAccess_Undefined;
+    WGPUSamplerBindingType SamplerBindingType = WGPUSamplerBindingType_Undefined; // For Samplers
     bool IsPushConstant = false;
     bool IsDynamic = false;
 };

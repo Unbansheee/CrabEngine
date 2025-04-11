@@ -177,7 +177,7 @@ wgpu::Limits Application::GetRequiredLimits(wgpu::Adapter adapter)
 	requiredLimits.maxTextureDimension2D = supportedLimits.maxTextureDimension2D;
 	requiredLimits.maxInterStageShaderVariables = 64;
 	requiredLimits.maxBindGroups = 4;
-	requiredLimits.maxUniformBuffersPerShaderStage = 3;
+	requiredLimits.maxUniformBuffersPerShaderStage = 8;
 	requiredLimits.maxUniformBufferBindingSize = 65536;
 	requiredLimits.maxDynamicUniformBuffersPerPipelineLayout = 1;
 	requiredLimits.maxTextureDimension1D = std::max(largestWidth, largestHeight);

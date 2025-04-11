@@ -19,10 +19,17 @@ namespace Uniforms
         float _pad[1];
     };
 
+
+
     export struct ULightingData
     {
-        std::array<Vector4, 2> LightDirections;
-        std::array<Vector4, 2> LightColors;
+        struct DirectionalLight {
+            Vector4 Direction;
+            Vector4 Color;
+        };
+
+        std::array<DirectionalLight, 4> DirectionalLights;
+        int DirectionalLightCount;
     };
 
     export struct UObjectData

@@ -36,9 +36,14 @@ public struct CameraData{
     public float3 CameraPosition;
 }
 
+public struct DirectionalLight{
+    public float4 Direction;
+    public float4 Color;
+};
+
 public struct LightingData{
-    public Array<float4, 2> LightDirections;
-    public Array<float4, 2> LightColors;
+    public Array<DirectionalLight, 4> DirectionalLights;
+    public int DirectionalLightCount = 0;
 }
 
 public struct GlobalData{
