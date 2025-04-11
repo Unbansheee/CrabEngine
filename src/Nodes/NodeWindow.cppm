@@ -39,7 +39,7 @@ public:
     wgpu::TextureFormat GetSurfaceFormat() const { return surfaceFormat; }
 
     Renderer& GetRenderer() {return renderer;}
-    wgpu::Surface& GetSurface() {return surface;}
+    wgpu::raii::Surface& GetSurface() {return surface;}
     wgpu::SurfaceTexture GetSurfaceTexture() const;
 
     void SetSurfaceDrawEnabled(bool enabled) {bShouldRenderNodesToSurface = enabled;}
@@ -62,9 +62,9 @@ protected:
     virtual void OnMouseButton(int button, int action, int mods)
     {}
 
-    wgpu::TextureView GetCurrentTextureView();
-    wgpu::TextureView GetNextSurfaceTextureView() const;
-    wgpu::TextureView GetDepthTextureView() const;
+    wgpu::raii::TextureView GetCurrentTextureView() const;
+    wgpu::raii::TextureView GetNextSurfaceTextureView() const;
+    wgpu::raii::TextureView GetDepthTextureView() const;
     Vector2 GetWindowSize() const;
 
     void CreateSwapChain(uint32_t width, uint32_t height);
@@ -77,15 +77,15 @@ protected:
     bool bShouldRenderNodesToSurface = true;
     Renderer renderer;
     GLFWwindow* window = nullptr;
-    wgpu::Surface surface = nullptr;
+    wgpu::raii::Surface surface = nullptr;
     bool bCloseRequested = false;
 
     std::shared_ptr<RuntimeTextureResource> PickingPassTexture;
     
     wgpu::TextureFormat surfaceFormat = wgpu::TextureFormat::Undefined;
     wgpu::TextureFormat depthFormat = wgpu::TextureFormat::Depth24Plus;
-    wgpu::Texture m_depthTexture = nullptr;
-    wgpu::TextureView m_currentSurfaceView = nullptr;
+    wgpu::raii::Texture m_depthTexture = nullptr;
+    wgpu::raii::TextureView m_currentSurfaceView = nullptr;
 
     mutable wgpu::SurfaceTexture m_surfaceTexture;
 

@@ -10,11 +10,11 @@ import Engine.Resource.RuntimeTexture;
 
 void MaterialResource::Apply(wgpu::RenderPassEncoder renderPass)
 {
-    renderPass.setPipeline(GetPipeline());
+    renderPass.setPipeline(*GetPipeline());
 
     UpdateBindGroups();
     for (auto& grp : m_bindGroups) {
-        renderPass.setBindGroup(grp.first, grp.second, 0, nullptr);
+        renderPass.setBindGroup(grp.first, *grp.second, 0, nullptr);
     }
 }
 
@@ -32,17 +32,17 @@ void MaterialResource::UpdateBindGroups() {
 
             if (meta.BindingType == Buffer) {
                 auto& buffer = m_buffers.at(uniformName);
-                entry.buffer = buffer.buffer;
+                entry.buffer = *buffer.buffer;
                 entry.offset = 0;
                 entry.size = buffer.size;
             }
             else if (meta.BindingType == Texture) {
                 auto& texture = m_textures.at(uniformName);
-                entry.textureView = texture.texture->GetInternalTextureView();
+                entry.textureView = *texture.texture->GetInternalTextureView();
             }
             else if (meta.BindingType == StorageTexture) {
                 auto& texture = m_textures.at(uniformName);
-                entry.textureView = texture.texture->GetInternalTextureView();
+                entry.textureView = *texture.texture->GetInternalTextureView();
             }
             else if (meta.BindingType == Sampler) {
                 auto sampler = m_samplers.at(uniformName);
@@ -63,11 +63,8 @@ void MaterialResource::UpdateBindGroups() {
             .entries = entries.data()
         };
 
-        if (m_bindGroups[group]) {
-            wgpuBindGroupRelease(m_bindGroups[group]);
-        }
 
-        m_bindGroups[group] = wgpuDeviceCreateBindGroup(Application::Get().GetDevice(), &desc);
+        m_bindGroups[group] = {wgpuDeviceCreateBindGroup(Application::Get().GetDevice(), &desc)};
         m_dirtyGroups[group] = false;
     }
 }
@@ -75,7 +72,7 @@ void MaterialResource::UpdateBindGroups() {
 void MaterialResource::SetUniform(const std::string& uniformName, void* data, uint32_t size) {
     Assert::Check(m_buffers.contains(uniformName), "Buffers.contains(uniformName)", "Parameter does not exist");
     auto buff = m_buffers.at(uniformName);
-    Application::Get().GetQueue().writeBuffer(buff.buffer, 0, data, size);
+    Application::Get().GetQueue().writeBuffer(*buff.buffer, 0, data, size);
 }
 
 
@@ -124,8 +121,10 @@ void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::filesy
     }
 
     InitializeProperties();
+
     Initialize();
     loaded = true;
+
 }
 
 void MaterialResource::InitializeProperties() {
@@ -203,14 +202,14 @@ void MaterialResource::OnPropertySet(Property& prop)
     }
 }
 
-wgpu::RenderPipeline MaterialResource::CreateRenderPipeline()
+wgpu::raii::RenderPipeline MaterialResource::CreateRenderPipeline()
 {
     Vertex::VertexBufferLayout layout;
     Vertex::CreateVertexBufferLayout<MeshVertex>(layout);
     
     wgpu::VertexBufferLayout vertexBufferLayout = layout.Layout;
-    
-    wgpu::RenderPipelineDescriptor pipelineDesc = {};
+
+    wgpu::RenderPipelineDescriptor pipelineDesc = wgpu::Default;
     pipelineDesc.vertex.bufferCount = 1;
     pipelineDesc.vertex.buffers = &vertexBufferLayout;
     pipelineDesc.vertex.entryPoint = {"vs_main", wgpu::STRLEN};

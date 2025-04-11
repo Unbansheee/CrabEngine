@@ -141,7 +141,7 @@ void Renderer::CreateBindGroups(wgpu::TextureView& idPassTex)
     {
         MaterialHelpers::BindGroupCreator<Uniforms::GlobalUniformsLayout> BindCreator(device);
         m_globalBindGroup = BindCreator
-            .Set<0, WGPUBuffer>(m_globalUniformBuffer.GetBuffer())
+            .Set<0, WGPUBuffer>(*m_globalUniformBuffer.GetBuffer())
             .Build();
     }
 
@@ -150,7 +150,7 @@ void Renderer::CreateBindGroups(wgpu::TextureView& idPassTex)
     {
         MaterialHelpers::BindGroupCreator<Uniforms::PerObjectUniformsLayout> BindCreator(device);
         m_objectUniformBindGroup = BindCreator
-            .Set<0, WGPUBuffer>(m_objectUniformBuffer.GetBuffer())
+            .Set<0, WGPUBuffer>(*m_objectUniformBuffer.GetBuffer())
             .Build();
     }
 
@@ -164,8 +164,8 @@ void Renderer::CreateBindGroups(wgpu::TextureView& idPassTex)
     {
         MaterialHelpers::BindGroupCreator<Uniforms::RendererUniformsLayout> BindCreator(device);
         m_rendererUniformBindGroup = BindCreator
-            .Set<0, WGPUBuffer>(m_cameraUniformBuffer.GetBuffer())
-            .Set<1, WGPUBuffer>(m_lightingUniformBuffer.GetBuffer())
+            .Set<0, WGPUBuffer>(*m_cameraUniformBuffer.GetBuffer())
+            .Set<1, WGPUBuffer>(*m_lightingUniformBuffer.GetBuffer())
             .Set<2, WGPUTextureView>(idPassTex)
             .Build();
     }
@@ -181,12 +181,7 @@ void Renderer::UpdateUniforms()
 void Renderer::Flush()
 {
     // 2. Collect draw commands
-    m_queue.submit(m_additionalPasses.size(), m_additionalPasses.data());
-    // Execute additional commands
-    for (auto command : m_additionalPasses)
-    {
-        command.release();
-    }
+    m_queue.submit(m_additionalPasses.size(), (wgpu::CommandBuffer*)m_additionalPasses.data());
     m_additionalPasses.clear();
 }
 
@@ -230,8 +225,8 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
     desc.colorAttachments = &colorAttachment;
     desc.depthStencilAttachment = &depthAttachment;
     
-    wgpu::CommandEncoder encoder = m_device.createCommandEncoder();
-    wgpu::RenderPassEncoder pass = encoder.beginRenderPass(desc);
+    wgpu::raii::CommandEncoder encoder = m_device.createCommandEncoder();
+    wgpu::raii::RenderPassEncoder pass = encoder->beginRenderPass(desc);
         
     // 2. Track current state
     MaterialResource* currentMaterial = nullptr;
@@ -262,7 +257,7 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
             currentMaterial->SetTexture("AlbedoTexture", cobblestone);
             currentMaterial->SetTexture("NormalTexture", cobblestone_N);
 
-            currentMaterial->Apply(pass);
+            currentMaterial->Apply(*pass);
         }
 
         // Bind global bind groups
@@ -277,14 +272,14 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
             Uniforms::UObjectData d;
             d.DrawID = item.drawID;
             d.ModelMatrix = item.modelMatrix;
-            pass.setPushConstants(wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment, 0, sizeof(d), &d);
-            pass.setVertexBuffer(0, item.vertexBuffer, 0, wgpu::WHOLE_SIZE);
+            pass->setPushConstants(wgpu::ShaderStage::Vertex | wgpu::ShaderStage::Fragment, 0, sizeof(d), &d);
+            pass->setVertexBuffer(0, item.vertexBuffer, 0, wgpu::WHOLE_SIZE);
 
 
             if (item.indexCount > 0)
             {
-                pass.setIndexBuffer(item.indexBuffer, wgpu::IndexFormat::Uint16, 0, wgpu::WHOLE_SIZE);
-                pass.drawIndexed(
+                pass->setIndexBuffer(item.indexBuffer, wgpu::IndexFormat::Uint16, 0, wgpu::WHOLE_SIZE);
+                pass->drawIndexed(
                     item.indexCount,
                     1,  // instanceCount
                     0,  // firstIndex
@@ -294,7 +289,7 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
             }
             else
             {
-                pass.draw(
+                pass->draw(
                     item.vertexCount,
                     1, // instanceCount
                     0, // firstVertex
@@ -304,13 +299,9 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
     }
 
     // 3. End frame
-    pass.end();
-    wgpu::CommandBuffer commands = encoder.finish();
-    m_queue.submit(1, &commands);
-
-    pass.release();
-    commands.release();
-    encoder.release();
+    pass->end();
+    wgpu::raii::CommandBuffer commands = encoder->finish();
+    m_queue.submit(1, (wgpu::CommandBuffer*)&commands);
 
     drawCommandBuffer.clear();
 }

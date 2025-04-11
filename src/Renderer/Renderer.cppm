@@ -27,7 +27,7 @@ public:
     void Initialize(wgpu::Device device);
     void Flush();
     std::vector<Node*> RenderNodeTree(Node* rootNode, View& view, wgpu::TextureView& colorAttachment, wgpu::TextureView& depthAttachment, const std::shared_ptr<TextureResource>& idTexture);
-    void AddCommand(wgpu::CommandBuffer command)
+    void AddCommand(wgpu::raii::CommandBuffer command)
     {
         m_additionalPasses.push_back(command);
     }
@@ -45,7 +45,7 @@ private:
     // Core WebGPU objects
     wgpu::Device m_device = nullptr;
     wgpu::Queue m_queue = nullptr;
-    std::vector<wgpu::CommandBuffer> m_additionalPasses;
+    std::vector<wgpu::raii::CommandBuffer> m_additionalPasses;
     
     // Rendering state
     wgpu::BindGroup m_globalBindGroup = nullptr;
@@ -60,7 +60,6 @@ private:
 
     std::shared_ptr<MaterialResource> m_fallbackMaterial;
     
-    //wgpu::BindGroup m_modelBindGroup = nullptr;
     std::vector<DrawCommand> drawCommandBuffer;
     
 

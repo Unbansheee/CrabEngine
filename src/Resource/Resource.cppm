@@ -39,7 +39,7 @@ public:
     virtual void LoadData() { loaded = true; };  // For explicit loading
     virtual bool IsLoaded() const {return loaded;}
 
-    virtual wgpu::TextureView GetThumbnail();
+    virtual wgpu::raii::TextureView GetThumbnail();
 
     const std::string& GetName() const {return name;}
     bool IsSourceImported() const { return !bIsInline; }

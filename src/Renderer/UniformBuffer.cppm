@@ -43,7 +43,7 @@ public:
 
     const T& GetData() { return Data; }
     
-    wgpu::Buffer GetBuffer() const
+    wgpu::raii::Buffer GetBuffer() const
     {
         assert(bInitialized);
         return InternalBuffer->GetBuffer();

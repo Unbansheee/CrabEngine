@@ -20,7 +20,7 @@ import Engine.ShaderCompiler.Types;
 
 // Storage for resources
 struct BufferBinding {
-    WGPUBuffer buffer;
+    wgpu::raii::Buffer buffer;
     uint32_t size;
     bool isDynamic;
 };
@@ -75,7 +75,7 @@ protected:
     
 public:
     wgpu::Device m_device = nullptr;
-    wgpu::RenderPipeline m_pipeline = nullptr;
+    wgpu::raii::RenderPipeline m_pipeline{};
     wgpu::raii::ShaderModule m_shaderModule ;
 
     // TODO: Replace
@@ -90,22 +90,21 @@ public:
     std::unordered_map<std::string, SamplerBinding> m_samplers;
 
     std::unordered_map<std::string, UniformMetadata> m_uniformMetadata;
-    std::unordered_map<uint32_t, WGPUBindGroup> m_bindGroups;
+    std::unordered_map<uint32_t, wgpu::raii::BindGroup> m_bindGroups;
     std::unordered_map<uint32_t, bool> m_dirtyGroups;
     std::unordered_map<uint32_t, wgpu::raii::BindGroupLayout> m_bindGroupLayouts;
     void UpdateBindGroups();
 
     // NEW
-    template<typename T>
-    void SetUniform(const std::string& uniformName, T& data) {
-        Assert::Check(m_buffers.contains(uniformName), "Buffers.contains(uniformName)", "Parameter does not exist");
-        auto buff = m_buffers.at(uniformName);
-        Application::Get().GetQueue().writeBuffer(buff.buffer, 0, &data, sizeof(T));
-    };
+
 
     void SetUniform(const std::string& uniformName, void* data, uint32_t size);
     void SetTexture(const std::string& uniformName, const std::shared_ptr<TextureResource>& texture);
     void SetSampler(const std::string& uniformName, wgpu::raii::Sampler sampler);
+    template<typename T>
+    void SetUniform(const std::string& uniformName, T& data) {
+        SetUniform(uniformName, (void*)&data, sizeof(T));
+    };
 
     wgpu::raii::PipelineLayout m_pipelineLayout;
 
@@ -131,8 +130,8 @@ public:
 
     void InitializeProperties();
 
-    wgpu::RenderPipeline GetPipeline() const { return m_pipeline; }
-    virtual wgpu::RenderPipeline CreateRenderPipeline();
+    wgpu::raii::RenderPipeline GetPipeline() const { return m_pipeline; }
+    virtual wgpu::raii::RenderPipeline CreateRenderPipeline();
 
     virtual void Apply(wgpu::RenderPassEncoder renderPass);
 

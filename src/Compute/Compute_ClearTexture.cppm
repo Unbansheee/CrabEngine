@@ -10,8 +10,8 @@ import fmt;
 export template<WGPUTextureFormat TextureFormat, WGPUStorageTextureAccess Access>
 class ComputeClearTexture
 {
-    wgpu::ComputePipeline computePipeline = nullptr;
-    wgpu::BindGroupLayout bindGroupLayout = nullptr;
+    wgpu::raii::ComputePipeline computePipeline;
+    wgpu::raii::BindGroupLayout bindGroupLayout;
 
 public:
     void Execute(std::shared_ptr<TextureResource> texture)
@@ -20,24 +20,24 @@ public:
         auto queue = Application::Get().GetQueue();
         
         // Create compute bind group
-        std::vector<wgpu::BindGroupEntry> entries(1, wgpu::Default);
+        wgpu::BindGroupEntry entry;
 
         // Input buffer
-        entries[0].binding = 0;
-        entries[0].textureView = texture->GetInternalTextureView();
-        entries[0].offset = 0;
+        entry.binding = 0;
+        entry.textureView = *texture->GetInternalTextureView();
+        entry.offset = 0;
 
         wgpu::BindGroupDescriptor bindGroupDesc;
-        bindGroupDesc.layout = bindGroupLayout;
-        bindGroupDesc.entryCount = (uint32_t)entries.size();
-        bindGroupDesc.entries = (WGPUBindGroupEntry*)entries.data();
-        auto bindGroup = device.createBindGroup(bindGroupDesc);
+        bindGroupDesc.layout = *bindGroupLayout;
+        bindGroupDesc.entryCount = (uint32_t)1;
+        bindGroupDesc.entries = (WGPUBindGroupEntry*)&entry;
+        wgpu::raii::BindGroup bindGroup = device.createBindGroup(bindGroupDesc);
         
-        auto encoder = device.createCommandEncoder();
+        wgpu::raii::CommandEncoder encoder = device.createCommandEncoder();
         
         wgpu::ComputePassDescriptor computePassDesc = wgpu::Default;
         computePassDesc.timestampWrites = nullptr;
-        wgpu::ComputePassEncoder computePass = encoder.beginComputePass(computePassDesc);
+        wgpu::raii::ComputePassEncoder computePass = encoder->beginComputePass(computePassDesc);
 
         uint32_t width = (texture->GetSize().x);
         uint32_t height = (texture->GetSize().y);
@@ -46,16 +46,13 @@ public:
         uint32_t workGroupCount_x = (width + workGroupSize-1) / workGroupSize;
         uint32_t workGroupCount_y = (height + workGroupSize-1) / workGroupSize;
 
-        computePass.setPipeline(computePipeline);
-        computePass.setBindGroup(0, bindGroup, 0, nullptr);
-        computePass.dispatchWorkgroups(workGroupCount_x,workGroupCount_y,1);
+        computePass->setPipeline(*computePipeline);
+        computePass->setBindGroup(0, *bindGroup, 0, nullptr);
+        computePass->dispatchWorkgroups(workGroupCount_x,workGroupCount_y,1);
+        computePass->end();
 
-        computePass.end();
-        queue.submit(encoder.finish());
-        
-#if !defined(WEBGPU_BACKEND_WGPU)
-        wgpuComputePassEncoderRelease(computePass);
-#endif
+        wgpu::raii::CommandBuffer buf = encoder->finish();
+        queue.submit(*buf);
     }
     
     ComputeClearTexture()
@@ -68,12 +65,12 @@ public:
         {"#ACCESS", MapAccessToString()},
         {"#FORMAT", MapFormatToString()}
         };
-        wgpu::ShaderModule computeShaderModule = ResourceManager::loadComputeShaderModule(ENGINE_RESOURCE_DIR "/Compute/clear_texture.wsl", device, formats);
+        wgpu::raii::ShaderModule computeShaderModule = ResourceManager::loadComputeShaderModule(ENGINE_RESOURCE_DIR "/Compute/clear_texture.wsl", device, formats);
         
         // Create compute pipeline
         wgpu::ComputePipelineDescriptor computePipelineDesc;
         computePipelineDesc.compute.entryPoint = {"clearTexture", wgpu::STRLEN};
-        computePipelineDesc.compute.module = computeShaderModule;
+        computePipelineDesc.compute.module = *computeShaderModule;
 
         wgpu::StorageTextureBindingLayout t;
         t.format = TextureFormat;
@@ -93,8 +90,8 @@ public:
         wgpu::PipelineLayoutDescriptor pipelineLayoutDesc;
         pipelineLayoutDesc.bindGroupLayoutCount = 1;
         pipelineLayoutDesc.bindGroupLayouts = (WGPUBindGroupLayout*)&bindGroupLayout;
-        auto pipelineLayout = device.createPipelineLayout(pipelineLayoutDesc);
-        computePipelineDesc.layout = pipelineLayout;
+        wgpu::raii::PipelineLayout pipelineLayout = device.createPipelineLayout(pipelineLayoutDesc);
+        computePipelineDesc.layout = *pipelineLayout;
         
         computePipeline = device.createComputePipeline(computePipelineDesc);
     }

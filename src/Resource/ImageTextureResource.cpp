@@ -29,9 +29,9 @@ void ImageTextureResource::LoadData()
 void ImageTextureResource::LoadTextureFromPath(const std::filesystem::path& path)
 {
     imageFilePath = path.string();
-    texture = ResourceManager::loadTexture(path, Application::Get().GetDevice(), &view);
-    width = texture.getWidth();
-    height = texture.getHeight();
+    texture = ResourceManager::loadTexture(path, Application::Get().GetDevice(), &*view);
+    width = texture->getWidth();
+    height = texture->getHeight();
 
     loaded = true;
 }

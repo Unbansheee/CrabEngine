@@ -43,7 +43,7 @@ public:
     void Clear()
     {
         delete[] mappedData;
-        buffer.release();
+        buffer = {};
     }
 
     wgpu::Device GetDevice() { return internalDevice; }
@@ -60,13 +60,13 @@ public:
     }
 
     void Upload(wgpu::Queue queue) {
-        queue.writeBuffer(buffer, 0, mappedData, buffer.getSize());
+        queue.writeBuffer(*buffer, 0, mappedData, buffer->getSize());
     }
 
-    wgpu::Buffer GetBuffer() {return buffer;}
+    wgpu::raii::Buffer GetBuffer() {return buffer;}
     
 private:
-    wgpu::Buffer buffer = nullptr;
+    wgpu::raii::Buffer buffer{};
     uint8_t* mappedData = nullptr;
     uint32_t alignment = 0;
     wgpu::Device internalDevice;

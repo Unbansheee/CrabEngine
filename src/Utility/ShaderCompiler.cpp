@@ -85,15 +85,18 @@ ShaderCompiler::ShaderCompiler(const std::string &shader_name, SlangTargetCompil
 
     if (target == SlangTargetCompileFlag::SPIRV) {
         composedProgram->getTargetCode(0, spirv.writeRef());
-        std::cout << "Shader compile successful" << std::endl;
+        std::cout << "Slang -> SPIRV Shader compile successful" << std::endl;
 
         wgpu::ShaderSourceSPIRV shaderCodeDesc = wgpu::Default;
         shaderCodeDesc.chain.next = nullptr;
         shaderCodeDesc.chain.sType = wgpu::SType::ShaderSourceSPIRV;
         shaderCodeDesc.code = static_cast<uint32_t const*>(spirv->getBufferPointer());
-        shaderCodeDesc.codeSize = spirv->getBufferSize() / sizeof(uint32_t);
-        shaderDesc.nextInChain = &shaderCodeDesc.chain;
+        shaderCodeDesc.codeSize = spirv->getBufferSize() / sizeof(uint32_t);;
+        shaderDesc.nextInChain = (WGPUChainedStruct*)&shaderCodeDesc.chain;
+        compiledShaderModule = device.createShaderModule(shaderDesc);
     }
+
+
     else if (target == SlangTargetCompileFlag::WGSL) {
         ComPtr<IBlob> out;
         {
@@ -105,20 +108,21 @@ ShaderCompiler::ShaderCompiler(const std::string &shader_name, SlangTargetCompil
         }
 
         wgsl = std::string((const char*)out->getBufferPointer());
-        std::cout << "Shader compile successful" << std::endl;
+        std::cout << "Slang -> WGSL Shader compile successful" << std::endl;
 
         wgpu::ShaderSourceWGSL shaderCodeDesc = wgpu::Default;
         shaderCodeDesc.chain.next = nullptr;
         shaderCodeDesc.chain.sType = wgpu::SType::ShaderSourceWGSL;
         shaderCodeDesc.code = {wgsl.c_str(), wgsl.length()};
         shaderDesc.nextInChain = &shaderCodeDesc.chain;
-        std::cout << wgsl << std::endl;
+        compiledShaderModule = device.createShaderModule(shaderDesc);
     }
-    compiledLayout = ComposeBindingData(composedProgram);
 
-    compiledShaderModule = device.createShaderModule(shaderDesc);
+
+
     Assert::Check(*compiledShaderModule != nullptr, "module != nullptr", "Error compiling module");
 
+    compiledLayout = ComposeBindingData(composedProgram);
 
     for (auto dir : dirs) {
         delete[] dir;

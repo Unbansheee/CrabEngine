@@ -23,19 +23,14 @@ public:
 
     ~TextureResource() override
     {
-        if (texture)
-        {
-            texture.release();
-            view.release();
-        }
     }
 
-    wgpu::TextureView GetThumbnail() override;
+    wgpu::raii::TextureView GetThumbnail() override;
 
-    wgpu::Texture& GetInternalTexture() { return texture; }
-    wgpu::TextureView& GetInternalTextureView() { return view; }
-    const wgpu::Texture& GetInternalTexture() const { return texture; }
-    const wgpu::TextureView& GetInternalTextureView() const { return view; }
+    wgpu::raii::Texture& GetInternalTexture() { return texture; }
+    wgpu::raii::TextureView& GetInternalTextureView() { return view; }
+    const wgpu::raii::Texture& GetInternalTexture() const { return texture; }
+    const wgpu::raii::TextureView& GetInternalTextureView() const { return view; }
 
     glm::uvec2 GetSize() const {return {width, height};}
 
@@ -43,7 +38,7 @@ protected:
     int width = 0;
     int height = 0;
     
-    wgpu::Texture texture = nullptr;
-    wgpu::TextureView view = nullptr;
+    wgpu::raii::Texture texture{};
+    wgpu::raii::TextureView view{};
 
 };

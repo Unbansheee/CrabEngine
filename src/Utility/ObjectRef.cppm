@@ -54,6 +54,7 @@ public:
 
     // Copy constructor
     ObjectRef(const ObjectRef& other) {
+        Clear();
         if (other.IsValid()) {
             connection = other.node->destroyed_signal.template connect<&ObjectRef::OnResourceDestroyed>(this);
             node = other.node;
@@ -169,7 +170,7 @@ template<typename T>
 template<typename U, typename>
 ObjectRef<T>::ObjectRef(ObjectRef<U> &&other) {
     static_assert(std::is_base_of_v<observable_dtor, T>, "T must implement observable_dtor");
-
+    Clear();
     if (other.IsValid()) {
         assert(U::GetStaticClass().IsSubclassOf(T::GetStaticClass()));
     }
@@ -281,6 +282,7 @@ ObjectRef<T> & ObjectRef<T>::operator=(ObjectRef &other) {
 template <typename T>
 ObjectRef<T>::ObjectRef(): node(nullptr)
 {
+    Clear();
     static_assert(std::is_base_of_v<observable_dtor, T>, "T must implement observable_dtor");
 }
 
@@ -365,10 +367,13 @@ void ObjectRef<T>::Clear()
     {
         connection.disconnect();
     }
+    connection = {};
+
 }
 
 template <typename T>
 void ObjectRef<T>::OnResourceDestroyed()
 {
+    Clear();
     this->node = nullptr;
 }

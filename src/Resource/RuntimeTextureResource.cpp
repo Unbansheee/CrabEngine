@@ -21,10 +21,7 @@ void RuntimeTextureResource::LoadData()
 
 void RuntimeTextureResource::LoadFromPixelData(int width, int height, int channels, unsigned char* pixelData)
 {
-    if (texture) texture.release();
-    if (view) view.release();
-    
-    texture = ResourceManager::loadTexture(Application::Get().GetDevice(), width, height, channels, pixelData, &view);
+    texture = ResourceManager::loadTexture(Application::Get().GetDevice(), width, height, channels, pixelData, &*view);
     this->width = width;
     this->height = height;
 
@@ -33,9 +30,7 @@ void RuntimeTextureResource::LoadFromPixelData(int width, int height, int channe
 
 void RuntimeTextureResource::CreateBlankTexture(wgpu::TextureDescriptor descriptor)
 {
-    if (texture) texture.release();
-    if (view) view.release();
-    
+
     width = descriptor.size.width;
     height = descriptor.size.height;
     texture = Application::Get().GetDevice().createTexture(descriptor);
@@ -48,7 +43,7 @@ void RuntimeTextureResource::CreateBlankTexture(wgpu::TextureDescriptor descript
     textureViewDesc.mipLevelCount = descriptor.mipLevelCount;
     textureViewDesc.dimension = wgpu::TextureViewDimension::_2D;
     textureViewDesc.format = descriptor.format;
-    view = texture.createView(textureViewDesc);
+    view = texture->createView(textureViewDesc);
 
     loaded = true;
 }

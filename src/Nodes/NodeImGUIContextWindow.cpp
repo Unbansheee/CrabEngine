@@ -33,7 +33,6 @@ void NodeImGUIContextWindow::EnterTree()
     info.NumFramesInFlight = 3;
     info.ViewportPresentMode = wgpu::PresentMode::Immediate;
     info.CreateViewportWindowFn = [](ImGuiViewport* viewport) {
-        auto that = reinterpret_cast<NodeWindow*>(ImGui::GetIO().UserData);
         auto* window = static_cast<GLFWwindow*>(viewport->PlatformHandle);
         
         int x, y;
@@ -43,6 +42,7 @@ void NodeImGUIContextWindow::EnterTree()
         return glfwGetWGPUSurface(Application::Get().GetInstance(), window);
     };
     ImGui_ImplWGPU_Init(&info);
+    GetNextSurfaceTextureView();
     
 }
 
@@ -51,12 +51,13 @@ void NodeImGUIContextWindow::Update(float dt)
     if (GetTree()->IsInEditor()) return;
     //auto next = GetCurrentTextureView();
     //if (next == nullptr) return;
+    wgpu::raii::TextureView tex = GetCurrentTextureView();
 
     WGPURenderPassColorAttachment color_attachments = {};
     color_attachments.loadOp = wgpu::LoadOp::Load;
     color_attachments.storeOp = wgpu::StoreOp::Store;
     color_attachments.clearValue = { 0, 0, 0, 0 };
-    color_attachments.view = GetCurrentTextureView();
+    color_attachments.view = *tex;
 
     WGPURenderPassDescriptor render_pass_desc = {};
     render_pass_desc.colorAttachmentCount = 1;
@@ -64,8 +65,8 @@ void NodeImGUIContextWindow::Update(float dt)
     render_pass_desc.depthStencilAttachment = nullptr;
 
     WGPUCommandEncoderDescriptor enc_desc = {};
-    wgpu::CommandEncoder gui_encoder = Application::Get().GetDevice().createCommandEncoder(enc_desc);
-    wgpu::RenderPassEncoder pass = gui_encoder.beginRenderPass(render_pass_desc);
+    wgpu::raii::CommandEncoder gui_encoder = Application::Get().GetDevice().createCommandEncoder(enc_desc);
+    wgpu::raii::RenderPassEncoder pass = gui_encoder->beginRenderPass(render_pass_desc);
     
     auto& io = ImGui::GetIO();
     ImGui_ImplWGPU_NewFrame();
@@ -84,17 +85,15 @@ void NodeImGUIContextWindow::Update(float dt)
     ImGui::EndFrame();
     ImGui::Render();
 
-    ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), pass);
+    ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), *pass);
 
-    pass.end();
+    pass->end();
     wgpu::CommandBufferDescriptor cmd_buffer_desc = {};
     cmd_buffer_desc.label = {"ImGUI Draw Command Buffer", wgpu::STRLEN};
-    wgpu::CommandBuffer cmd = gui_encoder.finish(cmd_buffer_desc);
+    wgpu::raii::CommandBuffer cmd = gui_encoder->finish(cmd_buffer_desc);
 
-    renderer.AddCommand(cmd);
-
-    pass.release();
-    gui_encoder.release();
+    //renderer.AddCommand(cmd);
+    Application::Get().GetQueue().submit(*cmd);
 
     NodeWindow::Update(dt);
 

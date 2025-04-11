@@ -1,4 +1,5 @@
 ﻿
+module;
 #include <iostream>
 #include <glfw3webgpu/glfw3webgpu.h>
 //#include <glm/ext/matrix_clip_space.hpp>
@@ -33,13 +34,13 @@ void NodeWindow::EnterTree()
     glfwSetWindowUserPointer(window, this);
     auto& app = Application::Get();
     auto instance = app.GetInstance();
-    surface = glfwGetWGPUSurface(instance, window);
+    surface = wgpu::raii::Surface(glfwGetWGPUSurface(instance, window));
     wgpu::RequestAdapterOptions adapterOpts = {};
-    adapterOpts.compatibleSurface = surface;
+    adapterOpts.compatibleSurface = *surface;
     wgpu::Adapter adapter = instance.requestAdapter(adapterOpts);
 #ifdef WEBGPU_BACKEND_WGPU
     SurfaceCapabilities capabilities;
-    surface.getCapabilities(adapter, &capabilities);
+    surface->getCapabilities(adapter, &capabilities);
     surfaceFormat = capabilities.formats[0];
 #else
     surfaceFormat = TextureFormat::BGRA8Unorm;
@@ -97,17 +98,14 @@ void NodeWindow::Update(float dt)
             viewData.ViewMatrix = ActiveCamera->GetViewMatrix();
             viewData.ProjectionMatrix = glm::perspectiveRH(ActiveCamera->FOV, GetAspectRatio(), ActiveCamera->NearClippingPlane, ActiveCamera->FarClippingPlane);
         }
-        renderer.RenderNodeTree(this, viewData, SurfaceView, DepthView, PickingPassTexture);
+        renderer.RenderNodeTree(this, viewData, *SurfaceView, *DepthView, PickingPassTexture);
     }
     renderer.Flush();
     
-    surface.present();
+    surface->present();
+    GetNextSurfaceTextureView();
 
-    DepthView.release();
-    SurfaceView.release();
-    m_currentSurfaceView.release();
-    m_currentSurfaceView = nullptr;
-    
+
     ExecuteResize();
     
     if (glfwWindowShouldClose(window))
@@ -139,8 +137,8 @@ void NodeWindow::InitializeRenderer()
 
 void NodeWindow::TerminateSurface()
 {
-    surface.unconfigure();
-    surface.release();
+    surface->unconfigure();
+    surface = {};
 }
 
 
@@ -156,25 +154,10 @@ void NodeWindow::RequestResize()
 
 }
 
-wgpu::TextureView NodeWindow::GetCurrentTextureView()
+wgpu::raii::TextureView NodeWindow::GetCurrentTextureView() const
 {
-    if (m_currentSurfaceView == nullptr)
-    {
-        m_currentSurfaceView = GetNextSurfaceTextureView();
-    }
-    return m_currentSurfaceView;
-}
-
-wgpu::TextureView NodeWindow::GetNextSurfaceTextureView() const
-{
-    // Get the surface texture
-    wgpuSurfaceGetCurrentTexture(surface, &m_surfaceTexture);
-    
-    if (m_surfaceTexture.status != wgpu::SurfaceGetCurrentTextureStatus::SuccessOptimal && m_surfaceTexture.status != wgpu::SurfaceGetCurrentTextureStatus::SuccessSuboptimal) {
-        return nullptr;
-    }
     wgpu::Texture texture = m_surfaceTexture.texture;
-    
+
     // Create a view for this surface texture
     wgpu::TextureViewDescriptor viewDescriptor;
     viewDescriptor.label = {"Surface texture view", wgpu::STRLEN};
@@ -185,17 +168,33 @@ wgpu::TextureView NodeWindow::GetNextSurfaceTextureView() const
     viewDescriptor.baseArrayLayer = 0;
     viewDescriptor.arrayLayerCount = 1;
     viewDescriptor.aspect = wgpu::TextureAspect::All;
-    wgpu::TextureView targetView = texture.createView(viewDescriptor);
+    wgpu::raii::TextureView targetView = texture.createView(viewDescriptor);
+
 #ifndef WEBGPU_BACKEND_WGPU
     // We no longer need the texture, only its view
     // (NB: with wgpu-native, surface textures must not be manually released)
-    wgpuTextureRelease(surfaceTexture.texture);
+    wgpuTextureRelease(m_surfaceTexture.texture);
 #endif // WEBGPU_BACKEND_WGPU
 
     return targetView;
 }
 
-wgpu::TextureView NodeWindow::GetDepthTextureView() const
+wgpu::raii::TextureView NodeWindow::GetNextSurfaceTextureView() const
+{
+    // Get the surface texture
+    if (m_surfaceTexture.texture) {
+        wgpuTextureRelease(m_surfaceTexture.texture);
+    }
+
+    wgpuSurfaceGetCurrentTexture(*surface, &m_surfaceTexture);
+    
+    if (m_surfaceTexture.status != wgpu::SurfaceGetCurrentTextureStatus::SuccessOptimal && m_surfaceTexture.status != wgpu::SurfaceGetCurrentTextureStatus::SuccessSuboptimal) {
+        return {};
+    }
+    return GetCurrentTextureView();
+}
+
+wgpu::raii::TextureView NodeWindow::GetDepthTextureView() const
 {
     // Depth attachment
     wgpu::TextureViewDescriptor depthTextureViewDesc;
@@ -206,8 +205,8 @@ wgpu::TextureView NodeWindow::GetDepthTextureView() const
     depthTextureViewDesc.mipLevelCount = 1;
     depthTextureViewDesc.dimension = wgpu::TextureViewDimension::_2D;
     depthTextureViewDesc.format = depthFormat;
-    WGPUTextureView depth_view = wgpuTextureCreateView(m_depthTexture, &depthTextureViewDesc);
-    return depth_view;
+    WGPUTextureView depth_view = wgpuTextureCreateView(*m_depthTexture, &depthTextureViewDesc);
+    return wgpu::raii::TextureView{depth_view};
 }
 
 wgpu::SurfaceTexture NodeWindow::GetSurfaceTexture() const
@@ -224,8 +223,7 @@ Vector2 NodeWindow::GetWindowSize() const
 
 void NodeWindow::CreateSwapChain(uint32_t width, uint32_t height)
 {
-    if (m_currentSurfaceView) m_currentSurfaceView.release();
-    m_currentSurfaceView = nullptr;
+    m_currentSurfaceView = {};
     wgpu::SurfaceConfiguration desc;
     desc.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::CopySrc | wgpu::TextureUsage::TextureBinding;
     desc.format = surfaceFormat;
@@ -235,7 +233,7 @@ void NodeWindow::CreateSwapChain(uint32_t width, uint32_t height)
     desc.viewFormats = nullptr;
     desc.viewFormatCount = 0;
     desc.device = Application::Get().GetDevice();
-    surface.configure(desc);
+    surface->configure(desc);
 }
 
 void NodeWindow::CreateDepthTexture(uint32_t width, uint32_t height)
@@ -257,8 +255,6 @@ void NodeWindow::ExecuteResize()
 {
     if (resizeRequest.active)
     {
-        m_depthTexture.destroy();
-        m_depthTexture.release();
         CreateSwapChain(resizeRequest.width, resizeRequest.height);
         CreateDepthTexture(resizeRequest.width, resizeRequest.height);
 
