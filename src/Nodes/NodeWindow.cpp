@@ -105,7 +105,6 @@ void NodeWindow::Update(float dt)
     surface->present();
     GetNextSurfaceTextureView();
 
-
     ExecuteResize();
     
     if (glfwWindowShouldClose(window))

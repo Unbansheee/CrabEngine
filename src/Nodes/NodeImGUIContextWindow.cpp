@@ -51,6 +51,24 @@ void NodeImGUIContextWindow::Update(float dt)
     if (GetTree()->IsInEditor()) return;
     //auto next = GetCurrentTextureView();
     //if (next == nullptr) return;
+
+    auto& io = ImGui::GetIO();
+    ImGui_ImplWGPU_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+    ImGuizmo::BeginFrame();
+
+    DrawGUI();
+
+    // Depth first walk
+    ForEachChild([](Node* child)
+    {
+        child->DrawGUIInternal();
+    });
+
+    ImGui::EndFrame();
+    ImGui::Render();
+
     wgpu::raii::TextureView tex = GetCurrentTextureView();
     if (tex) {
         WGPURenderPassColorAttachment color_attachments = {};
@@ -67,44 +85,20 @@ void NodeImGUIContextWindow::Update(float dt)
         WGPUCommandEncoderDescriptor enc_desc = {};
         wgpu::raii::CommandEncoder gui_encoder = Application::Get().GetDevice().createCommandEncoder(enc_desc);
         wgpu::raii::RenderPassEncoder pass = gui_encoder->beginRenderPass(render_pass_desc);
-
-        auto& io = ImGui::GetIO();
-        ImGui_ImplWGPU_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        ImGuizmo::BeginFrame();
-
-        DrawGUI();
-
-        // Depth first walk
-        ForEachChild([](Node* child)
-        {
-            child->DrawGUIInternal();
-        });
-
-        ImGui::EndFrame();
-        ImGui::Render();
-
         ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), *pass);
-
         pass->end();
         wgpu::CommandBufferDescriptor cmd_buffer_desc = {};
         cmd_buffer_desc.label = {"ImGUI Draw Command Buffer", wgpu::STRLEN};
         wgpu::raii::CommandBuffer cmd = gui_encoder->finish(cmd_buffer_desc);
-
-        //renderer.AddCommand(cmd);
         Application::Get().GetQueue().submit(*cmd);
     }
 
     NodeWindow::Update(dt);
 
-    if (tex) {
-        if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-            ImGui::UpdatePlatformWindows();
-            ImGui::RenderPlatformWindowsDefault();
-        }
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
     }
-
 }
 
 void NodeImGUIContextWindow::DrawGUI()
