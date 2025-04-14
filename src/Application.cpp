@@ -145,7 +145,7 @@ void Application::Update()
 
 void Application::Close()
 {
-	bShouldClose = true; 
+	bShouldClose = true;
 }
 
 wgpu::Limits Application::GetRequiredLimits(wgpu::Adapter adapter)

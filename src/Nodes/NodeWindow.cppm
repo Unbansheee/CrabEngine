@@ -77,7 +77,7 @@ protected:
     bool bShouldRenderNodesToSurface = true;
     Renderer renderer;
     GLFWwindow* window = nullptr;
-    wgpu::raii::Surface surface = nullptr;
+    wgpu::raii::Surface surface{};
     bool bCloseRequested = false;
 
     std::shared_ptr<RuntimeTextureResource> PickingPassTexture;

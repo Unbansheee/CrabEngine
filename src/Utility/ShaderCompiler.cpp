@@ -23,6 +23,11 @@ ShaderCompiler::ShaderCompiler(const std::string &shader_name, SlangTargetCompil
         createGlobalSession(&desc, globalSession.writeRef());
     }
 
+    if (shaderCache.contains(shader_name)) {
+        CompiledShader = shaderCache.at(shader_name);
+        return;
+    }
+
     TargetDesc targetDesc;
     if (target == SlangTargetCompileFlag::WGSL) {
         targetDesc.format = SlangCompileTarget::SLANG_WGSL;
@@ -93,7 +98,7 @@ ShaderCompiler::ShaderCompiler(const std::string &shader_name, SlangTargetCompil
         shaderCodeDesc.code = static_cast<uint32_t const*>(spirv->getBufferPointer());
         shaderCodeDesc.codeSize = spirv->getBufferSize() / sizeof(uint32_t);;
         shaderDesc.nextInChain = (WGPUChainedStruct*)&shaderCodeDesc.chain;
-        compiledShaderModule = device.createShaderModule(shaderDesc);
+        CompiledShader.compiledShaderModule = device.createShaderModule(shaderDesc);
     }
 
 
@@ -115,14 +120,16 @@ ShaderCompiler::ShaderCompiler(const std::string &shader_name, SlangTargetCompil
         shaderCodeDesc.chain.sType = wgpu::SType::ShaderSourceWGSL;
         shaderCodeDesc.code = {wgsl.c_str(), wgsl.length()};
         shaderDesc.nextInChain = &shaderCodeDesc.chain;
-        compiledShaderModule = device.createShaderModule(shaderDesc);
+        CompiledShader.compiledShaderModule = device.createShaderModule(shaderDesc);
     }
 
 
 
-    Assert::Check(*compiledShaderModule != nullptr, "module != nullptr", "Error compiling module");
+    Assert::Check(*CompiledShader.compiledShaderModule != nullptr, "module != nullptr", "Error compiling module");
 
-    compiledLayout = ComposeBindingData(composedProgram);
+    CompiledShader.compiledLayout = ComposeBindingData(composedProgram);
+
+    shaderCache.insert({shader_name, CompiledShader});
 
     for (auto dir : dirs) {
         delete[] dir;
@@ -130,15 +137,15 @@ ShaderCompiler::ShaderCompiler(const std::string &shader_name, SlangTargetCompil
 }
 
 wgpu::raii::ShaderModule ShaderCompiler::GetCompiledShaderModule() {
-    return compiledShaderModule;
+    return CompiledShader.compiledShaderModule;
 }
 
 BindingLayouts ShaderCompiler::GetPipelineLayout() {
-    return compiledLayout;
+    return CompiledShader.compiledLayout;
 }
 
 std::vector<UniformMetadata> ShaderCompiler::GetUniformMetadata() {
-    return compiledMetadata;
+    return CompiledShader.compiledMetadata;
 }
 
 std::vector<const char*> ShaderCompiler::GetShaderDirectories() {
@@ -173,7 +180,7 @@ BindingLayouts ShaderCompiler::ComposeBindingData(ComPtr<slang::IComponentType> 
         for (auto& entry : entries) {
             slang::TypeLayoutReflection* ref = p->getTypeLayout();
             builder.AddBindingsFrom(&entry, ref);
-            compiledMetadata.push_back(entry);
+            CompiledShader.compiledMetadata.push_back(entry);
         }
     }
 

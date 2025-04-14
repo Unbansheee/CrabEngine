@@ -118,6 +118,7 @@ void NodeWindow::Update(float dt)
 
 void NodeWindow::ExitTree()
 {
+    TerminateSurface();
     glfwDestroyWindow(window);
     window = nullptr;
 }
@@ -137,6 +138,7 @@ void NodeWindow::InitializeRenderer()
 
 void NodeWindow::TerminateSurface()
 {
+    if (m_surfaceTexture.texture) wgpuTextureRelease(m_surfaceTexture.texture);
     surface->unconfigure();
     surface = {};
 }
@@ -157,6 +159,7 @@ void NodeWindow::RequestResize()
 wgpu::raii::TextureView NodeWindow::GetCurrentTextureView() const
 {
     wgpu::Texture texture = m_surfaceTexture.texture;
+    if (!texture) return {};
 
     // Create a view for this surface texture
     wgpu::TextureViewDescriptor viewDescriptor;

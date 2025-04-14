@@ -52,55 +52,59 @@ void NodeImGUIContextWindow::Update(float dt)
     //auto next = GetCurrentTextureView();
     //if (next == nullptr) return;
     wgpu::raii::TextureView tex = GetCurrentTextureView();
+    if (tex) {
+        WGPURenderPassColorAttachment color_attachments = {};
+        color_attachments.loadOp = wgpu::LoadOp::Load;
+        color_attachments.storeOp = wgpu::StoreOp::Store;
+        color_attachments.clearValue = { 0, 0, 0, 0 };
+        color_attachments.view = *tex;
 
-    WGPURenderPassColorAttachment color_attachments = {};
-    color_attachments.loadOp = wgpu::LoadOp::Load;
-    color_attachments.storeOp = wgpu::StoreOp::Store;
-    color_attachments.clearValue = { 0, 0, 0, 0 };
-    color_attachments.view = *tex;
+        WGPURenderPassDescriptor render_pass_desc = {};
+        render_pass_desc.colorAttachmentCount = 1;
+        render_pass_desc.colorAttachments = &color_attachments;
+        render_pass_desc.depthStencilAttachment = nullptr;
 
-    WGPURenderPassDescriptor render_pass_desc = {};
-    render_pass_desc.colorAttachmentCount = 1;
-    render_pass_desc.colorAttachments = &color_attachments;
-    render_pass_desc.depthStencilAttachment = nullptr;
+        WGPUCommandEncoderDescriptor enc_desc = {};
+        wgpu::raii::CommandEncoder gui_encoder = Application::Get().GetDevice().createCommandEncoder(enc_desc);
+        wgpu::raii::RenderPassEncoder pass = gui_encoder->beginRenderPass(render_pass_desc);
 
-    WGPUCommandEncoderDescriptor enc_desc = {};
-    wgpu::raii::CommandEncoder gui_encoder = Application::Get().GetDevice().createCommandEncoder(enc_desc);
-    wgpu::raii::RenderPassEncoder pass = gui_encoder->beginRenderPass(render_pass_desc);
-    
-    auto& io = ImGui::GetIO();
-    ImGui_ImplWGPU_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-    ImGuizmo::BeginFrame();
+        auto& io = ImGui::GetIO();
+        ImGui_ImplWGPU_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        ImGuizmo::BeginFrame();
 
-    DrawGUI();
+        DrawGUI();
 
-    // Depth first walk
-    ForEachChild([](Node* child)
-    {
-        child->DrawGUIInternal();
-    });
-    
-    ImGui::EndFrame();
-    ImGui::Render();
+        // Depth first walk
+        ForEachChild([](Node* child)
+        {
+            child->DrawGUIInternal();
+        });
 
-    ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), *pass);
+        ImGui::EndFrame();
+        ImGui::Render();
 
-    pass->end();
-    wgpu::CommandBufferDescriptor cmd_buffer_desc = {};
-    cmd_buffer_desc.label = {"ImGUI Draw Command Buffer", wgpu::STRLEN};
-    wgpu::raii::CommandBuffer cmd = gui_encoder->finish(cmd_buffer_desc);
+        ImGui_ImplWGPU_RenderDrawData(ImGui::GetDrawData(), *pass);
 
-    //renderer.AddCommand(cmd);
-    Application::Get().GetQueue().submit(*cmd);
+        pass->end();
+        wgpu::CommandBufferDescriptor cmd_buffer_desc = {};
+        cmd_buffer_desc.label = {"ImGUI Draw Command Buffer", wgpu::STRLEN};
+        wgpu::raii::CommandBuffer cmd = gui_encoder->finish(cmd_buffer_desc);
+
+        //renderer.AddCommand(cmd);
+        Application::Get().GetQueue().submit(*cmd);
+    }
 
     NodeWindow::Update(dt);
 
-    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
+    if (tex) {
+        if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+        }
     }
+
 }
 
 void NodeImGUIContextWindow::DrawGUI()

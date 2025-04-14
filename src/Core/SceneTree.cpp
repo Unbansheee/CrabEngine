@@ -4,8 +4,7 @@ import Engine.Application;
 
 
 SceneTree::~SceneTree() {
-    root = nullptr;
-    physicsWorld = nullptr;
+    Clear();
 }
 
 void SceneTree::Begin()
@@ -36,6 +35,12 @@ void SceneTree::Update(float dt)
 
 void SceneTree::SetUsePhysics(bool usePhysics) {
     bUsePhysics = usePhysics;
+}
+
+void SceneTree::Clear() {
+    if (root) root->ExitTree();
+    root = nullptr;
+    physicsWorld = nullptr;
 }
 
 Node* SceneTree::GetNodeByID(UID id)

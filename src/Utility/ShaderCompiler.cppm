@@ -31,6 +31,15 @@ public:
      static WGPUTextureFormat MapSlangToTextureFormat(slang::TypeReflection::ScalarType fmt, int elemCount);
 
 private:
+     struct CompiledShaderModule{
+          std::string name{};
+          wgpu::raii::ShaderModule compiledShaderModule{};
+          std::vector<UniformMetadata> compiledMetadata{};
+          BindingLayouts compiledLayout{};
+     };
+
+     CompiledShaderModule CompiledShader;
+
      BindingLayouts ComposeBindingData(Slang::ComPtr<slang::IComponentType> program);
      std::vector<const char*> GetShaderDirectories();
      std::vector<UniformMetadata> ParseShaderParameter(slang::VariableLayoutReflection* var);
@@ -42,12 +51,11 @@ private:
      Slang::ComPtr<slang::ISession> session;
      static inline std::vector<const char*> shaderSources = {ENGINE_RESOURCE_DIR};
 
-     wgpu::raii::ShaderModule compiledShaderModule;
-     BindingLayouts compiledLayout;
-     std::vector<UniformMetadata> compiledMetadata;
-
      Slang::ComPtr<slang::IBlob> spirv;
      std::string wgsl;
+
+
+     static inline std::unordered_map<std::string, CompiledShaderModule> shaderCache;
 };
 
 

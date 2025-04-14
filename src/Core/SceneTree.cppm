@@ -18,6 +18,7 @@ public:
     void Begin();
     void Update(float dt);
     void SetUsePhysics(bool usePhysics);
+    void Clear();
     ~SceneTree();
     PhysicsWorld& GetPhysicsWorld() {return *physicsWorld.get();}
 
