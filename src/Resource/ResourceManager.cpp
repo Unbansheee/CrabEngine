@@ -68,7 +68,7 @@ void ResourceManager::SaveToFile(const std::filesystem::path& path, nlohmann::js
 void ResourceManager::SaveImportSettings(const std::filesystem::path& sourcePath,
     const std::shared_ptr<ImportSettings>& importSettings)
 {
-    std::ofstream outFile(sourcePath.string() += ".importSettings");
+    std::ofstream outFile(sourcePath.string() += ".meta");
     nlohmann::json j;
     importSettings->Serialize(j);
     outFile << j;

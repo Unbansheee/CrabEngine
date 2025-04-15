@@ -4,8 +4,6 @@
 
 #include <filesystem>
 #include "ReflectionMacros.h"
-//#include "Importers/ResourceImporter.cppm"
-//#include "Utility/ObservableDtor.h"
 
 export module Engine.Resource;
 export import Engine.Object;
@@ -36,7 +34,11 @@ public:
     
     void Serialize(nlohmann::json& archive) override { Object::Serialize(archive); }
     void Deserialize(nlohmann::json& archive) override { Object::Deserialize(archive); }
-    virtual void LoadData() { loaded = true; };  // For explicit loading
+
+    // Triggers resources such as mesh data, texture data, to be loaded into memory / gpu
+    // The idea is that a resource can exist as a shell, holding metadata, and its sub-data will only be loaded when explicitly needed
+    // To prevent having to keep big resources in memory, but still being able to reference them
+    virtual void LoadData() { loaded = true; };
     virtual bool IsLoaded() const {return loaded;}
 
     virtual wgpu::raii::TextureView GetThumbnail();

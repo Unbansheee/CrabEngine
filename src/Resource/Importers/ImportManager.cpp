@@ -37,7 +37,7 @@ ResourceImporter* ImportManager::GetImporterForExtension(std::filesystem::path e
 
 std::shared_ptr<ImportSettings> ImportManager::LoadOrCreateImportSettings(const std::filesystem::path& path, ResourceImporter* importer)
 {
-    auto importsettingPath = (path.string() + ".importSettings");
+    auto importsettingPath = (path.string() + ".meta");
     auto setting = importer->CreateDefaultSettings();
     if (std::filesystem::exists(importsettingPath))
     {
