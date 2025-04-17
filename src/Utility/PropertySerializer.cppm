@@ -25,11 +25,10 @@ export struct PropertySerializer
     void operator()(PropertyView& prop, nlohmann::json* archive, Vector4& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, Quat& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, Transform& val);
-    void operator()(PropertyView& prop, nlohmann::json* archive, StrongResourceRef& val);
+    void operator()(PropertyView& prop, nlohmann::json* archive, std::shared_ptr<Resource>& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, ObjectRef<Object>& val);
 
     void operator()(PropertyView& prop, nlohmann::json* archive, auto val) { std::cout << "Invalid variant for serializing: " << prop.name() << "\n"; }
-    
 
     // Optional: Default handler
     template <typename T>
@@ -50,7 +49,7 @@ export struct PropertyDeserializer
     void operator()(PropertyView& prop, nlohmann::json* archive, Vector4& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, Quat& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, Transform& val);
-    void operator()(PropertyView& prop, nlohmann::json* archive, StrongResourceRef& val);
+    void operator()(PropertyView& prop, nlohmann::json* archive, std::shared_ptr<Resource>& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, ObjectRef<Object>& val);
 
     void operator()(PropertyView& prop, nlohmann::json* archive, auto val) { std::cout << "Invalid variant for deserializing: " << prop.name() << "\n"; }

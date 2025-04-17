@@ -16,13 +16,21 @@ import Engine.Application;
 import Engine.Assert;
 import Engine.MaterialProperties;
 import Engine.ShaderCompiler.Types;
-
+import Engine.Resource.ShaderFile;
+import std;
 
 // Storage for resources
 struct BufferBinding {
     wgpu::raii::Buffer buffer;
     uint32_t size;
     bool isDynamic;
+};
+
+struct CPUBuffer {
+    std::vector<uint8_t> data; // Raw bytes matching GPU buffer layout
+    bool isDirty = false;      // Tracks if changes need uploading
+    uint32_t size;             // Total buffer size (bytes)
+    UniformMetadata uniformMetadata; // From shader reflection
 };
 
 struct TextureBinding {
@@ -35,9 +43,9 @@ struct SamplerBinding {
 
 export class MaterialResource : public Resource
 {
-    CRAB_ABSTRACT_CLASS(MaterialResource, Resource)
+    CRAB_CLASS(MaterialResource, Resource)
     BEGIN_PROPERTIES
-        ADD_PROPERTY("ShaderFile", shader_file)
+        custom.emplace_back( Property{"shader_file", "ShaderFile", std::string(ClassName), &ThisClass::shader_file, PropertyFlags::None, &ThisClass::StaticOnPropertySet} );
     END_PROPERTIES
 
     ~MaterialResource() override = default;
@@ -76,16 +84,18 @@ protected:
 public:
     wgpu::Device m_device = nullptr;
     wgpu::raii::RenderPipeline m_pipeline{};
-    wgpu::raii::ShaderModule m_shaderModule ;
+    wgpu::raii::ShaderModule m_shaderModule;
 
     // TODO: Replace
     wgpu::TextureFormat TargetTextureFormat = WGPUTextureFormat::WGPUTextureFormat_BGRA8UnormSrgb;
     wgpu::TextureFormat DepthTextureFormat = wgpu::TextureFormat::Depth24Plus;
 
     MaterialSettings m_settings;
-    StrongResourceRef shader_file;
+    std::shared_ptr<ShaderFileResource> shader_file;
 
+    std::unordered_map<std::string, CPUBuffer> m_cpuBuffers; // Mirrors m_buffers
     std::unordered_map<std::string, BufferBinding> m_buffers;
+
     std::unordered_map<std::string, TextureBinding> m_textures;
     std::unordered_map<std::string, SamplerBinding> m_samplers;
 
@@ -97,16 +107,34 @@ public:
 
     // NEW
 
+    bool HasUniform(const std::string& parameter) {return m_uniformMetadata.contains(parameter);}
+    std::vector<uint8_t> GetUniformData(const std::string& name);
 
-    void SetUniform(const std::string& uniformName, void* data, uint32_t size);
-    void SetTexture(const std::string& uniformName, const std::shared_ptr<TextureResource>& texture);
-    void SetSampler(const std::string& uniformName, wgpu::raii::Sampler sampler);
     template<typename T>
     void SetUniform(const std::string& uniformName, T& data) {
-        SetUniform(uniformName, (void*)&data, sizeof(T));
+        if constexpr(std::is_base_of_v<T, std::shared_ptr<TextureResource>>) {
+            SetTexture(uniformName, data);
+        }
+        else if constexpr (std::is_base_of_v<T, wgpu::raii::Sampler>) {
+            SetSampler(uniformName, data);
+        }
+        else {
+            SetUniformData(uniformName, (void*)&data, sizeof(T));
+        }
     };
 
+
+    void SetUniformData(const std::string& uniformName, void* data, uint32_t size, uint32_t offset = 0);
+    void SetTexture(const std::string& uniformName, const std::shared_ptr<TextureResource>& texture);
+    void SetSampler(const std::string& uniformName, wgpu::raii::Sampler sampler);
+
+    std::shared_ptr<TextureResource> GetTexture(const std::string& uniformName);
+
+    std::vector<uint8_t> ReadBufferData(const wgpu::raii::Buffer& buffer, uint32_t size);
+
     wgpu::raii::PipelineLayout m_pipelineLayout;
+
+    void CreateBuffer(const std::string& name, uint32_t size, bool isDynamic);
 
     void LoadData() override;
     MaterialResource() : Resource() {};
@@ -135,43 +163,7 @@ public:
 
     virtual void Apply(wgpu::RenderPassEncoder renderPass);
 
-
-
-    /*
-    template<typename T>
-    bool ValidateType(MaterialPropertyType type) {
-        switch (type) {
-            case MaterialPropertyType::Float:
-                Assert::Check(std::is_same_v<T, float>, "T == float", "Invalid type for T");
-                break;
-            case MaterialPropertyType::Int:
-                Assert::Check(std::is_same_v<T, int>, "T == int", "Invalid type for T");
-                break;
-            case MaterialPropertyType::UInt:
-                Assert::Check(std::is_same_v<T, uint32_t>, "T == uint32_t", "Invalid type for T");
-                break;
-            case MaterialPropertyType::Vector2:
-                Assert::Check(std::is_same_v<T, glm::vec2>, "T == Vector2", "Invalid type for T");
-                break;
-            case MaterialPropertyType::Vector3:
-                Assert::Check(std::is_same_v<T, glm::vec3>, "T == Vector3", "Invalid type for T");
-                break;
-            case MaterialPropertyType::Vector4:
-                Assert::Check(std::is_same_v<T, glm::vec4>, "T == Vector4", "Invalid type for T");
-                break;
-            case MaterialPropertyType::Matrix4x4:
-                Assert::Check(std::is_same_v<T, glm::mat4x4>, "T == Matrix4", "Invalid type for T");
-                break;
-            case MaterialPropertyType::Texture2D:
-                Assert::Check(std::is_same_v<T, wgpu::TextureView>, "T == wgpu::TextureView", "Invalid type for T");
-                break;
-            case MaterialPropertyType::TextureCube:
-                Assert::Check(std::is_same_v<T, wgpu::TextureView>, "T == wgpu::TextureView", "Invalid type for T");
-                break;
-        }
-
-        return false;
-    }
-    */
+    void Serialize(nlohmann::json &archive) override;
+    void Deserialize(nlohmann::json &archive) override;
 };
 

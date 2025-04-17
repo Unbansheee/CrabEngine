@@ -47,6 +47,7 @@ private:
      std::vector<UniformMetadata> ParseShaderVar(slang::TypeLayoutReflection *typeLayout, int group, int slot);
      UniformMetadata ParseResource(slang::TypeLayoutReflection *typeLayout, int group, int slot);
      std::vector<UniformMetadata> ParseParameterBlock(slang::TypeLayoutReflection *paramBlock, int group, int slot);
+     std::vector<UniformMetadata::BufferField> ParseBufferSubfields(slang::TypeLayoutReflection* typeLayout);
 
      Slang::ComPtr<slang::ISession> session;
      static inline std::vector<const char*> shaderSources = {ENGINE_RESOURCE_DIR};
@@ -227,55 +228,6 @@ void ShaderObjectLayoutBuilder::AddBindingsFrom(UniformMetadata* entry, slang::T
                samplerBinding.type = entry->SamplerBindingType;
                e.sampler = samplerBinding;
      }
-     /*
-     switch (kind) {
-
-          case slang::TypeReflection::Kind::Resource: // Texture, StructuredBuffer
-               if (typeLayout->getResourceShape() & SlangResourceShape::SLANG_STRUCTURED_BUFFER && typeLayout->getResourceShape() &! SlangResourceShape::SLANG_TEXTURE_2D) {
-                    WGPUBufferBindingLayout storageBinding;
-                    storageBinding.type = typeLayout->getResourceAccess() & SlangResourceAccess::SLANG_RESOURCE_ACCESS_WRITE ? WGPUBufferBindingType_Storage : WGPUBufferBindingType_ReadOnlyStorage;
-                    storageBinding.minBindingSize = entry->SizeInBytes;
-                    storageBinding.hasDynamicOffset = false;
-                    e.buffer = storageBinding;
-                    break;
-               }
-               else if (typeLayout->getResourceShape() & SlangResourceShape::SLANG_TEXTURE_2D) {
-                    SlangResourceAccess access = typeLayout->getResourceAccess();
-                    bool isStorageTexture =
-                        (access & SLANG_RESOURCE_ACCESS_READ_WRITE) ||
-                        (access & SLANG_RESOURCE_ACCESS_WRITE);
-
-                    auto t = typeLayout->getResourceResultType();
-                    auto elemCount = t->getElementCount();
-                    auto elementType = t->getScalarType();
-
-                    //auto format = MapSlangToTextureFormat(elementType, elemCount);
-                    //auto sampleType = MapSlangToTextureSampleFormat(elementType);
-
-
-                    if (isStorageTexture) {
-                         WGPUStorageTextureBindingLayout storageTextureBinding;
-                         auto fmt = typeLayout->getBindingRangeImageFormat(entry->Location);
-                         storageTextureBinding.format = entry->Format;
-                         storageTextureBinding.viewDimension = entry->Dimension;
-                         storageTextureBinding.access = typeLayout->getResourceAccess() & SlangResourceAccess::SLANG_RESOURCE_ACCESS_WRITE ? WGPUStorageTextureAccess_ReadWrite : WGPUStorageTextureAccess_ReadOnly;
-                         e.storageTexture = storageTextureBinding;
-                         break;
-                    }
-                    else {
-                         WGPUTextureBindingLayout textureBinding;
-                         auto fmt = typeLayout->getBindingRangeImageFormat(typeLayout->getBindingRangeCount());
-                         textureBinding.sampleType = entry->SampleType;
-                         textureBinding.multisampled = typeLayout->getResourceShape() & SlangResourceShape::SLANG_TEXTURE_2D_MULTISAMPLE || typeLayout->getResourceShape() & SlangResourceShape::SLANG_TEXTURE_MULTISAMPLE_FLAG ? WGPUOptionalBool_True : WGPUOptionalBool_False;
-                         textureBinding.viewDimension = entry->Dimension;
-                         e.texture = textureBinding;
-                         break;
-                    }
-               }
-          default:
-               Assert::Fail("Not Implemented");
-     }
-     */
 
      entries[entry->Group].push_back(e);
 }

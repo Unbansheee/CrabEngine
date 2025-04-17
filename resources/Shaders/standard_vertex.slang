@@ -10,6 +10,7 @@ public struct StandardVertex{
     public float3 Bitangent : BITANGENT;
 };
 
+
 public struct Model {
     public float4x4 ModelMatrix;
     public float4x4 LocalMatrix;

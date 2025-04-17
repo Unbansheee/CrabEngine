@@ -16,7 +16,6 @@ import Engine.Node.MeshInstance3D;
 import Engine.Resource.ArrayMesh;
 import Engine.GFX.MeshVertex;
 import Engine.GFX.UniformDefinitions;
-import Engine.Resource.Material.Standard;
 import Engine.Resource.ShaderFile;
 
 
@@ -348,7 +347,7 @@ std::shared_ptr<MeshResource> GLTFSceneParser::ParseMesh(WGPUDevice device, tiny
 
 std::shared_ptr<MaterialResource> GLTFSceneParser::ParseMaterial(WGPUDevice& context, tinygltf::Model& model, const std::vector<std::shared_ptr<TextureResource>>& textures, tinygltf::Material& material)
 {
-	std::shared_ptr<StandardMaterial> mat = std::make_shared<StandardMaterial>();
+	std::shared_ptr<MaterialResource> mat = std::make_shared<MaterialResource>();
 	mat->shader_file = ResourceManager::Load<ShaderFileResource>(ENGINE_RESOURCE_DIR"/standard_material.wgsl");
 	
 	auto& bcf = material.pbrMetallicRoughness.baseColorFactor;
@@ -362,11 +361,11 @@ std::shared_ptr<MaterialResource> GLTFSceneParser::ParseMaterial(WGPUDevice& con
 	if (material.pbrMetallicRoughness.baseColorTexture.index >= 0)
 	{
 		//mat->TBaseColour = textures.at(material.pbrMetallicRoughness.baseColorTexture.index);
-		mat->BaseColorTextureView = textures.at(material.pbrMetallicRoughness.baseColorTexture.index);
+		//mat->BaseColorTextureView = textures.at(material.pbrMetallicRoughness.baseColorTexture.index);
 	}
 	if (material.normalTexture.index >= 0)
 	{
-		mat->NormalTextureView = textures.at(material.normalTexture.index);
+		//mat->NormalTextureView = textures.at(material.normalTexture.index);
 		//mat->TMetallicRoughness = textures.at(material.pbrMetallicRoughness.metallicRoughnessTexture.index);
 	}
 

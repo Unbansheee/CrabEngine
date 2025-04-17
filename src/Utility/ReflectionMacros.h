@@ -67,7 +67,6 @@ nested_prop.displayName, \
 std::function<ValueVariant(void*)>(getter), \
 std::function<void(void*, const ValueVariant&)>(setter), \
 &ThisClass::StaticOnPropertySet, \
-nested_prop.type, \
 nested_prop.flags \
 )); \
 } \

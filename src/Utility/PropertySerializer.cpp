@@ -70,22 +70,22 @@ void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive,
         {val.Scale.x, val.Scale.y, val.Scale.z}};
 }
 
-void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive, StrongResourceRef& val)
+void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive, std::shared_ptr<Resource>& val)
 {
     auto& a = *archive;
     auto& properties = a[prop.name()];
-    if (auto res = val.Get<Resource>())
+    if (val)
     {
-        if (res->IsInline())
+        if (val->IsInline())
         {
             properties["import_type"] = "inline";
             auto& inlineDef = properties["inline_resource"];
-            res->Serialize(inlineDef);
+            val->Serialize(inlineDef);
         }
         else {
             properties["import_type"] = "file";
-            properties["source_file_path"] = res->GetSourcePath();
-            ResourceManager::SaveResource(res);
+            properties["source_file_path"] = val->GetSourcePath();
+            ResourceManager::SaveResource(val);
         }
     }
     else
@@ -194,7 +194,7 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
     }
 }
 
-void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archive, StrongResourceRef& val)
+void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archive, std::shared_ptr<Resource>& val)
 {
     auto& a = *archive;
     if (!a.contains(prop.name())) return;
@@ -212,7 +212,6 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
         std::shared_ptr<Resource> resource;
         resource.reset(res);
         resource->Deserialize(j);
-        resource->LoadData();
         val = resource;
         prop.set(val);
         return;

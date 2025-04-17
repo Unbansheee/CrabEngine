@@ -35,6 +35,8 @@ export template <typename T>
 class ObjectRef : rocket::trackable, public _ObjectRefBase
 {
 public:
+    using element_type = T;
+
     // Empty constructor
     ObjectRef();
     // Construct a handle from another object
@@ -122,31 +124,6 @@ private:
 
     void OnResourceDestroyed();
 };
-
-/*
-template <typename T>
-ObjectRef<T>::ObjectRef(T* node)
-{
-    static_assert(std::is_base_of_v<observable_dtor, T>, "T must implement observable_dtor");
-    if (!node) return;
-    this->node = node;
-    node->destroyed_signal += [&]()
-    {
-        connection = node->destroyed_signal.template connect<&ObjectRef::OnResourceDestroyed>(this);
-    };
-}
-
-template <typename T>
-ObjectRef<T>::ObjectRef(const ObjectRef& other)
-{
-    static_assert(std::is_base_of_v<observable_dtor, T>, "T must implement observable_dtor");
-    if (other.IsValid())
-    {
-        node = other.node;
-        connection = node->destroyed_signal.template connect<&ObjectRef::OnResourceDestroyed>(this);
-    }
-}
-*/
 
 template <typename T>
 ObjectRef<T>::~ObjectRef()

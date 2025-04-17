@@ -1,7 +1,7 @@
 //
 // Created by Vinnie on 21/02/2025.
 //
-
+module;
 #include "stb_image.h"
 #include <tiny_obj_loader.h>
 #include "fmt/format.h"
@@ -42,6 +42,7 @@ std::shared_ptr<Resource> ResourceManager::Load(const std::filesystem::path& pat
 
     if (IsSourceFile(path)) {
         auto res = ImportManager::Get().Import(path);
+        if (res)
         {
             std::lock_guard lock(cacheMutex);
             resourceCache[path.string()] = res;

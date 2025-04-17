@@ -13,6 +13,7 @@ import Engine.Resource.Ref;
 import Engine.Types;
 import Engine.Transform;
 import Engine.Object.Ref;
+import std;
 
 //export class Object;
 
@@ -27,7 +28,6 @@ export using ValueVariant = std::variant<
     Quat,
     Vector4,
     Transform,
-    ResourceRef,
-    StrongResourceRef,
+    std::shared_ptr<Resource>,
     ObjectRef<Object>
 >;

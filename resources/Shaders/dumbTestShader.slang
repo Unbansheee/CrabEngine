@@ -1,7 +1,9 @@
 
 import standard_vertex;
 
-
+[__AttributeUsage(_AttributeTargets.Var)]
+struct SerializedFieldAttribute
+{};
 
 
 struct RendererParameters{
@@ -10,6 +12,8 @@ struct RendererParameters{
     ConstantBuffer<LightingData> uLightingData;
     RWTexture2D<uint32_t> idPassTexture;
 }
+
+
 
 layout(push_constant)
 Model PushConstant : register(b0);
@@ -38,10 +42,16 @@ float3 BlinnPhong(in DirectionalLight light, in StandardMaterial material, float
 }
 
 ParameterBlock<RendererParameters> uRendererParams;
+
+[SerializedField]
 ParameterBlock<StandardMaterial> uMaterialProperties;
 
 SamplerState StandardTextureSampler;
+
+[SerializedField]
 Texture2D AlbedoTexture;
+
+[SerializedField]
 Texture2D NormalTexture;
 
 [shader("vertex")]

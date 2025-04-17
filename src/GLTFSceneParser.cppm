@@ -13,7 +13,6 @@ module;
 export module Engine.GLTFSceneParser;
 import Engine.Resource.Mesh;
 import Engine.Resource.Material;
-import Engine.Resource.Material.Standard;
 import Engine.Resource.Texture;
 import Engine.Node.Node3D;
 import Engine.WGPU;

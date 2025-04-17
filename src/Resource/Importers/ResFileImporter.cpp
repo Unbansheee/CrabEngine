@@ -26,6 +26,8 @@ std::shared_ptr<Resource> ResFileImporter::Import(const std::filesystem::path &s
     std::string type = j.at("class").get<std::string>();
 
     auto classData = ClassDB::Get().GetClassByName(type);
+    if (!classData) return nullptr;
+
     auto r = static_cast<Resource*>(classData->Initializer());
     std::shared_ptr<Resource> resource;
     resource.reset(r);

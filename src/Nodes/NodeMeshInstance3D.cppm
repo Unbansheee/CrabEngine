@@ -27,18 +27,18 @@ public:
     NodeMeshInstance3D();
     
     void SetMesh(const std::shared_ptr<MeshResource>& newMesh);
-    std::shared_ptr<MeshResource> GetMesh() const {return Mesh.Get<MeshResource>();}
+    std::shared_ptr<MeshResource> GetMesh() const {return Mesh;}
 
     void SetMaterial(const std::shared_ptr<MaterialResource>& newMaterial) { material = newMaterial; }
     std::shared_ptr<MaterialResource> GetMaterial() const
     {
-        return material.Get<MaterialResource>();
+        return material;
     }
 
     void Render(Renderer& renderer) override;
 
     
 protected:
-    StrongResourceRef material;
-    StrongResourceRef Mesh;
+    std::shared_ptr<MaterialResource> material;
+    std::shared_ptr<MeshResource> Mesh;
 };

@@ -14,13 +14,17 @@
 export module Engine.Reflection;
 import Engine.Variant;
 import Engine.Object.Ref;
+import std;
 //import class_db;
 //import resource;
 //import class_type;
 
 
 export class Property;
+export class Resource;
 export class Node;
+export struct ClassType;
+export class Object;
 
 export namespace PropertyFlags
 {
@@ -30,6 +34,25 @@ export namespace PropertyFlags
     constexpr uint32_t MaterialProperty = 1 << 3;
     constexpr uint32_t ColorHint = 1 << 4;
 };
+
+template <typename>
+struct is_shared_ptr : std::false_type {};
+
+template <typename U>
+struct is_shared_ptr<std::shared_ptr<U>> : std::true_type {};
+
+template <typename T>
+inline constexpr bool is_shared_ptr_v = is_shared_ptr<T>::value;
+
+template <typename T>
+concept IsSharedPtrToResource =
+    is_shared_ptr_v<T> &&
+    std::is_base_of_v<Resource, typename T::element_type>;
+
+template <typename T>
+concept IsObjectRef =
+    std::is_base_of_v<_ObjectRefBase, T> &&
+    std::is_base_of_v<Object, typename T::element_type>;
 
 class Property {
 public:
@@ -46,17 +69,31 @@ public:
     ) : name(name),
         displayName(display_name),
         ownerClass(owner_class),
-        type(typeid(T)),
         flags(flags),
         post_set_callback(std::move(post_set_cb))
     {
+        if constexpr (IsSharedPtrToResource<T>) {
+            reflectedObjectType = &(typename T::element_type::GetStaticClass());
+        }
+        else if constexpr (IsObjectRef<T>) {
+            reflectedObjectType = &(typename T::element_type::GetStaticClass());
+        }
 
         // Setter with callback invocation
         setter = [member_ptr](void* obj, const ValueVariant& value) {
             Class* target = static_cast<Class*>(obj);
             if constexpr (std::is_base_of_v<_ObjectRefBase, T>) {
                 target->*member_ptr = std::get<ObjectRef<Object>>(value).Cast<T>();
-            } else {
+            }
+            else if constexpr (IsSharedPtrToResource<T>) {
+                auto base_ptr = std::get<std::shared_ptr<Resource>>(value);
+                auto derived_ptr = std::dynamic_pointer_cast<typename T::element_type>(base_ptr);
+                if (!derived_ptr) {
+                    throw std::runtime_error("Type mismatch when assigning resource.");
+                }
+                target->*member_ptr = derived_ptr;
+            }
+            else {
                 target->*member_ptr = std::get<T>(value);
             }
         };
@@ -64,6 +101,9 @@ public:
         getter = ([member_ptr](void* obj) -> ValueVariant {
             if constexpr (std::is_base_of_v<_ObjectRefBase, T>) {
                 return ObjectRef<Object>(static_cast<Class*>(obj)->*member_ptr);
+            }
+            else if constexpr (IsSharedPtrToResource<T>) {
+                return static_cast<std::shared_ptr<Resource>>(static_cast<Class*>(obj)->*member_ptr);
             }
             else
             {
@@ -80,27 +120,18 @@ public:
     std::function<ValueVariant(void*)> getter,
     std::function<void(void*, const ValueVariant&)> setter,
     PostSetCallback postSetCallback,
-    std::type_index type,
     uint32_t flags
 ) : name(name),
     displayName(display_name),
     ownerClass(owner_class),
-    type(type),
     flags(flags),
     getter(std::move(getter)),
     setter(std::move(setter)),
-    post_set_callback(std::move(postSetCallback)){}
-
-    // Type checking interface
-    template <typename T>
-    bool is() const {
-        return type == typeid(T);
+    post_set_callback(std::move(postSetCallback)) {
     }
 
-    // Safe value access
     template <typename T>
     T get(void* obj) const {
-        if (!is<T>()) throw std::bad_variant_access{};
         return std::get<T>(getter(obj));
     }
 
@@ -119,7 +150,6 @@ public:
     template <typename T>
     void set(void* obj, T value) const
     {
-        if (!is<T>()) throw std::bad_variant_access{};
         setter(obj, value);
         // this must be const to make PropertyView's property field readonly
         // TODO: use a getter instead for propertyview
@@ -134,11 +164,12 @@ public:
     template <typename Visitor, typename ObjectClass>
     void visit(Visitor&& vis, nlohmann::json& archive, ObjectClass* obj) const;
 
+
     std::string displayName;
     std::string name;
     std::string ownerClass;
-    std::type_index type;
     uint32_t flags;
+    const ClassType* reflectedObjectType;
 
 private:
     std::function<ValueVariant(void*)> getter;

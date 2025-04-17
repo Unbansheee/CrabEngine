@@ -62,6 +62,7 @@ std::shared_ptr<Resource> ImportManager::ImportSourceFile(const std::filesystem:
     auto importer = GetImporterForExtension(path.extension());
     auto settings = LoadOrCreateImportSettings(path, importer);
     auto res = importer->Import(path, *settings);
+    if (!res) return nullptr;
     if (settings) res->importSettings = settings;
     res->sourcePath = path.string();
     res->bIsInline = false;

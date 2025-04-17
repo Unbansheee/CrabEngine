@@ -18,11 +18,7 @@ void ImageTextureResource::Deserialize(nlohmann::json& archive)
 
 void ImageTextureResource::LoadData()
 {
-    //assert(!imageFilePath.empty());
-    
     LoadTextureFromPath(imageFilePath);
-    //assert(texture);
-    
     TextureResource::LoadData();
 }
 

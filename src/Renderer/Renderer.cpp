@@ -10,7 +10,6 @@ import Engine.Node;
 import Engine.Resource.Material;
 import Engine.GFX.DrawCommand;
 import Engine.Resource.Mesh;
-import Engine.Resource.Material.Standard;
 import Engine.Resource.ShaderFile;
 import Engine.Resource.ResourceManager;
 
@@ -24,7 +23,7 @@ void Renderer::Initialize(wgpu::Device device)
     m_lightingUniformBuffer.Initialize(device);
     m_objectUniformBuffer.Initialize(device);
 
-    m_fallbackMaterial = MakeShared<StandardMaterial>();
+    m_fallbackMaterial = MakeShared<MaterialResource>();
     m_fallbackMaterial->shader_file = ResourceManager::Load<ShaderFileResource>(ENGINE_RESOURCE_DIR"/default_standard_material.wgsl");
     m_fallbackMaterial->LoadData();
 }
@@ -242,29 +241,12 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
 
             currentMaterial->SetUniform("uCameraData", m_cameraUniformBuffer.GetData());
             currentMaterial->SetUniform("uLightingData", m_lightingUniformBuffer.GetData());
-            Uniforms::UStandardMaterialParameters stParams;
-            stParams.Hardness = 16.0f;
-            stParams.Kd = 1.0f;
-            stParams.Ks = 1.0f;
-            stParams.NormalStrength = 1.0f;
-            stParams.BaseColorFactor = {1,1,1};
 
-            currentMaterial->SetUniform("uMaterialProperties", stParams);
             if (idTexture) {
                 currentMaterial->SetTexture("idPassTexture", idTexture);
             }
-
-            currentMaterial->SetTexture("AlbedoTexture", cobblestone);
-            currentMaterial->SetTexture("NormalTexture", cobblestone_N);
-
             currentMaterial->Apply(*pass);
         }
-
-        // Bind global bind groups
-        //pass.setBindGroup(MaterialResource::ENamedBindGroup::GLOBAL, m_globalBindGroup, 0, nullptr);
-        //pass.setBindGroup(MaterialResource::ENamedBindGroup::RENDERER, m_rendererUniformBindGroup, 0, nullptr);
-        //pass.setBindGroup(MaterialResource::ENamedBindGroup::OBJECT, m_objectUniformBindGroup, 0, nullptr);
-
 
 
         // Execute draw calls
