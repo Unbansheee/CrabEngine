@@ -95,7 +95,9 @@ void MaterialResource::Deserialize(nlohmann::json &archive) {
     Resource::Deserialize(archive);
 
     LoadFromShaderPath(Application::Get().GetDevice(), "ghghg");
-    nlohmann::json& uniformJson = archive.at("uniforms");
+
+    if (archive.contains("uniforms")) {
+        nlohmann::json& uniformJson = archive.at("uniforms");
 
     for (auto& [uniformName, uniform] : m_uniformMetadata) {
         if (!uniform.IsSerialized) continue;
@@ -149,6 +151,8 @@ void MaterialResource::Deserialize(nlohmann::json &archive) {
             }
         }
     }
+    }
+
 }
 
 void MaterialResource::UpdateBindGroups() {

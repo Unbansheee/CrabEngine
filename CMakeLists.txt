@@ -5,6 +5,8 @@ project(
     LANGUAGES CXX C # programming languages used by the project
 )
 
+include(CrabEngine.cmake)
+
 file(GLOB_RECURSE SOURCES
         src/*.h
         src/*.c
@@ -62,12 +64,29 @@ add_subdirectory(vendor/nativefiledialog-extended)
 add_subdirectory(vendor/string_id)
 add_subdirectory(vendor/jolt)
 add_subdirectory(vendor/fmt)
+add_subdirectory(vendor/vfspp vfspp_build)
+
 
 find_library(LIB_slang slang ${CMAKE_CURRENT_SOURCE_DIR}/vendor/slang/lib)
 find_library(LIB_slangGFX gfx ${CMAKE_CURRENT_SOURCE_DIR}/vendor/slang/lib)
 
-target_link_libraries(CrabEngine PRIVATE glfw glfw3webgpu nfd Jolt ${LIB_slang} ${LIB_slangGFX})
-target_link_libraries(CrabEngine PUBLIC webgpu imgui foonathan_string_id fmt)
+target_link_libraries(CrabEngine PRIVATE
+        glfw
+        glfw3webgpu
+        nfd
+        Jolt
+        ${LIB_slang}
+        ${LIB_slangGFX}
+        )
+
+target_link_libraries(CrabEngine PUBLIC
+        webgpu
+        imgui
+        foonathan_string_id
+        fmt
+        vfspp
+)
+
 target_copy_webgpu_binaries(CrabEngine)
 set_target_properties(CrabEngine PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
@@ -89,15 +108,18 @@ if(DEV_MODE)
     # In dev mode, we load resources from the source tree, so that when we
     # dynamically edit resources (like shaders), these are correctly
     # versionned.
-    target_compile_definitions(CrabEngine PRIVATE
+    target_compile_definitions(CrabEngine PUBLIC
             ENGINE_RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources"
     )
 else()
     # In release mode, we just load resources relatively to wherever the
     # executable is launched from, so that the binary is portable
-    target_compile_definitions(CrabEngine PRIVATE
-            ENGINE_RESOURCE_DIR="./resources"
+    target_compile_definitions(CrabEngine PUBLIC
+            ENGINE_RESOURCE_DIR="./Engine/resources"
     )
+
+
+
 endif()
 
 target_compile_definitions(CrabEngine PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)

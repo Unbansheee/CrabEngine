@@ -12,10 +12,12 @@ import Engine.GLM;
 import Engine.WGPU;
 import Engine.StringID;
 import Engine.Physics.Jolt;
+import vfspp;
 
 struct ImGuiContext;
 using glm::mat4x4;
 using glm::vec4;
+
 
 
 struct DeltaTicker
@@ -69,12 +71,17 @@ public:
 
     JPH::TempAllocator* GetPhysicsAllocator() const {return tempAllocator;}
     JPH::JobSystem* GetJobSystem() const {return jobSystem;}
+
+    vfspp::VirtualFileSystemPtr GetFilesystem();
+    void AddFileSystem(const std::string& alias, const std::string& root);
 protected:
     SceneTree sceneTree;
     DeltaTicker deltaTime;
     float dt;
     bool bShouldClose = false;
-    
+
+    vfspp::VirtualFileSystemPtr applicationFileSystem;
+
     wgpu::Instance wgpuInstance = nullptr;
     wgpu::Device wgpuDevice = nullptr;
 
@@ -90,3 +97,9 @@ private:
     Application();
     ~Application();
 };
+
+
+
+vfspp::VirtualFileSystemPtr Application::GetFilesystem() {
+    return applicationFileSystem;
+}

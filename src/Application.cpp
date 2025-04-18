@@ -101,9 +101,7 @@ Application::Application()
 
 	std::cout << "Got device: " << wgpuDevice << std::endl;
 
-
 	NFD::Init();
-
 
 	JPH::RegisterDefaultAllocator();
 	JPH::Trace = TraceImpl;
@@ -113,6 +111,22 @@ Application::Application()
 	tempAllocator = new JPH::TempAllocatorImpl(10 * 1024 * 1024);
 	jobSystem = new JPH::JobSystemThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, maxConcurrentJobs - 1);
 	sceneTree.SetRoot(Node::NewNode());
+
+	std::cout << std::filesystem::current_path().string() << std::endl;
+
+	auto rootFS = std::make_unique<vfspp::NativeFileSystem>(std::filesystem::current_path().string());
+	rootFS->Initialize();
+
+	applicationFileSystem = std::make_shared<vfspp::VirtualFileSystem>();
+	AddFileSystem("/app", std::filesystem::current_path().string());
+	AddFileSystem("/engine", ENGINE_RESOURCE_DIR);
+}
+
+void Application::AddFileSystem(const std::string &alias, const std::string &root) {
+	auto fs = std::make_unique<vfspp::NativeFileSystem>(root);
+	fs->Initialize();
+
+	applicationFileSystem->AddFileSystem(alias, std::move(fs));
 }
 
 Application::~Application()
