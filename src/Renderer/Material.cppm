@@ -105,6 +105,7 @@ public:
     std::unordered_map<uint32_t, wgpu::raii::BindGroupLayout> m_bindGroupLayouts;
     void UpdateBindGroups();
 
+    wgpu::raii::TextureView GetThumbnail() override;
     // NEW
 
     bool HasUniform(const std::string& parameter) {return m_uniformMetadata.contains(parameter);}
@@ -165,5 +166,7 @@ public:
 
     void Serialize(nlohmann::json &archive) override;
     void Deserialize(nlohmann::json &archive) override;
+
+    static inline std::shared_ptr<TextureResource> MaterialResourceThumbnail = nullptr;
 };
 

@@ -214,6 +214,13 @@ void MaterialResource::UpdateBindGroups() {
     }
 }
 
+wgpu::raii::TextureView MaterialResource::GetThumbnail() {
+    if (!MaterialResourceThumbnail) {
+        MaterialResourceThumbnail = ResourceManager::Load<TextureResource>(ENGINE_RESOURCE_DIR"/Textures/T_MaterialThumbnail.png");
+    }
+    return MaterialResourceThumbnail->GetInternalTextureView();
+}
+
 std::vector<uint8_t> MaterialResource::GetUniformData(const std::string &name) {
     return m_cpuBuffers.at(name).data;
 }
