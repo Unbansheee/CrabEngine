@@ -18,6 +18,7 @@ import Engine.Reflection.ClassDB;
 import Engine.Assert;
 import Engine.ShaderParser;
 import fmt;
+import Engine.Application;
 
 
 
@@ -31,21 +32,30 @@ bool ResourceManager::IsSourceFile(const std::filesystem::path& path)
 
 std::shared_ptr<Resource> ResourceManager::Load(const std::filesystem::path& path)
 {
+    auto fs = Application::Get().GetFilesystem();
+    auto file = fs->OpenFile(path.string(), vfspp::IFile::FileMode::Read);
+    std::string absolutePath;
+    if (file) {
+        absolutePath = file->GetFileInfo().AbsolutePath();
+    }
+    else {
+        absolutePath = path.string();
+    }
     {
         std::lock_guard lock(cacheMutex);
         // Existing resource loading logic
-        auto it = resourceCache.find(path.string());
+        auto it = resourceCache.find(absolutePath);
         if (it != resourceCache.end()) {
             return it->second;
         }
     }
 
-    if (IsSourceFile(path)) {
-        auto res = ImportManager::Get().Import(path);
+    if (IsSourceFile(absolutePath)) {
+        auto res = ImportManager::Get().Import(absolutePath);
         if (res)
         {
             std::lock_guard lock(cacheMutex);
-            resourceCache[path.string()] = res;
+            resourceCache[absolutePath] = res;
         }
         return res;
     }

@@ -16,7 +16,7 @@ import "cstdarg";
 #  include <emscripten.h>
 #endif // __EMSCRIPTEN__
 
-
+using namespace std::string_view_literals;
 // Callback for traces, connect this to your own trace function if you have one
 static void TraceImpl(const char *inFMT, ...)
 {
@@ -117,7 +117,9 @@ Application::Application()
 	auto rootFS = std::make_unique<vfspp::NativeFileSystem>(std::filesystem::current_path().string());
 	rootFS->Initialize();
 
-	applicationFileSystem = std::make_shared<vfspp::VirtualFileSystem>();
+	vfspp::VirtualFileSystemPtr vfs(new vfspp::VirtualFileSystem());
+	applicationFileSystem = vfs;
+
 	AddFileSystem("/app", std::filesystem::current_path().string());
 	AddFileSystem("/engine", ENGINE_RESOURCE_DIR);
 }

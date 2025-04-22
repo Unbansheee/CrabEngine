@@ -27,12 +27,27 @@ public:
 
     wgpu::raii::TextureView GetThumbnail() override;
 
-    wgpu::raii::Texture& GetInternalTexture() { return texture; }
-    wgpu::raii::TextureView& GetInternalTextureView() { return view; }
-    const wgpu::raii::Texture& GetInternalTexture() const { return texture; }
-    const wgpu::raii::TextureView& GetInternalTextureView() const { return view; }
+    wgpu::raii::Texture& GetInternalTexture() {
+        LoadIfRequired();
+        return texture;
+    }
+
+    wgpu::raii::TextureView& GetInternalTextureView() {
+        LoadIfRequired();
+        return view;
+    }
+    const wgpu::raii::Texture& GetInternalTexture() const {
+        LoadIfRequired();
+        return texture;
+    }
+    const wgpu::raii::TextureView& GetInternalTextureView() const {
+        LoadIfRequired();
+        return view;
+    }
 
     glm::uvec2 GetSize() const {return {width, height};}
+
+
 
 protected:
     int width = 0;

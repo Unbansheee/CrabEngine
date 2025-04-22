@@ -27,6 +27,8 @@ void NodeMeshInstance3D::Render(Renderer& renderer)
 
     if (Mesh && material)
     {
+        Mesh->LoadIfRequired();
+        material->LoadIfRequired();
         renderer.DrawMesh(Mesh, material, transform.GetWorldModelMatrix(), this);
     }
 }

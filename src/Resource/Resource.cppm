@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <filesystem>
 #include "ReflectionMacros.h"
 
 export module Engine.Resource;
@@ -40,6 +39,8 @@ public:
     // To prevent having to keep big resources in memory, but still being able to reference them
     virtual void LoadData() { loaded = true; };
     virtual bool IsLoaded() const {return loaded;}
+    void LoadIfRequired() const { if (!IsLoaded()) const_cast<Resource*>(this)->LoadData(); }
+
 
     virtual wgpu::raii::TextureView GetThumbnail();
 
@@ -50,6 +51,7 @@ public:
     const std::shared_ptr<ImportSettings>& GetImportSettings() { return importSettings; };
 
 protected:
+
     std::string name;
     bool bIsInline = true;
     std::string sourcePath;

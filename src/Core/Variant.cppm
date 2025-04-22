@@ -2,20 +2,14 @@
 
 #pragma once
 
-#include <string>
-#include <variant>
-
-//#include "Transform.h"
-//#include "Resource/ResourceHandle.h"
-
 export module Engine.Variant;
-import Engine.Resource.Ref;
 import Engine.Types;
 import Engine.Transform;
 import Engine.Object.Ref;
 import std;
 
-//export class Object;
+export class Object;
+export class Resource;
 
 // Supported native types + common engine types
 export using ValueVariant = std::variant<

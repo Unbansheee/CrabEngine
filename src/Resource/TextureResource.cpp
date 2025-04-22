@@ -14,6 +14,7 @@ void TextureResource::LoadData()
 }
 
 wgpu::raii::TextureView TextureResource::GetThumbnail() {
+    LoadIfRequired();
     if (view) {
         return GetInternalTextureView();
     }

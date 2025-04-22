@@ -11,7 +11,6 @@ export module Engine.Node.MeshInstance3D;
 export import Engine.Node.Node3D;
 import Engine.Resource.Material;
 import Engine.Resource.Texture;
-import Engine.Resource.Ref;
 import Engine.Resource.Mesh;
 
 export class NodeMeshInstance3D : public Node3D {
@@ -27,7 +26,7 @@ public:
     NodeMeshInstance3D();
     
     void SetMesh(const std::shared_ptr<MeshResource>& newMesh);
-    std::shared_ptr<MeshResource> GetMesh() const {return Mesh;}
+    std::shared_ptr<MeshResource> GetMesh() const { return Mesh; }
 
     void SetMaterial(const std::shared_ptr<MaterialResource>& newMaterial) { material = newMaterial; }
     std::shared_ptr<MaterialResource> GetMaterial() const

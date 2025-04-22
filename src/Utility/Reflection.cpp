@@ -1,3 +1,2 @@
-﻿//#include <Reflection.cppm>
-module Engine.Reflection;
+﻿module Engine.Reflection;
 

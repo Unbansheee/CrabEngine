@@ -3,7 +3,6 @@
 #pragma once
 
 #include "ReflectionMacros.h"
-//#include <webgpu/webgpu.hpp>
 
 export module Engine.Resource.Material;
 import Engine.Resource.ResourceManager;
@@ -11,7 +10,6 @@ export import Engine.GFX.Vertex;
 import Engine.WGPU;
 import Engine.Object;
 import Engine.Resource;
-import Engine.Resource.Ref;
 import Engine.Application;
 import Engine.Assert;
 import Engine.MaterialProperties;

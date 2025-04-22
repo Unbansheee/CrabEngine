@@ -2,23 +2,12 @@
 
 #pragma once
 
-#include <functional>
 #include <json.hpp>
-#include <string>
-#include <typeindex>
-#include <variant>
-
-//#include "ReflectionMacros.h"
-//#include "Resource/ResourceHandle.h"
 
 export module Engine.Reflection;
 import Engine.Variant;
 import Engine.Object.Ref;
 import std;
-//import class_db;
-//import resource;
-//import class_type;
-
 
 export class Property;
 export class Resource;

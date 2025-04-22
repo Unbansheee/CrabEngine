@@ -24,7 +24,7 @@ void Renderer::Initialize(wgpu::Device device)
     m_objectUniformBuffer.Initialize(device);
 
     m_fallbackMaterial = MakeShared<MaterialResource>();
-    m_fallbackMaterial->shader_file = ResourceManager::Load<ShaderFileResource>(ENGINE_RESOURCE_DIR"/default_standard_material.wgsl");
+    m_fallbackMaterial->shader_file = ResourceManager::Load<ShaderFileResource>("/engine/default_standard_material.wgsl");
     m_fallbackMaterial->LoadData();
 }
 
