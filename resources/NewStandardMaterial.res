@@ -1,1 +1,36 @@
-{"class":"MaterialResource","properties":{"name":"NewStandardMaterial","shader_file":{"import_type":"file","source_file_path":"S:/Libraries/Desktop/EngineTest/CrabApplication/vendor/CrabEngine/resources/standard_material.wgsl"},"sourcePath":"S:/Libraries/Desktop/EngineTest/CrabApplication/vendor/CrabEngine/resources\\NewStandardMaterial.res"},"uid":"3645951a-5862-48b0-b45a-95f9b0a13003","uniforms":{"AlbedoTexture":{"import_type":"file","source_file_path":"S:/Libraries/Desktop/EngineTest/CrabApplication/vendor/CrabEngine/resources\\fourareen2K_albedo.jpg","type":2},"NormalTexture":{"import_type":"file","source_file_path":"S:/Libraries/Desktop/EngineTest/CrabApplication/vendor/CrabEngine/resources\\fourareen2K_normals.png","type":2},"uMaterialProperties":{"BaseColorFactor":{"x":0.0,"y":0.0,"z":0.0},"Hardness":32.0,"Kd":1.0,"Ks":1.0,"NormalStrength":0.5,"type":1}}}
+{
+  "class": "MaterialResource",
+  "properties": {
+    "name": "NewStandardMaterial",
+    "shader_file": {
+      "import_type": "file",
+      "source_file_path": "/engine/standard_material.wgsl"
+    },
+    "sourcePath": "/engine/NewStandardMaterial.res"
+  },
+  "uid": "3645951a-5862-48b0-b45a-95f9b0a13003",
+  "uniforms": {
+    "AlbedoTexture": {
+      "import_type": "file",
+      "source_file_path": "/engine/fourareen2K_albedo.jpg",
+      "type": 2
+    },
+    "NormalTexture": {
+      "import_type": "file",
+      "source_file_path": "/engine/fourareen2K_normals.png",
+      "type": 2
+    },
+    "uMaterialProperties": {
+      "BaseColorFactor": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "Hardness": 32.0,
+      "Kd": 1.0,
+      "Ks": 1.0,
+      "NormalStrength": 0.5,
+      "type": 1
+    }
+  }
+}

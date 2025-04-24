@@ -11,6 +11,7 @@ import Engine.Resource.Importer;
 import Engine.Resource.Importer.ImportSettings;
 import Engine.Reflection.Class;
 import Engine.WGPU;
+import vfspp;
 
 export class ImportManager;
 export class TextureResource;
@@ -25,7 +26,7 @@ public:
     CRAB_CLASS(Resource, Object)
 
     BEGIN_PROPERTIES
-        ADD_PROPERTY("Name", name)
+        ADD_PROPERTY_FLAGS("Name", name, PropertyFlags::HideFromInspector)
         ADD_PROPERTY_FLAGS("SourcePath", sourcePath, PropertyFlags::HideFromInspector)
     END_PROPERTIES
 
@@ -47,17 +48,19 @@ public:
     const std::string& GetName() const {return name;}
     bool IsSourceImported() const { return !bIsInline; }
     bool IsInline() const { return bIsInline; }
-    const std::string& GetSourcePath() {return sourcePath; }
+    const std::string& GetSourcePath() { return sourcePath; }
     const std::shared_ptr<ImportSettings>& GetImportSettings() { return importSettings; };
+    std::string GetAbsoluteSourcePath() { return sourceInfo->AbsolutePath(); };
 
 protected:
 
     std::string name;
     bool bIsInline = true;
-    std::string sourcePath;
     std::atomic<bool> loaded{false};
     std::shared_ptr<ImportSettings> importSettings;
 
+    std::string sourcePath;
+    std::optional<vfspp::FileInfo> sourceInfo;
 private:
     static inline std::shared_ptr<TextureResource> DefaultResourceThumbnail = nullptr;
 

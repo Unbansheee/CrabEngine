@@ -216,7 +216,7 @@ void MaterialResource::UpdateBindGroups() {
 
 wgpu::raii::TextureView MaterialResource::GetThumbnail() {
     if (!MaterialResourceThumbnail) {
-        MaterialResourceThumbnail = ResourceManager::Load<TextureResource>(ENGINE_RESOURCE_DIR"/Textures/T_MaterialThumbnail.png");
+        MaterialResourceThumbnail = ResourceManager::Load<TextureResource>("/engine/Textures/T_MaterialThumbnail.png");
     }
     return MaterialResourceThumbnail->GetInternalTextureView();
 }
@@ -364,7 +364,7 @@ void MaterialResource::InitializeProperties() {
 
         if (meta.BindingType == Texture) {
             TextureBinding binding = {
-                ResourceManager::Load<TextureResource>(ENGINE_RESOURCE_DIR"/null_texture_black.png")
+                ResourceManager::Load<TextureResource>("/engine/null_texture_black.png")
             };
             m_textures.emplace(uniformName, binding);
         }

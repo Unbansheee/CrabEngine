@@ -4,7 +4,7 @@ import Engine.Resource.Texture;
 
 wgpu::raii::TextureView Resource::GetThumbnail() {
     if (!DefaultResourceThumbnail) {
-        DefaultResourceThumbnail = ResourceManager::Load<TextureResource>(ENGINE_RESOURCE_DIR"/Textures/T_DefaultResourceThumbnail.png");
+        DefaultResourceThumbnail = ResourceManager::Load<TextureResource>("/engine/Textures/T_DefaultResourceThumbnail.png");
     }
     return DefaultResourceThumbnail->GetInternalTextureView();
 }

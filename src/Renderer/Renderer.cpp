@@ -229,8 +229,8 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
         
     // 2. Track current state
     MaterialResource* currentMaterial = nullptr;
-    auto cobblestone = ResourceManager::Load<TextureResource>(ENGINE_RESOURCE_DIR"/Textures/cobblestone_floor_08_diff_2k.jpg");
-    auto cobblestone_N = ResourceManager::Load<TextureResource>(ENGINE_RESOURCE_DIR"/Textures/cobblestone_floor_08_nor_gl_2k.png");
+    auto cobblestone = ResourceManager::Load<TextureResource>("/engine/Textures/cobblestone_floor_08_diff_2k.jpg");
+    auto cobblestone_N = ResourceManager::Load<TextureResource>("/engine/Textures/cobblestone_floor_08_nor_gl_2k.png");
 
     for (const auto& batch : batches) {
         // Pipeline state change

@@ -20,11 +20,6 @@ import Engine.ShaderParser;
 import fmt;
 import Engine.Application;
 
-
-
-
-
-
 bool ResourceManager::IsSourceFile(const std::filesystem::path& path)
 {
     return path.has_extension() && ImportManager::Get().IsFileTypeImportable(path.extension());
@@ -35,12 +30,9 @@ std::shared_ptr<Resource> ResourceManager::Load(const std::filesystem::path& pat
     auto fs = Application::Get().GetFilesystem();
     auto file = fs->OpenFile(path.string(), vfspp::IFile::FileMode::Read);
     std::string absolutePath;
-    if (file) {
-        absolutePath = file->GetFileInfo().AbsolutePath();
-    }
-    else {
-        absolutePath = path.string();
-    }
+    Assert::Check(file != nullptr, "file != nullptr", "Invalid file: " + path.string());
+    absolutePath = file->GetFileInfo().AbsolutePath();
+    file->Close();
     {
         std::lock_guard lock(cacheMutex);
         // Existing resource loading logic
@@ -51,7 +43,7 @@ std::shared_ptr<Resource> ResourceManager::Load(const std::filesystem::path& pat
     }
 
     if (IsSourceFile(absolutePath)) {
-        auto res = ImportManager::Get().Import(absolutePath);
+        auto res = ImportManager::Get().Import(path);
         if (res)
         {
             std::lock_guard lock(cacheMutex);
