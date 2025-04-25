@@ -19,6 +19,7 @@ import Engine.Assert;
 import Engine.ShaderParser;
 import fmt;
 import Engine.Application;
+import Engine.Filesystem;
 
 bool ResourceManager::IsSourceFile(const std::filesystem::path& path)
 {
@@ -28,11 +29,8 @@ bool ResourceManager::IsSourceFile(const std::filesystem::path& path)
 std::shared_ptr<Resource> ResourceManager::Load(const std::filesystem::path& path)
 {
     auto fs = Application::Get().GetFilesystem();
-    auto file = fs->OpenFile(path.string(), vfspp::IFile::FileMode::Read);
-    std::string absolutePath;
-    Assert::Check(file != nullptr, "file != nullptr", "Invalid file: " + path.string());
-    absolutePath = file->GetFileInfo().AbsolutePath();
-    file->Close();
+    std::string absolutePath = Filesystem::AbsolutePath(path.string());
+
     {
         std::lock_guard lock(cacheMutex);
         // Existing resource loading logic
@@ -63,7 +61,9 @@ bool ResourceManager::IsResourceLoaded(const std::filesystem::path &path) {
 
 void ResourceManager::SaveToFile(const std::filesystem::path& path, nlohmann::json& json)
 {
-    std::ofstream outFile(path);
+    auto absPath = Filesystem::AbsolutePath(path.string());
+
+    std::ofstream outFile(absPath);
     outFile << json;
     outFile.close();
 }
@@ -71,7 +71,9 @@ void ResourceManager::SaveToFile(const std::filesystem::path& path, nlohmann::js
 void ResourceManager::SaveImportSettings(const std::filesystem::path& sourcePath,
     const std::shared_ptr<ImportSettings>& importSettings)
 {
-    std::ofstream outFile(sourcePath.string() += ".meta");
+    auto absPath = Filesystem::AbsolutePath(sourcePath.string());
+
+    std::ofstream outFile(absPath += ".meta");
     nlohmann::json j;
     importSettings->Serialize(j);
     outFile << j;
@@ -92,6 +94,8 @@ std::vector<std::shared_ptr<Resource>> ResourceManager::GetAllResources()
 
 bool ResourceManager::loadGeometryFromObj(const std::filesystem::path &path, std::vector<MeshVertex> &vertexData) {
 
+    auto absPath = Filesystem::AbsolutePath(path.string());
+
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -100,7 +104,7 @@ bool ResourceManager::loadGeometryFromObj(const std::filesystem::path &path, std
     std::string err;
 
     // Call the core loading procedure of TinyOBJLoader
-    bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.string().c_str());
+    bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, absPath.c_str());
 
     // Check errors
     if (!warn.empty()) {

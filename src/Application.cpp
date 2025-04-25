@@ -11,6 +11,8 @@ import Engine.Physics.Jolt;
 import Engine.Assert;
 import "GLFW/glfw3.h";
 import "cstdarg";
+import Engine.Filesystem;
+
 
 #ifdef __EMSCRIPTEN__
 #  include <emscripten.h>
@@ -117,19 +119,11 @@ Application::Application()
 	auto rootFS = std::make_unique<vfspp::NativeFileSystem>(std::filesystem::current_path().string());
 	rootFS->Initialize();
 
-	vfspp::VirtualFileSystemPtr vfs(new vfspp::VirtualFileSystem());
-	applicationFileSystem = vfs;
 
-	AddFileSystem("/app", std::filesystem::current_path().string());
-	AddFileSystem("/engine", ENGINE_RESOURCE_DIR);
+	Filesystem::AddFileSystemDirectory("/app", std::filesystem::current_path().string());
+	Filesystem::AddFileSystemDirectory("/engine", ENGINE_RESOURCE_DIR);
 }
 
-void Application::AddFileSystem(const std::string &alias, const std::string &root) {
-	auto fs = std::make_unique<vfspp::NativeFileSystem>(root);
-	fs->Initialize();
-
-	applicationFileSystem->AddFileSystem(alias, std::move(fs));
-}
 
 Application::~Application()
 {

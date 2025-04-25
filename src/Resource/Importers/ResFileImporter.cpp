@@ -8,6 +8,7 @@ module Engine.Resource.Importer.ResFileImporter;
 import std;
 import Engine.Resource;
 import Engine.Application;
+import Engine.Filesystem;
 
 std::string ResFileImporter::GetResourceType() const {
     return "Resource";
@@ -20,11 +21,10 @@ std::unordered_set<std::string> ResFileImporter::GetSupportedExtensions() const 
 std::shared_ptr<Resource> ResFileImporter::Import(const std::filesystem::path &sourcePath,
     const ImportSettings &settings) {
 
-    auto file = Application::Get().GetFilesystem()->OpenFile(vfspp::FileInfo(sourcePath.string()), vfspp::IFile::FileMode::Read);
-    file->Close();
+    auto filePath = Filesystem::AbsolutePath(sourcePath.string());
 
     nlohmann::json j;
-    std::ifstream inFile(file->GetFileInfo().AbsolutePath());
+    std::ifstream inFile(filePath);
     inFile >> j;
     inFile.close();
 
@@ -38,7 +38,7 @@ std::shared_ptr<Resource> ResFileImporter::Import(const std::filesystem::path &s
     resource.reset(r);
     resource->Deserialize(j);
 
-    resource->sourcePath = sourcePath.string();
+    resource->sourcePath = Filesystem::VirtualPath(sourcePath.string());
     resource->bIsInline = false;
 
     return resource;

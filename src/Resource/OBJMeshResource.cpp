@@ -21,7 +21,7 @@ void OBJMeshResource::Deserialize(nlohmann::json& archive)
 void OBJMeshResource::LoadData()
 {
     MeshResource::LoadData();
-    LoadOBJFromPath(GetAbsoluteSourcePath());
+    LoadOBJFromPath(sourcePath);
     loaded = true;
 }
 

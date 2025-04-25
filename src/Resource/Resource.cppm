@@ -50,7 +50,6 @@ public:
     bool IsInline() const { return bIsInline; }
     const std::string& GetSourcePath() { return sourcePath; }
     const std::shared_ptr<ImportSettings>& GetImportSettings() { return importSettings; };
-    std::string GetAbsoluteSourcePath() { return sourceInfo->AbsolutePath(); };
 
 protected:
 
@@ -60,7 +59,6 @@ protected:
     std::shared_ptr<ImportSettings> importSettings;
 
     std::string sourcePath;
-    std::optional<vfspp::FileInfo> sourceInfo;
 private:
     static inline std::shared_ptr<TextureResource> DefaultResourceThumbnail = nullptr;
 

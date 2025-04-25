@@ -7,6 +7,7 @@ import Engine.Resource;
 import Engine.Resource.Importer;
 import Engine.Resource.Importer.ImportSettings;
 import Engine.Application;
+import Engine.Filesystem;
 
 void ImportManager::RegisterImporter(std::unique_ptr<ResourceImporter> importer)
 {
@@ -66,11 +67,9 @@ std::shared_ptr<Resource> ImportManager::ImportSourceFile(const std::filesystem:
     if (!res) return nullptr;
     if (settings) res->importSettings = settings;
 
-    auto file = Application::Get().GetFilesystem()->OpenFile(vfspp::FileInfo(path.string()), vfspp::IFile::FileMode::Read);
-    res->sourceInfo = file->GetFileInfo();
-    file->Close();
+    auto virtualPath = Filesystem::VirtualPath(path.string());
 
-    res->sourcePath = path.string();
+    res->sourcePath = virtualPath;
     res->bIsInline = false;
     res->name = path.stem().string();
     return res;

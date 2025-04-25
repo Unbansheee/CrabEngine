@@ -7,6 +7,7 @@ import Engine.Resource.ResourceManager;
 import Engine.Resource.ImageTexture;
 import Engine.Node;
 import Engine.SceneSerializer;
+import Engine.Filesystem;
 
 wgpu::raii::TextureView SceneResource::GetThumbnail() {
     if (!SceneResourceThumbnail) {
@@ -23,7 +24,7 @@ std::unique_ptr<Node> SceneResource::Instantiate() {
 void SceneResource::LoadData() {
     SceneSerializer s;
     BaseNode = Node::NewNode("SceneRoot");
-    s.DeserializeScene(BaseNode.get(), sourceInfo->AbsolutePath());
+    s.DeserializeScene(BaseNode.get(), Filesystem::AbsolutePath(sourcePath));
 
     Resource::LoadData();
 }
