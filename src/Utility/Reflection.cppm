@@ -75,12 +75,19 @@ public:
                 target->*member_ptr = std::get<ObjectRef<Object>>(value).Cast<T>();
             }
             else if constexpr (IsSharedPtrToResource<T>) {
-                auto base_ptr = std::get<std::shared_ptr<Resource>>(value);
-                auto derived_ptr = std::dynamic_pointer_cast<typename T::element_type>(base_ptr);
-                if (!derived_ptr) {
-                    throw std::runtime_error("Type mismatch when assigning resource.");
-                }
-                target->*member_ptr = derived_ptr;
+
+                    auto base_ptr = std::get<std::shared_ptr<Resource>>(value);
+                    if (base_ptr == nullptr) {
+                        target->*member_ptr = nullptr;
+                    }
+                    else
+                    {
+                        auto derived_ptr = std::dynamic_pointer_cast<typename T::element_type>(base_ptr);
+                        if (!derived_ptr) {
+                            throw std::runtime_error("Type mismatch when assigning resource.");
+                        }
+                        target->*member_ptr = derived_ptr;
+                    }
             }
             else {
                 target->*member_ptr = std::get<T>(value);

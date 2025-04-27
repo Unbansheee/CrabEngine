@@ -4,7 +4,7 @@ export module Engine.Resource.ImportManager;
 import Engine.Resource.Importer;
 import std;
 
-export class ImportSettings;
+export class ResourceMetadata;
 
 export class ImportManager {
 public:
@@ -23,7 +23,7 @@ private:
     std::unordered_map<std::string, ResourceImporter*> extensionToImporter;
 
     ResourceImporter* GetImporterForExtension(std::filesystem::path extension) const;
-    std::shared_ptr<ImportSettings> LoadOrCreateImportSettings(std::filesystem::path::iterator::reference path, ResourceImporter* importer);
+    std::shared_ptr<ResourceMetadata> LoadOrCreateImportSettings(std::filesystem::path::iterator::reference path, ResourceImporter* importer);
 
     std::shared_ptr<Resource> ImportSourceFile(const std::filesystem::path& path);
 

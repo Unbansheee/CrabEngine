@@ -20,6 +20,6 @@ public:
     virtual std::string GetResourceType() const = 0;
     virtual std::unordered_set<std::string> GetSupportedExtensions() const = 0;
     virtual std::shared_ptr<Resource> Import(const std::filesystem::path& sourcePath, 
-                               const ImportSettings& settings) = 0;
-    virtual std::shared_ptr<ImportSettings> CreateDefaultSettings() const = 0;
+                               const ResourceMetadata& settings) = 0;
+    virtual std::shared_ptr<ResourceMetadata> CreateDefaultSettings() const = 0;
 };

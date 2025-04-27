@@ -17,8 +17,12 @@ public:
     static std::vector<std::pair<std::string, std::string>>& GetRegisteredDirectories();
 
     static void AddFileSystemDirectory(const std::string& alias, const std::string& root);
+    static void AddMemoryDirectory(const std::string& alias);
+
 
     static bool IsVirtualPath(const std::string& path);
+
+    static vfspp::IFileSystem::TFileList GetAllFiles();
 
     static std::string VirtualPath(const std::string& absolutePath);
     static std::string AbsolutePath(const std::string& relativePath);

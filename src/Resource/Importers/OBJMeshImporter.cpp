@@ -13,14 +13,14 @@ std::unordered_set<std::string> OBJMeshImporter::GetSupportedExtensions() const
 }
 
 std::shared_ptr<Resource> OBJMeshImporter::Import(const std::filesystem::path& sourcePath,
-    const ImportSettings& settings)
+    const ResourceMetadata& settings)
 {
     const auto& texSettings = static_cast<const OBJImportSettings&>(settings);
     auto tex = std::make_shared<OBJMeshResource>();
     return tex;
 }
 
-std::shared_ptr<ImportSettings> OBJMeshImporter::CreateDefaultSettings() const
+std::shared_ptr<ResourceMetadata> OBJMeshImporter::CreateDefaultSettings() const
 {
     return std::make_shared<OBJImportSettings>();
 }

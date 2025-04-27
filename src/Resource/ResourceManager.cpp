@@ -34,9 +34,9 @@ std::shared_ptr<Resource> ResourceManager::Load(const std::filesystem::path& pat
     {
         std::lock_guard lock(cacheMutex);
         // Existing resource loading logic
-        auto it = resourceCache.find(absolutePath);
-        if (it != resourceCache.end()) {
-            return it->second;
+        auto it = cache.FetchResourceByPath(path.string());
+        if (it) {
+            return it;
         }
     }
 
@@ -45,18 +45,31 @@ std::shared_ptr<Resource> ResourceManager::Load(const std::filesystem::path& pat
         if (res)
         {
             std::lock_guard lock(cacheMutex);
-            resourceCache[absolutePath] = res;
+            cache.AddResource(res);
         }
         return res;
     }
 
-    Assert::Verify(false, "Resource Error", "Failed to load resource at: " + path.string());
+    //Assert::Verify(false, "Resource Error", "Failed to load resource at: " + path.string());
+    return nullptr;
+}
+
+std::shared_ptr<Resource> ResourceManager::FindByID(const UID &id) {
+    auto fs = Application::Get().GetFilesystem();
+    {
+        std::lock_guard lock(cacheMutex);
+        auto it = cache.FetchResourceByID(id);
+        if (it) {
+            return it;
+        }
+    }
+
     return nullptr;
 }
 
 bool ResourceManager::IsResourceLoaded(const std::filesystem::path &path) {
     std::lock_guard lock(cacheMutex);
-    return resourceCache.contains(path.string());
+    return cache.FetchResourceByPath(path.string()) != nullptr;
 }
 
 void ResourceManager::SaveToFile(const std::filesystem::path& path, nlohmann::json& json)
@@ -64,32 +77,25 @@ void ResourceManager::SaveToFile(const std::filesystem::path& path, nlohmann::js
     auto absPath = Filesystem::AbsolutePath(path.string());
 
     std::ofstream outFile(absPath);
-    outFile << json;
+    outFile << std::setw(4) << json << std::endl;
     outFile.close();
 }
 
 void ResourceManager::SaveImportSettings(const std::filesystem::path& sourcePath,
-    const std::shared_ptr<ImportSettings>& importSettings)
+    const std::shared_ptr<ResourceMetadata>& importSettings)
 {
     auto absPath = Filesystem::AbsolutePath(sourcePath.string());
 
     std::ofstream outFile(absPath += ".meta");
     nlohmann::json j;
     importSettings->Serialize(j);
-    outFile << j;
+    outFile << std::setw(4) << j << std::endl;
     outFile.close();
 }
 
 std::vector<std::shared_ptr<Resource>> ResourceManager::GetAllResources()
 {
-    std::vector<std::shared_ptr<Resource>> r;
-    r.reserve(resourceCache.size());
-    
-    for (auto kv :resourceCache)
-    {
-        r.push_back(kv.second);
-    }
-    return r;
+    return cache.GetAllResources();
 }
 
 bool ResourceManager::loadGeometryFromObj(const std::filesystem::path &path, std::vector<MeshVertex> &vertexData) {

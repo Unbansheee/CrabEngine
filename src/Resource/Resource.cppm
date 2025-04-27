@@ -49,14 +49,14 @@ public:
     bool IsSourceImported() const { return !bIsInline; }
     bool IsInline() const { return bIsInline; }
     const std::string& GetSourcePath() { return sourcePath; }
-    const std::shared_ptr<ImportSettings>& GetImportSettings() { return importSettings; };
+    const std::shared_ptr<ResourceMetadata>& GetImportSettings() { return importSettings; };
 
 protected:
 
     std::string name;
     bool bIsInline = true;
     std::atomic<bool> loaded{false};
-    std::shared_ptr<ImportSettings> importSettings;
+    std::shared_ptr<ResourceMetadata> importSettings;
 
     std::string sourcePath;
 private:

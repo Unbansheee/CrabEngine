@@ -24,6 +24,14 @@ void Filesystem::AddFileSystemDirectory(const std::string &alias, const std::str
     GetRegisteredDirectories().push_back({alias, root});
 }
 
+void Filesystem::AddMemoryDirectory(const std::string &alias) {
+    auto fs = std::make_unique<vfspp::MemoryFileSystem>();
+    fs->Initialize();
+
+    GetFilesystem()->AddFileSystem(alias, std::move(fs));
+    //GetRegisteredDirectories().push_back({alias, ""});
+}
+
 bool Filesystem::IsVirtualPath(const std::string &path) {
     for (auto& [alias, dir] : GetRegisteredDirectories()) {
         if (vfspp::StringUtils::StartsWith(path, alias)) {
@@ -31,6 +39,17 @@ bool Filesystem::IsVirtualPath(const std::string &path) {
         }
     }
     return false;
+}
+
+vfspp::IFileSystem::TFileList Filesystem::GetAllFiles() {
+    vfspp::IFileSystem::TFileList files;
+    for (auto& [alias, dir] : GetRegisteredDirectories()) {
+        for (auto& fs : GetFilesystem()->GetFilesystems(alias)) {
+            files.insert(fs->FileList().begin(), fs->FileList().end());
+        }
+    }
+
+    return files;
 }
 
 std::string Filesystem::VirtualPath(const std::string &absolutePath) {

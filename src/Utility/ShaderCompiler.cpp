@@ -49,15 +49,15 @@ constexpr UniformMetadata::BufferField::FieldType MapScalarTypeToBufferReflectio
     }
 }
 
-ShaderCompiler::ShaderCompiler(const std::string &shader_name, SlangTargetCompileFlag target) {
+ShaderCompiler::ShaderCompiler(const std::string &shader_name, bool bForceRecompile, SlangTargetCompileFlag target) {
     static Slang::ComPtr<IGlobalSession> globalSession;
     if (!globalSession) {
         SlangGlobalSessionDesc desc = {};
         createGlobalSession(&desc, globalSession.writeRef());
     }
 
-    if (shaderCache.contains(shader_name)) {
-        CompiledShader = shaderCache.at(shader_name);
+    if (!bForceRecompile && GetShaderCache().contains(shader_name)) {
+        CompiledShader = GetShaderCache().at(shader_name);
         return;
     }
 
@@ -156,7 +156,7 @@ ShaderCompiler::ShaderCompiler(const std::string &shader_name, SlangTargetCompil
 
     CompiledShader.compiledLayout = ComposeBindingData(composedProgram);
 
-    shaderCache.insert({shader_name, CompiledShader});
+    GetShaderCache().insert({shader_name, CompiledShader});
 
     for (auto dir: dirs) {
         delete[] dir;

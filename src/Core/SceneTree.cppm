@@ -3,7 +3,7 @@
 #pragma once
 
 export module Engine.SceneTree;
-import uid;
+import Engine.UID;
 import physics_world;
 import <memory>;
 import <unordered_map>;

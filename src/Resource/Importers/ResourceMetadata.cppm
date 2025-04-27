@@ -10,9 +10,12 @@ export module Engine.Resource.Importer.ImportSettings;
 import Engine.Object;
 import Engine.Reflection.Class;
 
-export class ImportSettings : public Object
+export class ResourceMetadata : public Object
 {
-    CRAB_CLASS(ImportSettings, Object)
+    CRAB_CLASS(ResourceMetadata, Object)
     BEGIN_PROPERTIES
+        ADD_PROPERTY("ResourceID", ResourceID)
     END_PROPERTIES
+
+    UID ResourceID = UID::empty();
 };

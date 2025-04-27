@@ -1,7 +1,7 @@
 ﻿module Engine.Object;
 import Engine.Reflection;
 import Engine.Reflection.Serialization;
-import uid;
+import Engine.UID;
 import Engine.Reflection.ClassDB;
 import Engine.Reflection.Class;
 import Engine.StringID;

@@ -19,7 +19,7 @@ std::unordered_set<std::string> ResFileImporter::GetSupportedExtensions() const 
 }
 
 std::shared_ptr<Resource> ResFileImporter::Import(const std::filesystem::path &sourcePath,
-    const ImportSettings &settings) {
+    const ResourceMetadata &settings) {
 
     auto filePath = Filesystem::AbsolutePath(sourcePath.string());
 
@@ -44,7 +44,7 @@ std::shared_ptr<Resource> ResFileImporter::Import(const std::filesystem::path &s
     return resource;
 }
 
-std::shared_ptr<ImportSettings> ResFileImporter::CreateDefaultSettings() const {
-    static std::shared_ptr<ImportSettings> s = std::make_shared<ImportSettings>();
+std::shared_ptr<ResourceMetadata> ResFileImporter::CreateDefaultSettings() const {
+    static std::shared_ptr<ResourceMetadata> s = std::make_shared<ResourceMetadata>();
     return s;
 }

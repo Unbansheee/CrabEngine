@@ -21,13 +21,13 @@ public:
     std::unordered_set<std::string> GetSupportedExtensions() const override { return {".scene"}; };
 
     std::shared_ptr<Resource>
-    Import(const std::filesystem::path &sourcePath, const ::ImportSettings &settings) override {
+    Import(const std::filesystem::path &sourcePath, const ::ResourceMetadata &settings) override {
         auto scn = std::make_shared<SceneResource>();
         return scn;
     };
 
-    std::shared_ptr<::ImportSettings> CreateDefaultSettings() const override {
-        static std::shared_ptr<ImportSettings> s = std::make_shared<ImportSettings>();
+    std::shared_ptr<::ResourceMetadata> CreateDefaultSettings() const override {
+        static std::shared_ptr<ResourceMetadata> s = std::make_shared<ResourceMetadata>();
         return s;
     };
 };

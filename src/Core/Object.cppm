@@ -6,7 +6,7 @@
 
 export module Engine.Object;
 export import Engine.Reflection;
-export import uid;
+export import Engine.UID;
 export import json;
 export import std;
 import Engine.Object.ObservableDtor;

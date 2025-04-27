@@ -3,7 +3,7 @@
 #include <cassert>
 #include <cstdint>
 
-export module uid;
+export module Engine.UID;
 export import <vendor/uuid.h>;
 export struct UID
 {

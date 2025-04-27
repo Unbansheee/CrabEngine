@@ -14,7 +14,6 @@ import Engine.Application;
 import Engine.Assert;
 import Engine.MaterialProperties;
 import Engine.ShaderCompiler.Types;
-import Engine.Resource.ShaderFile;
 import std;
 
 // Storage for resources
@@ -42,8 +41,9 @@ struct SamplerBinding {
 export class MaterialResource : public Resource
 {
     CRAB_CLASS(MaterialResource, Resource)
+    CLASS_FLAG(EditorVisible);
     BEGIN_PROPERTIES
-        custom.emplace_back( Property{"shader_file", "ShaderFile", std::string(ClassName), &ThisClass::shader_file, PropertyFlags::None, &ThisClass::StaticOnPropertySet} );
+        ADD_PROPERTY("ShaderModuleName", ShaderModuleName);
     END_PROPERTIES
 
     ~MaterialResource() override = default;
@@ -56,7 +56,9 @@ export class MaterialResource : public Resource
         MATERIAL = 3,
         Count
     };
-    
+
+    std::string ShaderModuleName = "standard_shader";
+
 protected:
     struct MaterialBindGroup
     {
@@ -89,7 +91,6 @@ public:
     wgpu::TextureFormat DepthTextureFormat = wgpu::TextureFormat::Depth24Plus;
 
     MaterialSettings m_settings;
-    std::shared_ptr<ShaderFileResource> shader_file;
 
     std::unordered_map<std::string, CPUBuffer> m_cpuBuffers; // Mirrors m_buffers
     std::unordered_map<std::string, BufferBinding> m_buffers;
@@ -138,12 +139,12 @@ public:
     void LoadData() override;
     MaterialResource() : Resource() {};
     
-    MaterialResource(wgpu::Device device, const std::filesystem::path& shaderPath, MaterialSettings settings = MaterialSettings()) : m_device(device), m_settings(settings)
+    MaterialResource(wgpu::Device device, const std::string& moduleName, MaterialSettings settings = MaterialSettings()) : m_device(device), m_settings(settings)
     {
-        LoadFromShaderPath(device, shaderPath, settings);
+        LoadFromShaderPath(device, moduleName, settings);
     }
 
-    void LoadFromShaderPath(wgpu::Device device, const std::filesystem::path& shaderPath, MaterialSettings settings = MaterialSettings());
+    void LoadFromShaderPath(wgpu::Device device, const std::string& moduleName, MaterialSettings settings = MaterialSettings());
 
     virtual void Initialize()
     {

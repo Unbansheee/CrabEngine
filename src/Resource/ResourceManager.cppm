@@ -26,6 +26,43 @@ import Engine.MaterialProperties;
 export struct MeshVertex;
 export class ImportManager;
 
+struct ResourceCache {
+    std::unordered_map<std::string, std::shared_ptr<Resource>> pathCache;
+    std::unordered_map<UID, std::shared_ptr<Resource>> idCache;
+
+    void AddResource(std::shared_ptr<Resource> res) {
+        pathCache.insert({res->GetSourcePath(), res});
+        idCache.insert({res->GetID(), res});
+    }
+
+    std::shared_ptr<Resource> FetchResourceByPath(const std::string& path) {
+        if (pathCache.contains(path)) {
+            return pathCache.at(path);
+        }
+        return nullptr;
+    }
+
+    std::shared_ptr<Resource> FetchResourceByID(const UID& id) {
+        if (idCache.contains(id)) {
+            return idCache.at(id);
+        }
+        return nullptr;
+    }
+
+    std::vector<std::shared_ptr<Resource>> GetAllResources()
+    {
+        std::vector<std::shared_ptr<Resource>> r;
+        r.reserve(idCache.size());
+
+        for (auto kv : idCache)
+        {
+            r.push_back(kv.second);
+        }
+        return r;
+    }
+
+};
+
 
 export struct ShaderModule {
     wgpu::ShaderModule Module = nullptr;
@@ -41,12 +78,19 @@ public:
             return std::static_pointer_cast<T>(Load(path));
         }
 
+    template<typename T>
+    static std::shared_ptr<T> FindByID(const UID& id) {
+            return std::static_pointer_cast<T>(FindByID(id));
+        }
+
     static std::shared_ptr<Resource> Load(const std::filesystem::path& path);
+    static std::shared_ptr<Resource> FindByID(const UID& id);
+
 
     static bool IsResourceLoaded(const std::filesystem::path& path);
 
     static void SaveToFile(const std::filesystem::path& path, nlohmann::json& json);
-    static void SaveImportSettings(const std::filesystem::path& sourcePath, const std::shared_ptr<ImportSettings>& importSettings);
+    static void SaveImportSettings(const std::filesystem::path& sourcePath, const std::shared_ptr<ResourceMetadata>& importSettings);
     static void SaveResource(const std::shared_ptr<Resource>& resource, 
                       const std::filesystem::path& path = {}) {
         auto savePath = path.empty() ? resource->GetSourcePath() : path;
@@ -57,28 +101,17 @@ public:
             SaveToFile(savePath, j);
         }
         if (auto importSettings = resource->GetImportSettings()) {
-            SaveImportSettings(savePath,
-                 resource->GetImportSettings());
+            importSettings->ResourceID = resource->GetID();
+            SaveImportSettings(savePath, importSettings);
         }
     }
-
-    template<typename T>
-    void UnloadUnused() {
-            std::lock_guard lock(cacheMutex);
-            for(auto it = resourceCache.begin(); it != resourceCache.end(); ) {
-                if(it->second.use_count() == 1) { // Only owned by cache
-                    it = resourceCache.erase(it);
-                } else {
-                    ++it;
-                }
-            }
-        }
 
     static std::vector<std::shared_ptr<Resource>> GetAllResources();
     
 private:
     inline static std::mutex cacheMutex;
-    inline static std::unordered_map<std::string, std::shared_ptr<Resource>> resourceCache;
+    inline static ResourceCache cache;
+
     //TODO: Remove
 public:
     static bool loadGeometryFromObj(const std::filesystem::path& path,

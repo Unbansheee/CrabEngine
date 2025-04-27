@@ -9,6 +9,7 @@ import Engine.Reflection;
 import Engine.Transform;
 import Engine.Types;
 import Engine.Object.Ref;
+import Engine.UID;
 import std;
 
 
@@ -23,6 +24,7 @@ export struct PropertySerializer
     void operator()(PropertyView& prop, nlohmann::json* archive, Vector3& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, Vector4& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, Quat& val);
+    void operator()(PropertyView& prop, nlohmann::json* archive, UID& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, Transform& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, std::shared_ptr<Resource>& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, ObjectRef<Object>& val);
@@ -47,6 +49,7 @@ export struct PropertyDeserializer
     void operator()(PropertyView& prop, nlohmann::json* archive, Vector3& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, Vector4& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, Quat& val);
+    void operator()(PropertyView& prop, nlohmann::json* archive, UID& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, Transform& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, std::shared_ptr<Resource>& val);
     void operator()(PropertyView& prop, nlohmann::json* archive, ObjectRef<Object>& val);

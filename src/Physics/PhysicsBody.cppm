@@ -5,7 +5,7 @@
 export module Engine.Physics.Body;
 import Engine.Physics.Jolt;
 import Engine.Types;
-import uid;
+import Engine.UID;
 import rocket;
 import std;
 import Engine.Physics.JoltConversions;

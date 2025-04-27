@@ -16,7 +16,6 @@ import Engine.Node.MeshInstance3D;
 import Engine.Resource.ArrayMesh;
 import Engine.GFX.MeshVertex;
 import Engine.GFX.UniformDefinitions;
-import Engine.Resource.ShaderFile;
 
 
 /*
@@ -348,8 +347,8 @@ std::shared_ptr<MeshResource> GLTFSceneParser::ParseMesh(WGPUDevice device, tiny
 std::shared_ptr<MaterialResource> GLTFSceneParser::ParseMaterial(WGPUDevice& context, tinygltf::Model& model, const std::vector<std::shared_ptr<TextureResource>>& textures, tinygltf::Material& material)
 {
 	std::shared_ptr<MaterialResource> mat = std::make_shared<MaterialResource>();
-	mat->shader_file = ResourceManager::Load<ShaderFileResource>(ENGINE_RESOURCE_DIR"/standard_material.wgsl");
-	
+	mat->LoadData();
+
 	auto& bcf = material.pbrMetallicRoughness.baseColorFactor;
 	//mat->params.ColourFactor = Vector4( bcf.at(0), bcf.at(1), bcf.at(2), bcf.at(3) );
 	//mat->params.MetallicFactor = material.pbrMetallicRoughness.metallicFactor;

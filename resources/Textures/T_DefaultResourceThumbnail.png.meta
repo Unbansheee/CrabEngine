@@ -1,1 +1,9 @@
-{"class":"TextureImportSettings","properties":{"generateMipmaps":true,"sRGB":true},"uid":"aa2f6f18-45e4-4069-96e7-7ecfb43b909e"}
+{
+    "class": "TextureImportSettings",
+    "properties": {
+        "ResourceID": "cc7fd7a9-714d-4ba1-bcfe-946b92ddb0f4",
+        "generateMipmaps": true,
+        "sRGB": true
+    },
+    "uid": "d6cecac3-a3ba-4267-a4d6-12ac5657598c"
+}

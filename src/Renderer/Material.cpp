@@ -1,8 +1,6 @@
 ﻿module Engine.Resource.Material;
 import Engine.GFX.MeshVertex;
-import Engine.Resource.ShaderFile;
 import Engine.Application;
-import Engine.Resource.ShaderFile;
 import Engine.ShaderCompiler;
 import Engine.Resource.Texture;
 import Engine.Resource.RuntimeTexture;
@@ -94,7 +92,7 @@ void MaterialResource::Serialize(nlohmann::json &archive) {
 void MaterialResource::Deserialize(nlohmann::json &archive) {
     Resource::Deserialize(archive);
 
-    LoadFromShaderPath(Application::Get().GetDevice(), "ghghg");
+    LoadFromShaderPath(Application::Get().GetDevice(), ShaderModuleName);
 
     if (archive.contains("uniforms")) {
         nlohmann::json& uniformJson = archive.at("uniforms");
@@ -322,13 +320,19 @@ void MaterialResource::LoadData()
     Resource::LoadData();
 }
 
-void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::filesystem::path& shaderPath,
+void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::string& moduleName,
                                           MaterialSettings settings)
 {
+    ShaderModuleName = moduleName;
+
     m_device = device;
     m_settings = settings;
 
-    ShaderCompiler c("dumbTestShader");
+    m_uniformMetadata.clear();
+    m_pipelineLayout = {};
+    m_pipeline = {};
+
+    ShaderCompiler c(ShaderModuleName, true);
 
     m_shaderModule = c.GetCompiledShaderModule();
     auto l = c.GetPipelineLayout();
@@ -344,8 +348,8 @@ void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::filesy
     }
 
     InitializeProperties();
-
     Initialize();
+    UpdateBindGroups();
     loaded = true;
 
 }

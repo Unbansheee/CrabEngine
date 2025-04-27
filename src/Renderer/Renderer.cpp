@@ -10,7 +10,6 @@ import Engine.Node;
 import Engine.Resource.Material;
 import Engine.GFX.DrawCommand;
 import Engine.Resource.Mesh;
-import Engine.Resource.ShaderFile;
 import Engine.Resource.ResourceManager;
 
 
@@ -24,7 +23,6 @@ void Renderer::Initialize(wgpu::Device device)
     m_objectUniformBuffer.Initialize(device);
 
     m_fallbackMaterial = MakeShared<MaterialResource>();
-    m_fallbackMaterial->shader_file = ResourceManager::Load<ShaderFileResource>("/engine/default_standard_material.wgsl");
     m_fallbackMaterial->LoadData();
 }
 
@@ -229,8 +227,6 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
         
     // 2. Track current state
     MaterialResource* currentMaterial = nullptr;
-    auto cobblestone = ResourceManager::Load<TextureResource>("/engine/Textures/cobblestone_floor_08_diff_2k.jpg");
-    auto cobblestone_N = ResourceManager::Load<TextureResource>("/engine/Textures/cobblestone_floor_08_nor_gl_2k.png");
 
     for (const auto& batch : batches) {
         // Pipeline state change

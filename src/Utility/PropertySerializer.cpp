@@ -61,6 +61,10 @@ void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive,
     auto& a = *archive; a[prop.name()] = { val.w, val.x, val.y, val.z};
 }
 
+void PropertySerializer::operator()(PropertyView &prop, nlohmann::json *archive, UID &val) {
+    auto& a = *archive; a[prop.name()] = val.to_string();
+}
+
 void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive, Transform& val)
 {
     auto& a = *archive;
@@ -85,6 +89,7 @@ void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive,
         else {
             properties["import_type"] = "file";
             properties["source_file_path"] = val->GetSourcePath();
+            properties["uid"] = val->GetID().to_string();
             ResourceManager::SaveResource(val);
         }
     }
@@ -177,6 +182,17 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
     prop.set<Quat>(val);
 }
 
+void PropertyDeserializer::operator()(PropertyView &prop, nlohmann::json *archive, UID &val) {
+    auto& a = *archive;
+    if (!a.contains(prop.name())) return;
+
+    auto v = a.at(prop.name());
+    auto idstring = v.get<std::string>();
+    val = UID(idstring);
+
+    prop.set<UID>(val);
+}
+
 void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archive, Transform& val)
 {
     auto& a = *archive;
@@ -219,7 +235,13 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
 
     // load from file
     std::string source_path = properties.at("source_file_path").get<std::string>();
-    val = ResourceManager::Load(source_path);
+    std::string uidString = properties.at("uid").get<std::string>();
+    UID id = uidString;
+    auto r = ResourceManager::FindByID(id);
+    if (!r) {
+        r = ResourceManager::Load(source_path);
+    }
+    val = r;
     prop.set(val);
 }
 

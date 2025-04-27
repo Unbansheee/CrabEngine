@@ -22,7 +22,7 @@ public:
           SPIRV
      };
 
-     ShaderCompiler(const std::string& shader_name, SlangTargetCompileFlag target = SPIRV);
+     ShaderCompiler(const std::string& shader_name, bool bForceRecompile = false, SlangTargetCompileFlag target = SPIRV);
      wgpu::raii::ShaderModule GetCompiledShaderModule();
      BindingLayouts GetPipelineLayout();
      std::vector<UniformMetadata> GetUniformMetadata();
@@ -56,7 +56,10 @@ private:
      std::string wgsl;
 
 
-     static inline std::unordered_map<std::string, CompiledShaderModule> shaderCache;
+     static std::unordered_map<std::string, CompiledShaderModule>& GetShaderCache() {
+          static std::unordered_map<std::string, CompiledShaderModule> s_cache;
+          return s_cache;
+     };
 };
 
 

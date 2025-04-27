@@ -12,7 +12,7 @@ import Engine.Assert;
 import "GLFW/glfw3.h";
 import "cstdarg";
 import Engine.Filesystem;
-
+import Engine.Resource.ResourceManager;
 
 #ifdef __EMSCRIPTEN__
 #  include <emscripten.h>
@@ -139,6 +139,11 @@ Application::~Application()
 
 void Application::Begin()
 {
+	auto files = Filesystem::GetAllFiles();
+	for (auto& [dir, file] : files) {
+		ResourceManager::Load(dir);
+	}
+
 	sceneTree.Begin();
 }
 

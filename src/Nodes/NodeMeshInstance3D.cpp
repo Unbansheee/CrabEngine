@@ -8,7 +8,6 @@ import Engine.WGPU;
 import Engine.Types;
 import Engine.Resource.Material;
 import Engine.Resource.ResourceManager;
-import Engine.Resource.ShaderFile;
 import Engine.GFX.Renderer;
 
 NodeMeshInstance3D::NodeMeshInstance3D()

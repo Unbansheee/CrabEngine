@@ -37,9 +37,9 @@ ResourceImporter* ImportManager::GetImporterForExtension(std::filesystem::path e
     return nullptr;
 }
 
-std::shared_ptr<ImportSettings> ImportManager::LoadOrCreateImportSettings(const std::filesystem::path& path, ResourceImporter* importer)
+std::shared_ptr<ResourceMetadata> ImportManager::LoadOrCreateImportSettings(const std::filesystem::path& path, ResourceImporter* importer)
 {
-    auto importsettingPath = (path.string() + ".meta");
+    auto importsettingPath = (Filesystem::AbsolutePath(path.string()) + ".meta");
     auto setting = importer->CreateDefaultSettings();
     if (std::filesystem::exists(importsettingPath))
     {
@@ -63,14 +63,18 @@ std::shared_ptr<Resource> ImportManager::ImportSourceFile(const std::filesystem:
 {
     auto importer = GetImporterForExtension(path.extension());
     auto settings = LoadOrCreateImportSettings(path, importer);
-    auto res = importer->Import(path, *settings);
+    std::shared_ptr<Resource> res = importer->Import(path, *settings);
     if (!res) return nullptr;
     if (settings) res->importSettings = settings;
 
     auto virtualPath = Filesystem::VirtualPath(path.string());
 
+    if (settings->ResourceID != UID::empty()) {
+        res->id = settings->ResourceID;
+    }
     res->sourcePath = virtualPath;
     res->bIsInline = false;
     res->name = path.stem().string();
+
     return res;
 }
