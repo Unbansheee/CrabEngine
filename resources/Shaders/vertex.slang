@@ -1,5 +1,5 @@
 ﻿
-module standard_vertex;
+module vertex;
 
 public struct StandardVertex{
     public float3 Position : POSITION;
@@ -10,12 +10,6 @@ public struct StandardVertex{
     public float3 Bitangent : BITANGENT;
 };
 
-
-public struct Model {
-    public float4x4 ModelMatrix;
-    public float4x4 LocalMatrix;
-    public uint32_t DrawID;
-};
 
 public struct StandardShaderFragmentInput {
     public float4 ProjectedPosition : SV_Position;
@@ -31,22 +25,3 @@ public struct StandardShaderFragmentInput {
     public float4 Custom_02;
 };
 
-public struct CameraData{
-    public float4x4 ViewMatrix;
-    public float4x4 ProjectionMatrix;
-    public float3 CameraPosition;
-}
-
-public struct DirectionalLight{
-    public float4 Direction;
-    public float4 Color;
-};
-
-public struct LightingData{
-    public Array<DirectionalLight, 4> DirectionalLights;
-    public int DirectionalLightCount = 0;
-}
-
-public struct GlobalData{
-    public float Time;
-}

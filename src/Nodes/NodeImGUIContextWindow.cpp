@@ -30,7 +30,7 @@ void NodeImGUIContextWindow::EnterTree()
     info.Device = app.GetDevice();
     info.RenderTargetFormat = surfaceFormat;
     info.DepthStencilFormat = wgpu::TextureFormat::Undefined;
-    info.NumFramesInFlight = 3;
+    info.NumFramesInFlight = 1;
     info.ViewportPresentMode = wgpu::PresentMode::Immediate;
     info.CreateViewportWindowFn = [](ImGuiViewport* viewport) {
         auto* window = static_cast<GLFWwindow*>(viewport->PlatformHandle);
@@ -91,6 +91,7 @@ void NodeImGUIContextWindow::Update(float dt)
         cmd_buffer_desc.label = {"ImGUI Draw Command Buffer", wgpu::STRLEN};
         wgpu::raii::CommandBuffer cmd = gui_encoder->finish(cmd_buffer_desc);
         Application::Get().GetQueue().submit(*cmd);
+
     }
 
     NodeWindow::Update(dt);

@@ -57,7 +57,7 @@ export class MaterialResource : public Resource
         Count
     };
 
-    std::string ShaderModuleName = "standard_shader";
+    std::string ShaderModuleName = "default_shader";
 
 protected:
     struct MaterialBindGroup
