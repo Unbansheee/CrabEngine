@@ -38,6 +38,16 @@ struct SamplerBinding {
     wgpu::raii::Sampler sampler;
 };
 
+export struct MaterialSettings
+{
+    wgpu::PrimitiveTopology PrimitiveTopology = wgpu::PrimitiveTopology::TriangleList;
+    wgpu::FrontFace FrontFace = wgpu::FrontFace::CW;
+    wgpu::CullMode CullMode = wgpu::CullMode::Back;
+    wgpu::CompareFunction DepthCompare = WGPUCompareFunction_Less;
+    bool bUseBlending = true;
+    bool bDepthWrite = true;
+};
+
 export class MaterialResource : public Resource
 {
     CRAB_CLASS(MaterialResource, Resource)
@@ -47,6 +57,7 @@ export class MaterialResource : public Resource
     END_PROPERTIES
 
     ~MaterialResource() override = default;
+    MaterialResource(const std::string& moduleName, const MaterialSettings& settings = MaterialSettings());
 
     enum ENamedBindGroup
     {
@@ -67,13 +78,7 @@ protected:
         wgpu::BindGroupLayout Layout;
     };
 
-    struct MaterialSettings
-    {
-        wgpu::PrimitiveTopology PrimitiveTopology = wgpu::PrimitiveTopology::TriangleList;
-        wgpu::FrontFace FrontFace = wgpu::FrontFace::CCW;
-        wgpu::CullMode CullMode = wgpu::CullMode::None;
-        bool bUseBlending = true;
-    };
+
 
     enum RenderPass
     {

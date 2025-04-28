@@ -3,7 +3,19 @@
 //
 module Engine.Node.CollisionShape3D;
 import Engine.Physics.JoltConversions;
+import Engine.GFX.Renderer;
+import Engine.Resource;
+import Engine.Resource.Mesh;
 
+void NodeBoxShape3D::Render(Renderer &renderer) {
+    NodeCollisionShape3D::Render(renderer);
+
+    if (renderer.bDebugDrawEnabled) {
+        static std::shared_ptr<MeshResource> mesh = ResourceManager::Load<MeshResource>("/engine/Shapes/cube.obj");
+        renderer.DrawMesh(mesh, GetDebugMaterial(), GetTransform().GetWorldModelMatrix(), this);
+    }
+
+}
 
 JPH::ShapeRefC NodeBoxShape3D::GetShape() const {
     JPH::BoxShapeSettings boxSettings(glm_to_jolt(Dimensions));
@@ -41,6 +53,15 @@ JPH::ShapeRefC NodeCollisionShape3D::GetShapeTree() {
         std::cout << tree.GetError() << std::endl;
     }
     return tree.Get();
+}
+
+void NodeSphereShape3D::Render(Renderer &renderer) {
+    NodeCollisionShape3D::Render(renderer);
+
+    if (renderer.bDebugDrawEnabled) {
+        static std::shared_ptr<MeshResource> mesh = ResourceManager::Load<MeshResource>("/engine/Shapes/sphere.obj");
+        renderer.DrawMesh(mesh, GetDebugMaterial(), GetTransform().GetWorldModelMatrix(), this);
+    }
 }
 
 JPH::ShapeRefC NodeSphereShape3D::GetShape() const {

@@ -39,14 +39,9 @@ Node* Node::AddChild(std::unique_ptr<Node> node)
 	return n.get();
 }
 
-
-
-
 Node::~Node()
 {
-	//if (tree) tree->UnregisterNode(this);
 }
-
 
 std::unique_ptr<Node> Node::Duplicate() {
 	auto newnode = static_cast<Node*>(GetStaticClassFromThis().Initializer());
@@ -204,9 +199,11 @@ void Node::Serialize(nlohmann::json& archive)
 	auto childArray = nlohmann::json::array();
 	ForEachChild([&childArray](Node* child)
 	{
-		auto childData = nlohmann::json::object();
-		child->Serialize(childData);
-		childArray.push_back(childData);
+		if (!child->HasFlag(ObjectFlags::Transient)) {
+			auto childData = nlohmann::json::object();
+			child->Serialize(childData);
+			childArray.push_back(childData);
+		}
 	});
 	archive["children"] = childArray;
 }

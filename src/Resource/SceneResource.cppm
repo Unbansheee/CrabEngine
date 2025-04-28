@@ -13,10 +13,12 @@ export class SceneResource : public Resource {
      CRAB_CLASS(SceneResource, Resource)
 
 public:
+
      wgpu::raii::TextureView GetThumbnail() override;
      std::unique_ptr<Node> Instantiate();
      void LoadData() override;
      void Serialize(nlohmann::json &archive) override;
+
 private:
      inline static std::shared_ptr<TextureResource> SceneResourceThumbnail {};
 

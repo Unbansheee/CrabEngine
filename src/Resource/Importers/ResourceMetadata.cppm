@@ -2,8 +2,6 @@
 
 #pragma once
 
-//#include "Core/ClassDB.h"
-//#include "Core/Object.h"
 #include "ReflectionMacros.h"
 
 export module Engine.Resource.Importer.ImportSettings;

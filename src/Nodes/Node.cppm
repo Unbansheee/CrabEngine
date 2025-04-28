@@ -3,14 +3,7 @@
 module;
 #pragma once
 
-#include <memory>
-#include <string>
-#include <vector>
-
-//#include "Transform.cppm"
-//#include "Core/Object.cppm"
 #include "ReflectionMacros.h"
-//#include "Core/ClassDB.cppm"
 
 export module Engine.Node;
 export import Engine.Object;
@@ -42,11 +35,6 @@ protected:
 	friend class NodeImGUIContextWindow;
 	friend class SceneTree;
 	friend class Object;
-
-
-	
-	// Runs every frame before the Update function, with the latest controller input data
-	//virtual void ProcessInput(const Controller::Input::ControllerContext& PadData, int padIndex) {};
 
 	// Runs every frame
 	virtual void Update(float dt) {}
@@ -232,6 +220,17 @@ public:
 		return children;
 	}
 
+	std::vector<ObjectRef<Node>> GetChildrenSafe() const
+	{
+		std::vector<ObjectRef<Node>> children;
+		for (auto& child : Children)
+		{
+			if (child == nullptr) continue;
+			children.emplace_back(child.get());
+		}
+		return children;
+	}
+
 	template<typename Functor>
 	void ForEachChild(Functor functor)
 	{
@@ -307,10 +306,6 @@ public:
 	virtual void Deserialize(nlohmann::json& archive) override;
 	
 protected:
-	
-	// Hidden flag
-
-	// Child nodes
 private:
 	std::vector<std::unique_ptr<Node>> Children;
 
@@ -318,19 +313,12 @@ protected:
 	// Parent node. If nullptr, assume this is SceneRoot
 	ObjectRef<Node> Parent;
 
-	
 	virtual void DrawGUIInternal();
-	
-	// Call ProcessInput() and update children inputs
-	//void ProcessInputInternal(const Controller::Input::ControllerContext& PadData, int padIndex);
 	
 	bool isInTree = false;
 	bool isReady = false;
 private:
 	SceneTree* tree = nullptr;
-	// RenderContext that 'owns' this. Only valid if this is the Root node. Should work on a better way to do this
-	//Context* OwningContext = nullptr;
-	//Application* ApplicationContext = nullptr;
 };
 
 

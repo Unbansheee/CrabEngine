@@ -104,6 +104,8 @@ public:
             importSettings->ResourceID = resource->GetID();
             SaveImportSettings(savePath, importSettings);
         }
+
+        resource->OnResourceSaved.invoke();
     }
 
     static std::vector<std::shared_ptr<Resource>> GetAllResources();

@@ -9,5 +9,5 @@ import std;
 export struct SceneSerializer
 {
     void SerializeScene(Node* rootNode, const std::filesystem::path& destination);
-    void DeserializeScene(Node* rootNode, const std::filesystem::path& scene);
+    std::unique_ptr<Node> DeserializeScene(const std::filesystem::path& scene);
 };

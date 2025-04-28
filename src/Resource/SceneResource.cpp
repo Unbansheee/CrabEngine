@@ -23,8 +23,7 @@ std::unique_ptr<Node> SceneResource::Instantiate() {
 
 void SceneResource::LoadData() {
     SceneSerializer s;
-    BaseNode = Node::NewNode("SceneRoot");
-    s.DeserializeScene(BaseNode.get(), Filesystem::AbsolutePath(sourcePath));
+    BaseNode = s.DeserializeScene(Filesystem::AbsolutePath(sourcePath));
 
     Resource::LoadData();
 }

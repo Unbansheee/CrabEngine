@@ -12,6 +12,7 @@ import Engine.Resource.Importer.ImportSettings;
 import Engine.Reflection.Class;
 import Engine.WGPU;
 import vfspp;
+import rocket;
 
 export class ImportManager;
 export class TextureResource;
@@ -42,7 +43,6 @@ public:
     virtual bool IsLoaded() const {return loaded;}
     void LoadIfRequired() const { if (!IsLoaded()) const_cast<Resource*>(this)->LoadData(); }
 
-
     virtual wgpu::raii::TextureView GetThumbnail();
 
     const std::string& GetName() const {return name;}
@@ -51,6 +51,7 @@ public:
     const std::string& GetSourcePath() { return sourcePath; }
     const std::shared_ptr<ResourceMetadata>& GetImportSettings() { return importSettings; };
 
+    rocket::signal<void()> OnResourceSaved;
 protected:
 
     std::string name;

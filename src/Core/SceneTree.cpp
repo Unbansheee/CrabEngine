@@ -59,10 +59,11 @@ void SceneTree::RegisterNode(Node* node)
         nodeMap[node->GetID()] = node;
         node->tree = this;
         node->isInTree = true;
-        node->ForEachChild([this](Node* child)
-        {
-            RegisterNode(child);
-        });
+        auto children = node->GetChildrenSafe();
+        for (auto& child : children) {
+            if (!child.IsValid()) continue;
+            RegisterNode(child.Get());
+        }
 
         node->EnterTree();
     }
@@ -75,10 +76,11 @@ void SceneTree::UnregisterNode(Node* node)
         nodeMap.erase(node->GetID());
         node->tree = nullptr;
         node->isInTree = false;
-        node->ForEachChild([this](Node* child)
-        {
-            UnregisterNode(child);
-        });
+
+        auto children = node->GetChildrenSafe();
+        for (auto& child : children) {
+            UnregisterNode(child.Get());
+        }
 
         node->ExitTree();
     }

@@ -32,7 +32,7 @@ public:
         m_additionalPasses.push_back(command);
     }
 
-    void DrawMesh(const std::shared_ptr<MeshResource>& mesh, const std::shared_ptr<MaterialResource>& material, const Matrix4& transform, Node* sender = nullptr);
+    void DrawMesh(const std::shared_ptr<MeshResource>& mesh, const std::shared_ptr<MaterialResource>& material, const Matrix4& transform, Node* sender = nullptr, int priority = 0);
     
     std::vector<DrawBatch> BuildBatches(const std::vector<DrawCommand> commands, std::vector<Node*>& drawnNodes);
     void GatherDrawCommands(Node* rootNode);
@@ -41,6 +41,8 @@ public:
     virtual void UpdateUniforms();
     
     rocket::signal<void(Vector2)> OnResized;
+
+    bool bDebugDrawEnabled = false;
 private:
     // Core WebGPU objects
     wgpu::Device m_device = nullptr;
@@ -61,8 +63,6 @@ private:
     std::shared_ptr<MaterialResource> m_fallbackMaterial;
     
     std::vector<DrawCommand> drawCommandBuffer;
-    
 
-    void SortBatches(std::vector<DrawBatch>& batches);
     void ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::TextureView& colorAttachmentView, wgpu::TextureView& depthAttachmentView, const std::shared_ptr<TextureResource>& idTexture);
 };

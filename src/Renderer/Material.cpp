@@ -153,6 +153,12 @@ void MaterialResource::Deserialize(nlohmann::json &archive) {
 
 }
 
+MaterialResource::MaterialResource(const std::string &moduleName, const MaterialSettings& settings) : Resource() {
+    ShaderModuleName = moduleName;
+    LoadFromShaderPath(Application::Get().GetDevice(), moduleName, settings);
+    MaterialResource::LoadData();
+}
+
 void MaterialResource::UpdateBindGroups() {
     for (auto& [group, dirty] : m_dirtyGroups) {
         if (!dirty) continue;
@@ -470,8 +476,8 @@ wgpu::raii::RenderPipeline MaterialResource::CreateRenderPipeline()
     pipelineDesc.fragment = &fragmentState;
     
     wgpu::DepthStencilState depthStencilState = wgpu::Default;
-    depthStencilState.depthCompare = wgpu::CompareFunction::Less;
-    depthStencilState.depthWriteEnabled = WGPUOptionalBool_True;
+    depthStencilState.depthCompare = m_settings.DepthCompare;
+    depthStencilState.depthWriteEnabled = m_settings.bDepthWrite ? WGPUOptionalBool_True : WGPUOptionalBool_False;
     depthStencilState.format = DepthTextureFormat;
     depthStencilState.stencilReadMask = 0;
     depthStencilState.stencilWriteMask = 0;

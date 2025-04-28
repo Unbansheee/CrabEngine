@@ -33,9 +33,6 @@ std::vector<Node*> Renderer::RenderNodeTree(Node* rootNode, View& view, wgpu::Te
     std::vector<Node*> DrawnNodes;
     DrawnNodes.push_back(nullptr); // Index 0 is INVALID
     
-    //CreateBindGroups(id_texture);
-    //UpdateUniforms();
-    
     Uniforms::ULightingData lightingData;
     lightingData.DirectionalLights = {
         Uniforms::ULightingData::DirectionalLight{Vector4{0.5f, -0.9f, 0.1f, 0.0f}, Vector4{ 1.0f, 0.9f, 0.6f, 1.0f }},
@@ -48,16 +45,12 @@ std::vector<Node*> Renderer::RenderNodeTree(Node* rootNode, View& view, wgpu::Te
     
     // 3. Build and sort batches
     auto batches = BuildBatches(drawCommandBuffer, DrawnNodes);
-    SortBatches(batches);
-
-    //m_objectUniformBuffer.Upload(m_queue);
 
     Uniforms::UCameraData cameraData;
     cameraData.cameraPosition = view.Position;
     cameraData.projectionMatrix = view.ProjectionMatrix;
     cameraData.viewMatrix = view.ViewMatrix;
     m_cameraUniformBuffer.SetData(cameraData);
-
     
     // 4. Execute rendering
     ExecuteBatches(batches, colorAttachment, depthAttachment, idTexture);
@@ -66,8 +59,11 @@ std::vector<Node*> Renderer::RenderNodeTree(Node* rootNode, View& view, wgpu::Te
 }
 
 void Renderer::DrawMesh(const std::shared_ptr<MeshResource>& mesh, const std::shared_ptr<MaterialResource>& material,
-    const Matrix4& transform, Node* sender)
+    const Matrix4& transform, Node* sender, int priority)
 {
+    mesh->LoadIfRequired();
+    material->LoadIfRequired();
+
     drawCommandBuffer.push_back(DrawCommand{
         material ? material.get() : m_fallbackMaterial.get(),
         mesh->vertexBuffer,
@@ -90,13 +86,13 @@ std::vector<DrawBatch> Renderer::BuildBatches(const std::vector<DrawCommand> com
     for (const auto& cmd : commands) {
         if (!currentBatch || 
             currentBatch->material != cmd.material)
-        {
-            batches.push_back({
-                .material = cmd.material,
-                .drawItems = {},
-            });
-            currentBatch = &batches.back();
-        }
+            {
+                batches.push_back({
+                    .material = cmd.material,
+                    .drawItems = {},
+                });
+                currentBatch = &batches.back();
+            }
 
         drawnNodes.push_back(cmd.sender);
         uint32_t drawID = drawnNodes.size() - 1;
@@ -182,21 +178,6 @@ void Renderer::Flush()
     m_additionalPasses.clear();
 }
 
-
-void Renderer::SortBatches(std::vector<DrawBatch>& batches)
-{
-    // Sort criteria:
-    // 1. Render pass priority (e.g., shadows first)
-    // 2. Pipeline state
-    // 3. Material properties
-    /*
-        std::sort(batches.begin(), batches.end(), [](const DrawBatch& a, const DrawBatch& b) {
-            return std::tie(a.pass, a.pipeline, a.materialHash) < 
-                   std::tie(b.pass, b.pipeline, b.materialHash);
-        });
-        */
-}
-
 void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::TextureView& colorAttachmentView, wgpu::TextureView& depthAttachmentView, const std::shared_ptr<TextureResource>& idTexture)
 {
     // 1. Begin frame
@@ -221,7 +202,7 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
     desc.colorAttachmentCount = 1;
     desc.colorAttachments = &colorAttachment;
     desc.depthStencilAttachment = &depthAttachment;
-    
+
     wgpu::raii::CommandEncoder encoder = m_device.createCommandEncoder();
     wgpu::raii::RenderPassEncoder pass = encoder->beginRenderPass(desc);
         

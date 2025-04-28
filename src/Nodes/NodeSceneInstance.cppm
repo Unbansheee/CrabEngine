@@ -30,19 +30,7 @@ public:
 
 void NodeSceneInstance::Ready() {
     Node3D::Ready();
-
-    if (Scene) {
-        auto child = GetParent()->AddChild(Scene->Instantiate());
-        if (auto node3d = Object::Cast<Node3D>(child)) {
-          node3d->SetGlobalPosition(GetGlobalPosition());
-          node3d->SetGlobalOrientation(GetGlobalOrientation());
-          node3d->SetGlobalScale(GetGlobalScale());
-        };
-    }
-    RemoveFromParent();
 }
-
-
 
 void NodeSceneInstance::EnterTree() {
     Node3D::EnterTree();
@@ -54,16 +42,27 @@ void NodeSceneInstance::EnterTree() {
             ChildScene->AddFlag(ObjectFlags::HiddenFromTree);
         }
     }
+    else {
+        if (Scene) {
+            auto child = GetParent()->AddChild(Scene->Instantiate());
+            if (auto node3d = Object::Cast<Node3D>(child)) {
+                node3d->SetGlobalPosition(GetGlobalPosition());
+                node3d->SetGlobalOrientation(GetGlobalOrientation());
+                node3d->SetGlobalScale(GetGlobalScale());
+            };
+        }
+
+        RemoveFromParent();
+    }
 }
 
 void NodeSceneInstance::ExitTree() {
     Node3D::ExitTree();
 
-    if (isInTree && GetTree()->IsInEditor()) {
-        if (ChildScene.IsValid()) {
-            ChildScene->RemoveFromParent();
-        }
+    if (ChildScene.IsValid()) {
+        ChildScene->RemoveFromParent();
     }
+
 }
 
 void NodeSceneInstance::OnPropertySet(Property &prop) {

@@ -8,6 +8,8 @@ export module Engine.Node.CollisionShape3D;
 import Engine.Node.Node3D;
 import Engine.Physics.Jolt;
 import Engine.Types;
+import Engine.Resource.Material;
+import Engine.Resource.ResourceManager;
 
 export class NodeCollisionShape3D : public Node3D {
     CRAB_ABSTRACT_CLASS(NodeCollisionShape3D, Node3D)
@@ -16,6 +18,19 @@ export class NodeCollisionShape3D : public Node3D {
 public:
     JPH::ShapeRefC GetShapeTree();
     virtual JPH::ShapeRefC GetShape() const = 0;
+
+    static std::shared_ptr<MaterialResource> GetDebugMaterial() {
+
+        MaterialSettings s;
+        s.DepthCompare = WGPUCompareFunction_LessEqual;
+        s.bDepthWrite = true;
+        s.bUseBlending = true;
+
+        static std::shared_ptr<MaterialResource> s_debugMaterial = std::make_shared<MaterialResource>("collision_debug_shader", s);
+        auto col = glm::vec4(1, 0, 0, 1);
+        s_debugMaterial->SetUniform("Colour", col);
+        return s_debugMaterial;
+    }
 };
 
 export class NodeBoxShape3D : public NodeCollisionShape3D {
@@ -27,6 +42,8 @@ export class NodeBoxShape3D : public NodeCollisionShape3D {
     END_PROPERTIES
 
     Vector3 Dimensions = {1.f, 1.f, 1.f};
+
+    void Render(Renderer &renderer) override;
 
     JPH::ShapeRefC GetShape() const override;
 
@@ -41,6 +58,8 @@ export class NodeSphereShape3D : public NodeCollisionShape3D {
     END_PROPERTIES
 
     float Radius = 1.f;
+
+    void Render(Renderer &renderer) override;
 
     float GetScaledRadius() const;
     JPH::ShapeRefC GetShape() const override;
