@@ -16,12 +16,21 @@ struct BaseObjectRegistrationObject
     BaseObjectRegistrationObject();
 };
 
+export using ObjectFlags_ = uint64_t;
+export namespace ObjectFlags {
+    constexpr uint64_t None = 0 << 0;
+    constexpr uint64_t Transient = 1 << 1; // Does not get serialized, does not get duplicated when parent node gets duplicated
+    constexpr uint64_t HiddenFromTree = 1 << 2; // Does not appear in the SceneTree view
+}
 
 export class Object : public observable_dtor
 {
+
 private:
     inline static BaseObjectRegistrationObject ObjectRegistrationObject;
     friend class Property;
+
+    ObjectFlags_ ObjectFlags = 0;
 public:
     template<typename T>
     static Object* Create()
@@ -30,6 +39,9 @@ public:
     }
     
     ~Object() override = default;
+
+    void AddFlag(ObjectFlags_ Flag);
+    bool HasFlag(ObjectFlags_ Flag);
 
     // Returns the class properties from an object instance. This indirection is required otherwise if getting properties for a
     // Node3D via a Node*, only the Node*'s properties would be returned. This function is implemented in the BEGIN_PROPERTIES macro
@@ -85,7 +97,7 @@ public:
 
 
 protected:
-    UID id ;
+    UID id;
 
     static void StaticOnPropertySet(void* obj, Property& prop) {
         auto o = static_cast<Object*>(obj);

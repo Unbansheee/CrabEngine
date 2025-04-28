@@ -72,9 +72,21 @@ std::shared_ptr<Resource> ImportManager::ImportSourceFile(const std::filesystem:
     if (settings->ResourceID != UID::empty()) {
         res->id = settings->ResourceID;
     }
+    else
+        res->id = UID();
     res->sourcePath = virtualPath;
     res->bIsInline = false;
     res->name = path.stem().string();
+
+    auto importsettingPath = (Filesystem::AbsolutePath(path.string()) + ".meta");
+
+    settings->ResourceID = res->id;
+    nlohmann::json j;
+    std::ofstream outFile(importsettingPath);
+    settings->Serialize(j);
+    outFile << j;
+    outFile.close();
+
 
     return res;
 }

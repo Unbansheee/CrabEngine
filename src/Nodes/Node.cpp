@@ -56,6 +56,7 @@ std::unique_ptr<Node> Node::Duplicate() {
 	}
 	std::unique_ptr<Node> n = InitializeNode(newnode, GetName());
 	ForEachChild([&n](Node* child) {
+		if (child->HasFlag(ObjectFlags::Transient)) return;
 		n->AddChild(child->Duplicate());
 	});
 
@@ -71,7 +72,7 @@ void Node::Render(IDPassRenderer& renderer)
 
 Transform Node::GetTransform() const
 {
-	return Transform::identity();
+	return GetParentTransform();
 }
 
 Transform Node::GetParentTransform() const

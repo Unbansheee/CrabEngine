@@ -120,7 +120,7 @@ Application::Application()
 	rootFS->Initialize();
 
 
-	Filesystem::AddFileSystemDirectory("/app", std::filesystem::current_path().string());
+	//Filesystem::AddFileSystemDirectory("/app", std::filesystem::current_path().string());
 	Filesystem::AddFileSystemDirectory("/engine", ENGINE_RESOURCE_DIR);
 }
 

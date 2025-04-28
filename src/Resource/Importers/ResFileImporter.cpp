@@ -40,11 +40,12 @@ std::shared_ptr<Resource> ResFileImporter::Import(const std::filesystem::path &s
 
     resource->sourcePath = Filesystem::VirtualPath(sourcePath.string());
     resource->bIsInline = false;
+    resource->id = settings.ResourceID;
 
     return resource;
 }
 
 std::shared_ptr<ResourceMetadata> ResFileImporter::CreateDefaultSettings() const {
-    static std::shared_ptr<ResourceMetadata> s = std::make_shared<ResourceMetadata>();
-    return s;
+    auto defaultData = std::make_shared<ResourceMetadata>();
+    return defaultData;
 }

@@ -54,7 +54,7 @@ struct ResourceCache {
         std::vector<std::shared_ptr<Resource>> r;
         r.reserve(idCache.size());
 
-        for (auto kv : idCache)
+        for (auto kv : pathCache)
         {
             r.push_back(kv.second);
         }

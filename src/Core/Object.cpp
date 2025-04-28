@@ -11,6 +11,14 @@ BaseObjectRegistrationObject::BaseObjectRegistrationObject()
     ClassDB::Get().RegisterClassType(Object::GetStaticClass());
 }
 
+void Object::AddFlag(uint64_t Flag) {
+    ObjectFlags |= Flag;
+}
+
+bool Object::HasFlag(uint64_t Flag) {
+    return ObjectFlags & Flag;
+}
+
 const ClassType& Object::GetStaticClass()
 {
     static ClassType s
@@ -33,6 +41,7 @@ void Object::Serialize(nlohmann::json& archive)
 {
     archive["class"] = GetStaticClassFromThis().Name.string();
     archive["uid"] = id.to_string();
+    archive["flags"] = ObjectFlags;
     auto& properties = archive["properties"];
 
     auto s = PropertySerializer();
@@ -45,6 +54,9 @@ void Object::Serialize(nlohmann::json& archive)
 void Object::Deserialize(nlohmann::json& archive)
 {
     id = archive["uid"].get<std::string>();
+    if (archive.contains("flags")) {
+        AddFlag(archive["flags"].get<uint64_t>());
+    }
 
     auto& properties = archive["properties"];
     auto s = PropertyDeserializer();

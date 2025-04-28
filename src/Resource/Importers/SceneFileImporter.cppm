@@ -27,7 +27,6 @@ public:
     };
 
     std::shared_ptr<::ResourceMetadata> CreateDefaultSettings() const override {
-        static std::shared_ptr<ResourceMetadata> s = std::make_shared<ResourceMetadata>();
-        return s;
+        return std::make_shared<ResourceMetadata>();
     };
 };
