@@ -1,1 +1,10 @@
-{"class":"TextureImportSettings","flags":0,"properties":{"ResourceID":"dabae932-9705-4d50-b0c5-57268bc0c8cc","generateMipmaps":true,"sRGB":true},"uid":"354afdaa-8623-40bc-b4b3-88467d7f964e"}
+{
+    "class": "TextureImportSettings",
+    "flags": 0,
+    "properties": {
+        "ResourceID": "dabae932-9705-4d50-b0c5-57268bc0c8cc",
+        "generateMipmaps": true,
+        "sRGB": true
+    },
+    "uid": "354afdaa-8623-40bc-b4b3-88467d7f964e"
+}

@@ -39,11 +39,15 @@ public:
     
     virtual void CreateBindGroups(wgpu::TextureView& idPassTex);
     virtual void UpdateUniforms();
-    
+
+    void SetClearColour(Vector4 colour) {m_clearColour = colour;}
+
     rocket::signal<void(Vector2)> OnResized;
 
     bool bDebugDrawEnabled = false;
 private:
+    glm::vec4 m_clearColour = {0,0,0,1};
+
     // Core WebGPU objects
     wgpu::Device m_device = nullptr;
     wgpu::Queue m_queue = nullptr;

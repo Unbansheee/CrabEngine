@@ -12,7 +12,8 @@ void NodeBoxShape3D::Render(Renderer &renderer) {
 
     if (renderer.bDebugDrawEnabled) {
         static std::shared_ptr<MeshResource> mesh = ResourceManager::Load<MeshResource>("/engine/Shapes/cube.obj");
-        renderer.DrawMesh(mesh, GetDebugMaterial(), GetTransform().GetWorldModelMatrix(), this);
+        //renderer.DrawMesh(mesh, std::get<0>(GetDebugMaterial()), GetTransform().GetWorldModelMatrix(), this);
+        renderer.DrawMesh(mesh, std::get<1>(GetDebugMaterial()), GetTransform().GetWorldModelMatrix(), this);
     }
 
 }
@@ -60,12 +61,62 @@ void NodeSphereShape3D::Render(Renderer &renderer) {
 
     if (renderer.bDebugDrawEnabled) {
         static std::shared_ptr<MeshResource> mesh = ResourceManager::Load<MeshResource>("/engine/Shapes/sphere.obj");
-        renderer.DrawMesh(mesh, GetDebugMaterial(), GetTransform().GetWorldModelMatrix(), this);
+        //renderer.DrawMesh(mesh, std::get<0>(GetDebugMaterial()), GetTransform().GetWorldModelMatrix(), this);
+        renderer.DrawMesh(mesh, std::get<1>(GetDebugMaterial()), GetTransform().GetWorldModelMatrix(), this);
+
     }
 }
 
 JPH::ShapeRefC NodeSphereShape3D::GetShape() const {
     JPH::SphereShapeSettings settings(Radius);
+    settings.SetEmbedded();
+    auto s = settings.Create();
+    if (s.HasError()) {
+        std::cout << s.GetError() << std::endl;
+    }
+    return s.Get();
+}
+
+void NodeCapsuleShape3D::Render(Renderer &renderer) {
+    NodeCollisionShape3D::Render(renderer);
+
+    static std::shared_ptr<MeshResource> sphere = ResourceManager::Load<MeshResource>("/engine/Shapes/sphere.obj");
+    static std::shared_ptr<MeshResource> cylinder = ResourceManager::Load<MeshResource>("/engine/Shapes/cylinder.obj");
+
+    if (renderer.bDebugDrawEnabled) {
+        float r2 = Radius;
+        Transform up;
+        up.Position = {0, HalfHeight, 0};
+        up.Scale = {r2, r2, r2};
+
+        Transform down;
+        down.Position = {0, -HalfHeight, 0};
+        down.Scale = {r2, r2, r2};
+
+
+        Transform cyl;
+        cyl.Scale = {r2, r2, HalfHeight};
+        cyl.Orientation = glm::angleAxis(glm::radians(90.f), Vector3{1.f, 0.f, 0.f});
+
+        up.ModelMatrix = GetTransform().GetWorldModelMatrix() * up.GetLocalModelMatrix();
+        down.ModelMatrix = GetTransform().GetWorldModelMatrix() * down.GetLocalModelMatrix();
+        cyl.ModelMatrix = GetTransform().GetWorldModelMatrix() * cyl.GetLocalModelMatrix();
+
+        auto mat = GetDebugMaterial();
+
+        //renderer.DrawMesh(sphere, std::get<0>(mat), up.GetWorldModelMatrix(), this);
+        renderer.DrawMesh(sphere, std::get<1>(mat), up.GetWorldModelMatrix(), this);
+
+        //renderer.DrawMesh(sphere, std::get<0>(mat), down.GetWorldModelMatrix(), this);
+        renderer.DrawMesh(sphere, std::get<1>(mat), down.GetWorldModelMatrix(), this);
+
+        //renderer.DrawMesh(cylinder, std::get<0>(mat), cyl.GetWorldModelMatrix(), this);
+        renderer.DrawMesh(cylinder, std::get<1>(mat), cyl.GetWorldModelMatrix(), this);
+    }
+}
+
+JPH::ShapeRefC NodeCapsuleShape3D::GetShape() const {
+    JPH::CapsuleShapeSettings settings(HalfHeight, Radius);
     settings.SetEmbedded();
     auto s = settings.Create();
     if (s.HasError()) {

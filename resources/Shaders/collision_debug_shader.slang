@@ -31,5 +31,5 @@ float4 fs_main(in CollisionDebugFragmentInput input)
     uRendererParams.idPassTexture.Store({input.ProjectedPosition.x, input.ProjectedPosition.y}, PushConstant.DrawID);
 
     var corrected_color = pow(Colour.xyz, float3(2.2));
-    return float4(corrected_color.xyz, 0.3);
+    return float4(corrected_color.xyz, Colour.a);
 };

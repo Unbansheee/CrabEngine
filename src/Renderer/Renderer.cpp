@@ -186,7 +186,7 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
     colorAttachment.view = colorAttachmentView;
     colorAttachment.loadOp = wgpu::LoadOp::Clear;
     colorAttachment.storeOp = wgpu::StoreOp::Store;
-    colorAttachment.clearValue = {0.5f, 0.5f, 0.5f, 1.0f};
+    colorAttachment.clearValue = WGPUColor(m_clearColour.r, m_clearColour.g, m_clearColour.b, m_clearColour.a);
     colorAttachment.resolveTarget = nullptr;
     
     wgpu::RenderPassDepthStencilAttachment depthAttachment;
@@ -235,7 +235,7 @@ void Renderer::ExecuteBatches(const std::vector<DrawBatch>& batches, wgpu::Textu
             pass->setVertexBuffer(0, item.vertexBuffer, 0, wgpu::WHOLE_SIZE);
 
 
-            if (item.indexCount > 0)
+            if (item.indexCount > 0 && currentMaterial->m_settings.PrimitiveTopology == wgpu::PrimitiveTopology::TriangleList)
             {
                 pass->setIndexBuffer(item.indexBuffer, wgpu::IndexFormat::Uint16, 0, wgpu::WHOLE_SIZE);
                 pass->drawIndexed(

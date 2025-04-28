@@ -19,17 +19,30 @@ public:
     JPH::ShapeRefC GetShapeTree();
     virtual JPH::ShapeRefC GetShape() const = 0;
 
-    static std::shared_ptr<MaterialResource> GetDebugMaterial() {
+    static std::tuple<std::shared_ptr<MaterialResource>, std::shared_ptr<MaterialResource>> GetDebugMaterial() {
 
         MaterialSettings s;
-        s.DepthCompare = WGPUCompareFunction_LessEqual;
+        s.DepthCompare = wgpu::CompareFunction::LessEqual;
         s.bDepthWrite = true;
         s.bUseBlending = true;
+        s.PrimitiveTopology = wgpu::PrimitiveTopology::TriangleList;
+
+        MaterialSettings swf;
+        swf.DepthCompare = WGPUCompareFunction_LessEqual;
+        swf.bDepthWrite = true;
+        swf.bUseBlending = true;
+        swf.PrimitiveTopology = wgpu::PrimitiveTopology::LineStrip;
 
         static std::shared_ptr<MaterialResource> s_debugMaterial = std::make_shared<MaterialResource>("collision_debug_shader", s);
-        auto col = glm::vec4(1, 0, 0, 1);
+        static std::shared_ptr<MaterialResource> s_debugMaterialWf = std::make_shared<MaterialResource>("collision_debug_shader", swf);
+
+        auto col = glm::vec4(1, 0, 0, 0.1);
         s_debugMaterial->SetUniform("Colour", col);
-        return s_debugMaterial;
+
+        auto colWF = glm::vec4(1, 0, 0, 1);
+        s_debugMaterialWf->SetUniform("Colour", colWF);
+
+        return {s_debugMaterial, s_debugMaterialWf};
     }
 };
 
@@ -61,6 +74,23 @@ export class NodeSphereShape3D : public NodeCollisionShape3D {
 
     void Render(Renderer &renderer) override;
 
-    float GetScaledRadius() const;
     JPH::ShapeRefC GetShape() const override;
 };
+
+export class NodeCapsuleShape3D : public NodeCollisionShape3D {
+    CRAB_CLASS(NodeCapsuleShape3D, NodeCollisionShape3D)
+    CLASS_FLAG(EditorVisible);
+
+    BEGIN_PROPERTIES
+        ADD_PROPERTY("Radius", Radius);
+        ADD_PROPERTY("HalfHeight", HalfHeight);
+    END_PROPERTIES
+
+    float Radius = 1.f;
+    float HalfHeight = 1.f;
+
+    void Render(Renderer &renderer) override;
+
+    JPH::ShapeRefC GetShape() const override;
+};
+

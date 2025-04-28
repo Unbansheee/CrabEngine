@@ -2,6 +2,7 @@
 // Created by Vinnie on 20/03/2025.
 //
 module;
+
 #include "Jolt/Jolt.h"
 #include "Jolt/Core/IssueReporting.h"
 #include "Jolt/Core/Memory.h"
@@ -22,9 +23,12 @@ module;
 #include "Jolt/Physics/Collision/Shape/Shape.h"
 #include "Jolt/Core/Factory.h"
 #include "Jolt/Core/HashCombine.h"
+#include "Jolt/Physics/Collision/Shape/CapsuleShape.h"
 #include "Jolt/Physics/Collision/Shape/MutableCompoundShape.h"
 #include "Jolt/Physics/Collision/Shape/ScaledShape.h"
 #include "Jolt/Physics/Collision/Shape/StaticCompoundShape.h"
+#include "Jolt/Physics/Collision/Shape/CylinderShape.h"
+#include "Jolt/Physics/Collision/Shape/CapsuleShape.h"
 
 
 export module Engine.Physics.Jolt;
@@ -86,6 +90,10 @@ export namespace JPH {
     using JPH::ScaledShapeSettings;
     using JPH::ScaledShape;
     using JPH::PhysicsMaterial;
+    using JPH::CapsuleShape;
+    using JPH::CapsuleShapeSettings;
+    using JPH::CylinderShape;
+    using JPH::CylinderShapeSettings;
 
     void RegisterJoltTypes() {
         JPH::RegisterTypes();

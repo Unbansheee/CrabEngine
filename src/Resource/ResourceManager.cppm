@@ -18,6 +18,7 @@ struct ResourceCache {
     std::unordered_map<UID, std::shared_ptr<Resource>> idCache;
 
     void AddResource(std::shared_ptr<Resource> res) {
+        if (Contains(res)) return;
         pathCache.insert({res->GetSourcePath(), res});
         idCache.insert({res->GetID(), res});
     }
@@ -48,6 +49,13 @@ struct ResourceCache {
         return r;
     }
 
+    bool Contains(const std::shared_ptr<Resource>& resource) {
+        if (idCache.contains(resource->GetID())) return true;
+        if (pathCache.contains(resource->GetSourcePath())) return true;
+        if (pathCache.contains(resource->GetAbsolutePath())) return true;
+
+        return false;
+    }
 };
 
 

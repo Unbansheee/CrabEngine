@@ -42,6 +42,7 @@ std::shared_ptr<Resource> ResourceManager::Load(const std::filesystem::path& pat
         auto res = ImportManager::Get().Import(path);
         if (res)
         {
+
             std::lock_guard lock(cacheMutex);
             cache.AddResource(res);
         }
