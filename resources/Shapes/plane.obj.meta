@@ -1,1 +1,8 @@
-{"class":"OBJImportSettings","flags":0,"properties":{"ResourceID":"41b97684-37a3-4ae7-a9cf-0b4c840a709a"},"uid":"62fc095d-f292-4ff3-8857-04be997afc34"}
+{
+    "class": "OBJImportSettings",
+    "flags": 0,
+    "properties": {
+        "ResourceID": "41b97684-37a3-4ae7-a9cf-0b4c840a709a"
+    },
+    "uid": "62fc095d-f292-4ff3-8857-04be997afc34"
+}

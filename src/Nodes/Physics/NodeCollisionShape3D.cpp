@@ -12,8 +12,13 @@ void NodeBoxShape3D::Render(Renderer &renderer) {
 
     if (renderer.bDebugDrawEnabled) {
         static std::shared_ptr<MeshResource> mesh = ResourceManager::Load<MeshResource>("/engine/Shapes/cube.obj");
+
+        Transform scaled;
+        scaled.Scale = Dimensions;
+
+        scaled.ModelMatrix = GetTransform().GetWorldModelMatrix() * scaled.GetLocalModelMatrix();
         //renderer.DrawMesh(mesh, std::get<0>(GetDebugMaterial()), GetTransform().GetWorldModelMatrix(), this);
-        renderer.DrawMesh(mesh, std::get<1>(GetDebugMaterial()), GetTransform().GetWorldModelMatrix(), this);
+        renderer.DrawMesh(mesh, std::get<1>(GetDebugMaterial()), scaled.GetWorldModelMatrix(), this);
     }
 
 }
@@ -21,6 +26,7 @@ void NodeBoxShape3D::Render(Renderer &renderer) {
 JPH::ShapeRefC NodeBoxShape3D::GetShape() const {
     JPH::BoxShapeSettings boxSettings(glm_to_jolt(Dimensions));
     boxSettings.SetEmbedded();
+    boxSettings.SetDensity(Density);
     auto s = boxSettings.Create();
 
     if (s.HasError()) {
@@ -60,9 +66,15 @@ void NodeSphereShape3D::Render(Renderer &renderer) {
     NodeCollisionShape3D::Render(renderer);
 
     if (renderer.bDebugDrawEnabled) {
+
         static std::shared_ptr<MeshResource> mesh = ResourceManager::Load<MeshResource>("/engine/Shapes/sphere.obj");
+
+        Transform scaled;
+        scaled.Scale = {Radius, Radius, Radius};
+        scaled.ModelMatrix = GetTransform().GetWorldModelMatrix() * scaled.GetLocalModelMatrix();
+
         //renderer.DrawMesh(mesh, std::get<0>(GetDebugMaterial()), GetTransform().GetWorldModelMatrix(), this);
-        renderer.DrawMesh(mesh, std::get<1>(GetDebugMaterial()), GetTransform().GetWorldModelMatrix(), this);
+        renderer.DrawMesh(mesh, std::get<1>(GetDebugMaterial()), scaled.GetWorldModelMatrix(), this);
 
     }
 }
@@ -70,6 +82,7 @@ void NodeSphereShape3D::Render(Renderer &renderer) {
 JPH::ShapeRefC NodeSphereShape3D::GetShape() const {
     JPH::SphereShapeSettings settings(Radius);
     settings.SetEmbedded();
+    settings.SetDensity(Density);
     auto s = settings.Create();
     if (s.HasError()) {
         std::cout << s.GetError() << std::endl;
@@ -118,6 +131,7 @@ void NodeCapsuleShape3D::Render(Renderer &renderer) {
 JPH::ShapeRefC NodeCapsuleShape3D::GetShape() const {
     JPH::CapsuleShapeSettings settings(HalfHeight, Radius);
     settings.SetEmbedded();
+    settings.SetDensity(Density);
     auto s = settings.Create();
     if (s.HasError()) {
         std::cout << s.GetError() << std::endl;

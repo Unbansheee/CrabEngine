@@ -14,7 +14,11 @@ import Engine.Resource.ResourceManager;
 export class NodeCollisionShape3D : public Node3D {
     CRAB_ABSTRACT_CLASS(NodeCollisionShape3D, Node3D)
     CLASS_FLAG(Abstract)
+    BEGIN_PROPERTIES
+        ADD_PROPERTY("Density", Density);
+    END_PROPERTIES
 
+    float Density = 1000.f;
 public:
     JPH::ShapeRefC GetShapeTree();
     virtual JPH::ShapeRefC GetShape() const = 0;

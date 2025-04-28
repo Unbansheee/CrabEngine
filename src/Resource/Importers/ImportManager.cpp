@@ -57,7 +57,7 @@ std::shared_ptr<ResourceMetadata> ImportManager::LoadOrCreateImportSettings(cons
         nlohmann::json j;
         std::ofstream outFile(importsettingPath);
         setting->Serialize(j);
-        outFile << j;
+        outFile << std::setw(4) << j << std::endl;
         outFile.close();
     }
     return setting;
@@ -89,7 +89,7 @@ std::shared_ptr<Resource> ImportManager::ImportSourceFile(const std::filesystem:
     nlohmann::json j;
     std::ofstream outFile(importsettingPath);
     settings->Serialize(j);
-    outFile << j;
+    outFile << std::setw(4) << j << std::endl;
     outFile.close();
 
     return res;
