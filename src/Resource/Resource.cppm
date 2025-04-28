@@ -13,6 +13,7 @@ import Engine.Reflection.Class;
 import Engine.WGPU;
 import vfspp;
 import rocket;
+import Engine.Filesystem;
 
 export class ImportManager;
 export class TextureResource;
@@ -49,6 +50,12 @@ public:
     bool IsSourceImported() const { return !bIsInline; }
     bool IsInline() const { return bIsInline; }
     const std::string& GetSourcePath() { return sourcePath; }
+    const std::string& GetAbsolutePath() {
+        if (absolutePath.empty()) {
+            absolutePath = Filesystem::AbsolutePath(sourcePath);
+        }
+        return absolutePath;
+    };
     const std::shared_ptr<ResourceMetadata>& GetImportSettings() { return importSettings; };
 
     rocket::signal<void()> OnResourceSaved;
@@ -58,8 +65,12 @@ protected:
     bool bIsInline = true;
     std::atomic<bool> loaded{false};
     std::shared_ptr<ResourceMetadata> importSettings;
+    std::string sourcePath{};
 
-    std::string sourcePath;
+    // Runtime only, not serialized
+    std::string absolutePath{};
+
+    std::filesystem::file_time_type resource_time;
 private:
     static inline std::shared_ptr<TextureResource> DefaultResourceThumbnail = nullptr;
 

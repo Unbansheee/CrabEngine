@@ -21,6 +21,10 @@ std::shared_ptr<Resource> ImportManager::Import(const std::filesystem::path& pat
     return ImportSourceFile(path);
 }
 
+void ImportManager::Reimport(const std::shared_ptr<Resource> &resource) {
+    return ReimportResource(resource);
+}
+
 bool ImportManager::IsFileTypeImportable(std::filesystem::path extension) const {
     return GetImporterForExtension(extension) != nullptr;
 }
@@ -68,7 +72,7 @@ std::shared_ptr<Resource> ImportManager::ImportSourceFile(const std::filesystem:
     if (settings) res->importSettings = settings;
 
     auto virtualPath = Filesystem::VirtualPath(path.string());
-
+    auto absolutePath = Filesystem::AbsolutePath(path.string());
     if (settings->ResourceID != UID::empty()) {
         res->id = settings->ResourceID;
     }
@@ -77,6 +81,7 @@ std::shared_ptr<Resource> ImportManager::ImportSourceFile(const std::filesystem:
     res->sourcePath = virtualPath;
     res->bIsInline = false;
     res->name = path.stem().string();
+    res->resource_time = std::filesystem::last_write_time(absolutePath);
 
     auto importsettingPath = (Filesystem::AbsolutePath(path.string()) + ".meta");
 
@@ -87,6 +92,22 @@ std::shared_ptr<Resource> ImportManager::ImportSourceFile(const std::filesystem:
     outFile << j;
     outFile.close();
 
-
     return res;
+}
+
+void ImportManager::ReimportResource(const std::shared_ptr<Resource> &resource) {
+    auto absolutePath = Filesystem::AbsolutePath(resource->sourcePath);
+    resource->bIsInline = false;
+    resource->resource_time = std::filesystem::last_write_time(absolutePath);
+    resource->loaded = false;
+
+    bool isTextRes = std::filesystem::path(absolutePath).extension() == ".res" || std::filesystem::path(absolutePath).extension() == ".scene";
+    if (isTextRes) {
+        nlohmann::json j;
+        std::ifstream inFile(absolutePath);
+        inFile >> j;
+        inFile.close();
+
+        resource->Deserialize(j);
+    }
 }

@@ -3,19 +3,6 @@
 //
 module;
 
-#pragma once
-
-#include <cstdint>
-#include <vector>
-#include <filesystem>
-#include <optional>
-//#include <webgpu/webgpu.hpp> 
-
-//#include "Application.h"
-#include <mutex>
-
-//#include "Resource.h"
-
 export module Engine.Resource.ResourceManager;
 import Engine.Resource;
 import Engine.Resource.Importer.ImportSettings;
@@ -76,7 +63,7 @@ public:
     template<typename T>
     static std::shared_ptr<T> Load(const std::filesystem::path& path) {
             return std::static_pointer_cast<T>(Load(path));
-        }
+    }
 
     template<typename T>
     static std::shared_ptr<T> FindByID(const UID& id) {
@@ -86,9 +73,10 @@ public:
     static std::shared_ptr<Resource> Load(const std::filesystem::path& path);
     static std::shared_ptr<Resource> FindByID(const UID& id);
 
+    static void PollResourcesForChanges();
 
+    static void ReloadResource(const std::shared_ptr<Resource>& resource);
     static bool IsResourceLoaded(const std::filesystem::path& path);
-
     static void SaveToFile(const std::filesystem::path& path, nlohmann::json& json);
     static void SaveImportSettings(const std::filesystem::path& sourcePath, const std::shared_ptr<ResourceMetadata>& importSettings);
     static void SaveResource(const std::shared_ptr<Resource>& resource, 

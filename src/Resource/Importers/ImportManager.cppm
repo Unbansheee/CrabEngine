@@ -17,6 +17,8 @@ public:
     void RegisterImporter(std::unique_ptr<ResourceImporter> importer);
 
     std::shared_ptr<Resource> Import(const std::filesystem::path& path);
+    void Reimport(const std::shared_ptr<Resource>& resource);
+
     bool IsFileTypeImportable(std::filesystem::path extension) const;
 private:
     std::vector<std::unique_ptr<ResourceImporter>> importers;
@@ -26,6 +28,7 @@ private:
     std::shared_ptr<ResourceMetadata> LoadOrCreateImportSettings(std::filesystem::path::iterator::reference path, ResourceImporter* importer);
 
     std::shared_ptr<Resource> ImportSourceFile(const std::filesystem::path& path);
+    void ReimportResource(const std::shared_ptr<Resource>& resource);
 
     ImportManager() = default;
 };

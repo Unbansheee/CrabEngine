@@ -28,9 +28,7 @@ bool ResourceManager::IsSourceFile(const std::filesystem::path& path)
 
 std::shared_ptr<Resource> ResourceManager::Load(const std::filesystem::path& path)
 {
-    auto fs = Application::Get().GetFilesystem();
     std::string absolutePath = Filesystem::AbsolutePath(path.string());
-
     {
         std::lock_guard lock(cacheMutex);
         // Existing resource loading logic
@@ -65,6 +63,28 @@ std::shared_ptr<Resource> ResourceManager::FindByID(const UID &id) {
     }
 
     return nullptr;
+}
+
+void ResourceManager::PollResourcesForChanges() {
+    for (auto res : GetAllResources()) {
+        auto absPath = res->GetAbsolutePath();
+        auto resTime = std::filesystem::last_write_time(absPath);
+        if (resTime != res->resource_time) {
+            ResourceManager::ReloadResource(res);
+        }
+    }
+}
+
+void ResourceManager::ReloadResource(const std::shared_ptr<Resource> &resource) {
+    auto absPath = Filesystem::AbsolutePath(resource->sourcePath);
+    if (IsSourceFile(absPath)) {
+        ImportManager::Get().Reimport(resource);
+        if (resource)
+        {
+            std::lock_guard lock(cacheMutex);
+            cache.AddResource(resource);
+        }
+    }
 }
 
 bool ResourceManager::IsResourceLoaded(const std::filesystem::path &path) {
