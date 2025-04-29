@@ -54,7 +54,7 @@ export struct ClassType : NoCopy
     bool IsSubclassOf(const ClassType& parent) const;
 
     template<typename T>
-    bool IsSubclassOf()
+    bool IsSubclassOf() const
     {
         return IsSubclassOf(T::GetStaticClass());
     }
