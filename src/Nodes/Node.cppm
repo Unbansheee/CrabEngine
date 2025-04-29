@@ -7,27 +7,30 @@ module;
 
 export module Engine.Node;
 export import Engine.Object;
-export import Engine.Reflection.ClassDB;
 export import Engine.Transform;
 export import Engine.Reflection.Class;
-import Engine.Reflection.Class;
 import Engine.Object.ObservableDtor;
 import Engine.SceneTree;
 import Engine.Object.Ref;
 
 export class RenderVisitor;
 export class Renderer;
-export class IDPassRenderer;
-
 
 export class Node : public Object {
 public:
-	public: constexpr static inline std::string_view ClassName = "Node"; using ThisClass = Node; using Super = Object; static const ClassType& GetStaticClass() { static ClassType s { .Name = MakeStringID("Node"), .Initializer = &Object::Create<Node>, .Properties = Node::GetClassProperties(), .Parent = MakeStringID("Object") }; return s; } virtual const ClassType& GetStaticClassFromThis() override { return GetStaticClass(); } [[maybe_unused]] inline static AutoClassRegister AutoRegistrationObject_Node = AutoClassRegister(GetStaticClass());
+	CRAB_CLASS(Node, Object)
 	CLASS_FLAG(EditorVisible)
 	BEGIN_PROPERTIES
 		ADD_PROPERTY("Name", Name)
 		ADD_PROPERTY("Hidden", isHidden)
 	END_PROPERTIES
+
+	static void RegisterMethods() {
+		BIND_METHOD(EnterTree)
+		BIND_METHOD(ExitTree)
+		BIND_METHOD(Ready)
+		BIND_METHOD(Update)
+	}
 
 protected:
 	friend class Application;
@@ -37,14 +40,13 @@ protected:
 	friend class Object;
 
 	// Runs every frame
-	virtual void Update(float dt) {}
+	virtual void Update(float dt) {
+
+	}
 
 	virtual void DrawGUI()
 	{
 	};
-
-public:
-
 
 public:
 	virtual ~Node() override;
@@ -90,8 +92,7 @@ public:
 	virtual void Init() {};
 
 	virtual void Render(Renderer& renderer);
-	virtual void Render(IDPassRenderer& renderer);
-	
+
 	// Returns the Transform data of this Node
 	virtual Transform GetTransform() const;
 

@@ -8,5 +8,7 @@ export namespace sid = foonathan::string_id;
 export using namespace sid::literals;
 
 export string_id MakeStringID(const std::string& str);
+export string_id MakeStringID(const char* str);
+
 
 

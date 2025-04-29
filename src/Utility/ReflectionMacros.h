@@ -16,6 +16,7 @@ std::vector<Property> base = Super::GetClassProperties(); \
 std::vector<Property> custom;
 
 
+
 #define BEGIN_STRUCT_PROPERTIES(Struct) \
 using ThisClass = Struct; \
 constexpr static inline std::string_view ClassName = #Struct; \
@@ -123,8 +124,10 @@ static ClassType s\
 };\
 return s;\
 }\
-virtual const ClassType& GetStaticClassFromThis() override { return GetStaticClass(); } \
-[[maybe_unused]] inline static AutoClassRegister AutoRegistrationObject_##Class = AutoClassRegister(GetStaticClass());
+virtual const ClassType& GetStaticClassFromThis() override { if (scriptInstance.has_value()) {return *scriptInstance->ScriptClass;} return GetStaticClass(); } \
+[[maybe_unused]] inline static AutoClassRegister AutoRegistrationObject_##Class = AutoClassRegister(GetStaticClass()); \
+[[maybe_unused]] inline static AutoMethodRegister<ThisClass> AutoMethodRegistrationObject_##Class = AutoMethodRegister<ThisClass>();
+
 
 
 #define CRAB_ABSTRACT_CLASS(Class, ParentClass) \
@@ -152,3 +155,7 @@ virtual const ClassType& GetStaticClassFromThis() override { return GetStaticCla
 
 #define REGISTER_RESOURCE_IMPORTER(Type)\
 [[maybe_unused]] inline static AutoRegisterResourceImporter<Type> ImporterRegistrationObject_##Type = AutoRegisterResourceImporter<Type>();
+
+
+#define BIND_METHOD(Name) \
+    RegisterMethod<ThisClass>(#Name, &ThisClass::Name);

@@ -39,6 +39,32 @@ set(INTERPROCEDURAL_OPTIMIZATION ON)
 target_compile_definitions(CrabEngine PUBLIC "$<$<CONFIG:Debug>:_DEBUG>")
 target_compile_definitions(CrabEngine PUBLIC "$<$<CONFIG:Debug>:ENGINE_ENABLE_ASSERTS>")
 
+# Run `dotnet --info` and capture output
+execute_process(
+        COMMAND dotnet --info
+        OUTPUT_VARIABLE DOTNET_INFO
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Run `dotnet --list-sdks` to find SDK path
+execute_process(
+        COMMAND dotnet --list-sdks
+        OUTPUT_VARIABLE DOTNET_SDK_LIST
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Extract the path in brackets (e.g., [C:\Program Files\dotnet\sdk])
+string(REGEX MATCH "\\[(.*)\\]" _DOTNET_SDK_PATH_LINE "${DOTNET_SDK_LIST}")
+string(REGEX REPLACE ".*\\[(.*)\\].*" "\\1" DOTNET_ROOT "${_DOTNET_SDK_PATH_LINE}")
+
+# Go up one level to get the DOTNET_ROOT (sdk is inside it)
+get_filename_component(DOTNET_ROOT "${DOTNET_ROOT}" DIRECTORY)
+
+message(STATUS "Detected DOTNET_ROOT: ${DOTNET_ROOT}")
+
+# Make DOTNET_ROOT available in your build
+add_compile_definitions(DOTNET_ROOT="${DOTNET_ROOT}")
+set(ENV{DOTNET_ROOT} "${DOTNET_ROOT}")
 
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -69,6 +95,8 @@ add_subdirectory(vendor/vfspp vfspp_build)
 
 find_library(LIB_slang slang ${CMAKE_CURRENT_SOURCE_DIR}/vendor/slang/lib)
 find_library(LIB_slangGFX gfx ${CMAKE_CURRENT_SOURCE_DIR}/vendor/slang/lib)
+find_library(LIB_nethost nethost ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nethost)
+
 
 target_link_libraries(CrabEngine PRIVATE
         glfw
@@ -77,6 +105,7 @@ target_link_libraries(CrabEngine PRIVATE
         Jolt
         ${LIB_slang}
         ${LIB_slangGFX}
+        ${LIB_nethost}
         )
 
 target_link_libraries(CrabEngine PUBLIC
@@ -142,10 +171,12 @@ target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor)
 target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui)
 target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/slang)
 target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nativefiledialog-extended/src/include)
+target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nethost/include)
 target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_include_directories(CrabEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Nodes)
 target_include_directories(CrabEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer)
 target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/Utility)
+
 
 
 

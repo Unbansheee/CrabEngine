@@ -14,6 +14,7 @@ import Engine.StringID;
 import Engine.Physics.Jolt;
 import vfspp;
 import Engine.Filesystem;
+import Engine.ScriptEngine;
 
 struct ImGuiContext;
 using glm::mat4x4;
@@ -38,11 +39,7 @@ private:
 export class Application
 {
 public:
-    static Application& Get()
-    {
-        static Application s;
-        return s;
-    }
+    static Application& Get();
 
     void Begin();
     void Update();
@@ -68,22 +65,28 @@ public:
 
     float DeltaTime() {return dt;};
 
-    sid::default_database& GetStringDB() {return defaultStringDatabase;}
+    static sid::default_database& GetStringDB() {
+        static sid::default_database s_defaultStringDatabase;
+        return s_defaultStringDatabase;
+    }
 
     JPH::TempAllocator* GetPhysicsAllocator() const {return tempAllocator;}
     JPH::JobSystem* GetJobSystem() const {return jobSystem;}
 
     vfspp::VirtualFileSystemPtr GetFilesystem();
+
+    ScriptEngine* GetScriptEngine() {return &scriptEngine;};
 protected:
     SceneTree sceneTree;
     DeltaTicker deltaTime;
     float dt;
     bool bShouldClose = false;
 
+    ScriptEngine scriptEngine;
+
     wgpu::Instance wgpuInstance = nullptr;
     wgpu::Device wgpuDevice = nullptr;
 
-    sid::default_database defaultStringDatabase;
 
     int maxConcurrentJobs = std::thread::hardware_concurrency();		// How many jobs to run in parallel
     JPH::TempAllocator* tempAllocator;

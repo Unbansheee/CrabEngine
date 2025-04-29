@@ -8,7 +8,6 @@ import physics_world;
 import <memory>;
 import <unordered_map>;
 
-export class Node;
 
 export class SceneTree
 {

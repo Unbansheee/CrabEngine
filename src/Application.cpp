@@ -122,6 +122,8 @@ Application::Application()
 
 	//Filesystem::AddFileSystemDirectory("/app", std::filesystem::current_path().string());
 	Filesystem::AddFileSystemDirectory("/engine", ENGINE_RESOURCE_DIR);
+
+	scriptEngine.Init();
 }
 
 
@@ -135,6 +137,11 @@ Application::~Application()
 
 	NFD::Quit();
 	glfwTerminate();
+}
+
+Application & Application::Get() {
+	static Application s;
+	return s;
 }
 
 void Application::Begin()

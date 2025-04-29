@@ -10,10 +10,7 @@ import Engine.Object.Ref;
 import std;
 
 export class Property;
-export class Resource;
-export class Node;
 export struct ClassType;
-export class Object;
 
 export namespace PropertyFlags
 {
@@ -236,3 +233,4 @@ void Property::visit(Visitor&& vis, nlohmann::json& archive, ObjectClass* obj) c
     std::variant<nlohmann::json*> j = &archive;
     return std::visit(std::forward<Visitor>(vis), p, j, value);
 }
+

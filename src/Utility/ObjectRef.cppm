@@ -5,9 +5,8 @@
 
 export module Engine.Object.Ref;
 import Engine.Object.ObservableDtor;
-import Engine.Reflection.Class;
 import Engine.Assert;
-
+export class Object;
 
 export class _ObjectRefBase {
 

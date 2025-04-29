@@ -2,9 +2,6 @@
 // Created by Vinnie on 22/02/2025.
 //
 
-//#include "Node.cppm"
-
-//#include "Core/ClassDB.cppm"
 module;
 
 module Engine.Node;
@@ -61,9 +58,6 @@ std::unique_ptr<Node> Node::Duplicate() {
 void Node::Render(Renderer& renderer) {
 }
 
-void Node::Render(IDPassRenderer& renderer)
-{
-}
 
 Transform Node::GetTransform() const
 {

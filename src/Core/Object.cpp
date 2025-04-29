@@ -5,10 +5,17 @@ import Engine.UID;
 import Engine.Reflection.ClassDB;
 import Engine.Reflection.Class;
 import Engine.StringID;
+import Engine.Application;
 
 BaseObjectRegistrationObject::BaseObjectRegistrationObject()
 {
     ClassDB::Get().RegisterClassType(Object::GetStaticClass());
+}
+
+Object::~Object() {
+    if (scriptInstance.has_value()) {
+        Application::Get().GetScriptEngine()->CallManaged(L"Scripts.ScriptHost", L"DestroyScript", scriptInstance->ManagedHandle);
+    }
 }
 
 void Object::AddFlag(uint64_t Flag) {

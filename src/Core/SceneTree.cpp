@@ -1,6 +1,6 @@
 ﻿module Engine.SceneTree;
-import Engine.Node;
 import Engine.Application;
+import Engine.Node;
 
 
 SceneTree::~SceneTree() {
@@ -65,7 +65,12 @@ void SceneTree::RegisterNode(Node* node)
             RegisterNode(child.Get());
         }
 
-        node->EnterTree();
+        if (node->scriptInstance.has_value()) {
+            node->scriptInstance->Call<void>(L"EnterTree");
+        }
+        else {
+            node->EnterTree();
+        }
     }
 }
 
@@ -82,14 +87,24 @@ void SceneTree::UnregisterNode(Node* node)
             UnregisterNode(child.Get());
         }
 
-        node->ExitTree();
+        if (node->scriptInstance.has_value()) {
+            node->scriptInstance->Call<void>(L"ExitTree");
+        }
+        else {
+            node->ExitTree();
+        }
     }
 }
 
 void SceneTree::UpdateNode(Node* n, float dt, bool recursive)
 {
-    n->Update(dt);
-    
+    if (n->scriptInstance.has_value()) {
+        n->scriptInstance->Call<void>(L"Update", dt);
+    }
+    else {
+        n->Update(dt);
+    }
+
     if (recursive)
     {
         n->ForEachChild([this, dt, recursive](Node* child)
@@ -108,7 +123,12 @@ void SceneTree::ReadyNode(Node* n)
 
     if (!n->isReady)
     {
-        n->Ready();
+        if (n->scriptInstance.has_value()) {
+            n->scriptInstance->Call<void>(L"Ready");
+        }
+        else {
+            n->Ready();
+        }
         n->isReady = true;
     }
 }
