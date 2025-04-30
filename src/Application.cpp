@@ -64,6 +64,7 @@ Application::Application()
 
 	scriptEngine.reset(new ScriptEngine());
 	scriptEngine->Init();
+	scriptEngine->LoadModule(L"Dotnet/Scripts.dll", L"Scripts");
 
 	std::cout << "Requesting adapter..." << std::endl;
 	wgpu::RequestAdapterOptions adapterOpts = {};

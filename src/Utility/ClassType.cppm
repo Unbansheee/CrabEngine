@@ -50,7 +50,7 @@ export struct ClassType : NoCopy
     std::vector<Property> Properties{};
     string_id Parent = MakeStringID("null");
     ClassFlags_ Flags = 0;
-    std::unordered_map<std::string, void*> methodTable;
+    std::unordered_map<std::string, void*> methodTable{};
 
     bool operator==(const ClassType& other) const
     {
@@ -66,7 +66,6 @@ export struct ClassType : NoCopy
     {
         return Name != MakeStringID("null");
     }
-    
     
     bool IsSubclassOf(const ClassType& parent) const;
 

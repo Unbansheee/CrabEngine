@@ -27,7 +27,7 @@ export namespace ObjectFlags {
 
 export class Object : public observable_dtor
 {
-
+    friend class ScriptModule;
 private:
     inline static BaseObjectRegistrationObject ObjectRegistrationObject;
 
@@ -46,6 +46,11 @@ public:
 
     void AddFlag(ObjectFlags_ Flag);
     bool HasFlag(ObjectFlags_ Flag);
+
+    ScriptInstance* GetScriptInstance() {
+        if (scriptInstance.has_value()) return &scriptInstance.value();
+        return nullptr;
+    }
 
     static void RegisterMethods() {
     }

@@ -11,42 +11,51 @@ module;
 #pragma comment(lib, "nethost.lib")
 
 export module Engine.ScriptEngine;
-import std;
 import Engine.Assert;
-import Engine.Reflection.Class;
+import std;
 
-using namespace std;
+
+export class ScriptEngine;
+export struct ClassType;
 
 struct ScriptInfo {
     const char* Name;
     const char* ParentClassName;
 };
 
+export template<typename T = void>
+struct ScriptFunctionResult {
+    using InternalResultType = std::conditional_t<std::is_void_v<T>, bool, T>;
+    bool SuccessfullyExecuted = false;
+    std::optional<InternalResultType> Result = {};
 
-export class ScriptEngine {
-    hostfxr_initialize_for_runtime_config_fn init_fptr;
-    hostfxr_get_runtime_delegate_fn get_delegate_fptr;
-    hostfxr_close_fn close_fptr;
+    InternalResultType& operator* ()
+    {
+        return Result.value();
+    }
 
-    load_assembly_and_get_function_pointer_fn load_assembly_fn = nullptr;
+    InternalResultType& operator-> ()
+    {
+        return Result.value();
+    }
+};
 
-
-
-    std::wstring runtimeConfig = L"Dotnet/Scripts.runtimeconfig.json";
-    std::wstring assemblyPath = L"Dotnet/Scripts.dll";
-
-    std::unordered_map<std::wstring, void*> functionCache;
-
-    std::list<ClassType> scriptClasses{};
-
-    bool LoadHostFXR();
-    bool GetManagedDelegate(const std::wstring& runtimeConfigPath);
-
+class ScriptModule {
 public:
-    void Init();
+    ScriptModule(ScriptEngine* scriptEngine, const std::wstring& assemblyPath, const std::wstring& libName);
+
+    std::list<ClassType> scriptClasses;
+    std::unordered_map<std::wstring, void*> functionCache;
+    std::wstring assemblyPath;
+    std::wstring libName;
+    ScriptEngine* engine;
+
+    load_assembly_and_get_function_pointer_fn GetLoadAssemblyFn();
+public:
+    const ClassType* GetClass(const std::wstring& className) const;
 
     template<typename ReturnType = void, typename... Args>
-    ReturnType CallManaged(const std::wstring& className, const std::wstring& fnName, Args... args) {
+    ScriptFunctionResult<ReturnType> CallManaged(const std::wstring& className, const std::wstring& fnName, Args... args) {
         using ManagedFn = ReturnType(__stdcall*)(Args...);
         ManagedFn fn = nullptr;
 
@@ -55,9 +64,9 @@ public:
             fn = static_cast<ManagedFn>(functionCache.at(key));
         }
         else {
-            int rc = load_assembly_fn(
+            int rc = GetLoadAssemblyFn()(
             assemblyPath.c_str(),
-            (className + L", Scripts").c_str(),
+            (className + L", " + libName).c_str(),
             fnName.c_str(),
             UNMANAGEDCALLERSONLY_METHOD,
             nullptr,
@@ -66,12 +75,7 @@ public:
 
             if (rc != 0 || !fn) {
                 std::wcerr << "Failed to load managed method: " << className << "." << fnName << "()" << ". HRESULT: 0x" << std::hex << rc << std::endl;
-                if constexpr (std::is_same_v<ReturnType, void>) {
-                    return;
-                }
-                else {
-                    return ReturnType();
-                }
+                return { false, {} };
             }
 
             functionCache.insert({key, static_cast<void*>(fn)});
@@ -79,15 +83,15 @@ public:
 
         if constexpr (std::is_same_v<ReturnType, void>) {
             fn(args...);
-            return;
+            return {true, {}};
         }
         else {
-            return fn(args...);
+            return {true, fn(args...)};
         }
     }
 
     template<typename ReturnType = void, typename... Args>
-    ReturnType CallScriptMethod(void* managedHandle, const std::wstring& methodName, Args&&... args) {
+    ScriptFunctionResult<ReturnType> CallScriptMethod(void* managedHandle, const std::wstring& methodName, Args&&... args) {
         void** argArray = nullptr;
         int argCount = sizeof...(Args);
 
@@ -101,7 +105,7 @@ public:
             returnBuffer = alloca(sizeof(ReturnType));
         }
 
-        CallManaged<void>(
+        auto ret = CallManaged<void>(
             L"Scripts.ScriptHost",
             L"CallScriptMethod",
             managedHandle,
@@ -111,10 +115,56 @@ public:
             returnBuffer
         );
 
+        if (!ret.SuccessfullyExecuted) return {false, {}};
+
         if constexpr (!std::is_void_v<ReturnType>) {
-            return *reinterpret_cast<ReturnType*>(returnBuffer);
+            return {true, *reinterpret_cast<ReturnType*>(returnBuffer)};
         }
+        return {true, {}};
+    }
+};
+
+
+export class ScriptEngine {
+    friend class ScriptModule;
+
+    hostfxr_initialize_for_runtime_config_fn init_fptr;
+    hostfxr_get_runtime_delegate_fn get_delegate_fptr;
+    hostfxr_close_fn close_fptr;
+    load_assembly_and_get_function_pointer_fn load_assembly_fn = nullptr;
+    std::vector<std::unique_ptr<ScriptModule>> loadedModules;
+
+    bool LoadHostFXR();
+    bool GetManagedDelegate(const std::wstring& runtimeConfigPath);
+
+public:
+    void Init();
+    void LoadModule(const std::wstring &assembly, const std::wstring &libName);
+
+    template<typename ReturnType = void, typename... Args>
+    ScriptFunctionResult<ReturnType> CallManaged(const std::wstring& className, const std::wstring& fnName, Args... args) {
+        for (auto& module : loadedModules) {
+            ScriptFunctionResult<ReturnType> res = module->CallManaged<ReturnType>(className, fnName, args...);
+            if (res.SuccessfullyExecuted) {
+                return res;
+            }
+        }
+        return {false, {}};
     }
 
+    template<typename ReturnType = void, typename... Args>
+    ScriptFunctionResult<ReturnType> CallScriptMethod(void* managedHandle, const std::wstring& methodName, Args&&... args) {
+        for (auto& module : loadedModules) {
+            ScriptFunctionResult<ReturnType> res = module->CallScriptMethod(managedHandle, methodName, args...);
+            if (res.SuccessfullyExecuted) {
+                return res;
+            }
+        }
+        return {false, {}};
+    }
 };
+
+
+
+
 
