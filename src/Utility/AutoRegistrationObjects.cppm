@@ -44,3 +44,10 @@ struct AutoClassFlagRegister {
         AddFlagToClassType(unconst, flags);
     }
 };
+
+export template<typename T, typename... Args>
+struct MethodRegister {
+    MethodRegister(const std::string& name, void* method) {
+        const_cast<ClassType&>(T::GetStaticClass()).methodTable[name] = method;
+    }
+};

@@ -29,7 +29,18 @@ export namespace ClassFlags {
     constexpr uint32_t ScriptClass = 1 << 3;
 }
 
-export using MethodFn = std::function<void(void*, void*)>;
+export using MethodFn = std::function<void(void*, void*[])>;
+
+// Per-method invocation context
+export struct MethodContext {
+    void* methodPtr; // No instance here
+};
+
+export typedef void(__stdcall* NativeMethod)(void* context, void** args);
+
+export struct BoundMethod {
+    NativeMethod function;
+};
 
 export struct ClassType : NoCopy
 {
@@ -39,7 +50,7 @@ export struct ClassType : NoCopy
     std::vector<Property> Properties{};
     string_id Parent = MakeStringID("null");
     ClassFlags_ Flags = 0;
-    std::unordered_map<std::string, MethodFn> methodTable;
+    std::unordered_map<std::string, void*> methodTable;
 
     bool operator==(const ClassType& other) const
     {

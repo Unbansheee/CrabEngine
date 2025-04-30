@@ -12,6 +12,10 @@ import Engine.Reflection.ClassDB;
 import Engine.ScriptInstance;
 import Engine.Object;
 
+void doThing(void* ctx) {
+    std::cout << "Thing" << std::endl;
+}
+
 void ScriptEngine::Init() {
     if (!LoadHostFXR()) {
         std::cerr << "Failed to load hostfxr." << std::endl;
@@ -35,8 +39,19 @@ void ScriptEngine::Init() {
         t.Name = MakeStringID(script_info[i].Name);
         t.Parent = MakeStringID(script_info[i].ParentClassName);
         ClassDB::Get().RegisterClassType(t);
+    }
 
-
+    // Bind native class functions
+    for (auto& classType : ClassDB::Get().GetClasses()) {
+        if (!classType->HasFlag(ClassFlags::ScriptClass)) {
+            for (auto& [name, func] : classType->methodTable) {
+                std::string className = classType->Name.string();
+                std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+                std::wstring wideClass = converter.from_bytes(className);
+                std::wstring wideFn = converter.from_bytes(name);
+                CallManaged<void>(L"Scripts.ScriptHost", L"RegisterNativeFunction", (L"Scripts." + wideClass).c_str(), wideFn.c_str(), func);
+            }
+        }
     }
 
     for (auto& classType : scriptClasses) {

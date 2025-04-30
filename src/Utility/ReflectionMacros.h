@@ -157,5 +157,14 @@ virtual const ClassType& GetStaticClassFromThis() override { return GetStaticCla
 [[maybe_unused]] inline static AutoRegisterResourceImporter<Type> ImporterRegistrationObject_##Type = AutoRegisterResourceImporter<Type>();
 
 
-#define BIND_METHOD(Name) \
-    RegisterMethod<ThisClass>(#Name, &ThisClass::Name);
+#define BIND_METHOD(ReturnType, Name) \
+static ReturnType Native##Name(ThisClass* ctx) { \
+return ctx->Name(); \
+} \
+inline static auto Register_##Name = MethodRegister<ThisClass>(#Name, (void*)&Native##Name);
+
+#define BIND_METHOD_PARAMS(ReturnType, Name, ParamList, ArgList) \
+static ReturnType Native##Name(ThisClass* ctx, ParamList) { \
+return ctx->Name ArgList; \
+} \
+inline static auto Register_##Name = MethodRegister<ThisClass>(#Name, (void*)&Native##Name);

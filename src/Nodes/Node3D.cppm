@@ -25,6 +25,20 @@ public:
         ADD_PROPERTY("Transform", transform)
     END_PROPERTIES
 
+    BIND_METHOD_PARAMS(void, SetPosition, Vector3 position, (position))
+    BIND_METHOD_PARAMS(void, SetScale, Vector3 scale, (scale))
+    BIND_METHOD_PARAMS(void, SetOrientation, Quat orientation, (orientation))
+    BIND_METHOD_PARAMS(void, SetGlobalPosition, Vector3 position, (position))
+    BIND_METHOD_PARAMS(void, SetGlobalScale, Vector3 scale, (scale))
+    BIND_METHOD_PARAMS(void, SetGlobalOrientation, Quat orientation, (orientation))
+
+    BIND_METHOD(Vector3, GetPosition);
+    BIND_METHOD(Vector3, GetScale);
+    BIND_METHOD(Quat, GetOrientation);
+    BIND_METHOD(Vector3, GetGlobalPosition);
+    BIND_METHOD(Vector3, GetGlobalScale);
+    BIND_METHOD(Quat, GetGlobalOrientation);
+
     static void RegisterMethods() {
 
     }

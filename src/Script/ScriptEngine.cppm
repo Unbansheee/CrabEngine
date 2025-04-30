@@ -7,6 +7,7 @@ module;
 #include <hostfxr.h>
 #include <nethost.h>
 #include <coreclr_delegates.h>
+#include <malloc.h>
 #pragma comment(lib, "nethost.lib")
 
 export module Engine.ScriptEngine;
@@ -82,6 +83,36 @@ public:
         }
         else {
             return fn(args...);
+        }
+    }
+
+    template<typename ReturnType = void, typename... Args>
+    ReturnType CallScriptMethod(void* managedHandle, const std::wstring& methodName, Args&&... args) {
+        void** argArray = nullptr;
+        int argCount = sizeof...(Args);
+
+        if constexpr (sizeof...(Args) > 0) {
+            static void* tempArgs[] = { (void*)&args... };
+            argArray = tempArgs;
+        }
+
+        void* returnBuffer = nullptr;
+        if constexpr (!std::is_void_v<ReturnType>) {
+            returnBuffer = alloca(sizeof(ReturnType));
+        }
+
+        CallManaged<void>(
+            L"Scripts.ScriptHost",
+            L"CallScriptMethod",
+            managedHandle,
+            methodName.c_str(),
+            argArray,
+            static_cast<int>(sizeof...(Args)),
+            returnBuffer
+        );
+
+        if constexpr (!std::is_void_v<ReturnType>) {
+            return *reinterpret_cast<ReturnType*>(returnBuffer);
         }
     }
 

@@ -15,11 +15,11 @@ export struct ScriptInstance {
      template<typename ReturnValue, typename ...Args>
      ReturnValue Call(const std::wstring& method, Args... args) {
          if constexpr (std::is_same_v<ReturnValue, void>) {
-             GetScriptEngine()->CallManaged<ReturnValue>(L"Scripts.ScriptHost", L"CallMethod", ManagedHandle, method.c_str(), args...);
+             GetScriptEngine()->CallScriptMethod<ReturnValue>(ManagedHandle, method.c_str(), args...);
              return;
          }
          else {
-             return GetScriptEngine()->CallManaged<ReturnValue>(L"Scripts.ScriptHost", L"CallMethod", ManagedHandle, method.c_str(), args...);
+             return GetScriptEngine()->CallScriptMethod<ReturnValue>(ManagedHandle, method.c_str(), args...);
          }
      }
 

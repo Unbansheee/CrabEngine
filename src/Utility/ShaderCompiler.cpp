@@ -370,7 +370,6 @@ ShaderCompiler::ParseBufferSubfields(slang::TypeLayoutReflection *typeLayout) {
         bufferFields = typeLayout->getElementTypeLayout()->getFieldCount();
     }
 
-    std::cout << "Fields: " << bufferFields << std::endl;
     for (int i = 0; i < bufferFields; i++) {
         UniformMetadata::BufferField &Subfield = fields.emplace_back();
         VariableLayoutReflection *field = nullptr;

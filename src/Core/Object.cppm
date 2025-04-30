@@ -11,7 +11,7 @@ export import json;
 export import std;
 import Engine.Object.ObservableDtor;
 import Engine.ScriptInstance;
-
+import Engine.Reflection;
 
 struct BaseObjectRegistrationObject
 {
@@ -30,6 +30,7 @@ export class Object : public observable_dtor
 
 private:
     inline static BaseObjectRegistrationObject ObjectRegistrationObject;
+
     friend class Property;
 
     ObjectFlags_ ObjectFlags = 0;
@@ -63,19 +64,21 @@ public:
     // Returns all registered properties for this class
     static const std::vector<Property>& GetClassProperties()
     {
-        static const std::vector<Property> p = {};
+        static const std::vector<Property> p;
         return p;
     }
 
+    /*
     template<typename T = ThisClass, typename... Args>
     static void RegisterMethod(const std::string& name, void (T::*method)(Args...)) {
-            const_cast<ClassType&>(GetStaticClass()).methodTable[name] = [method](void* ctx, void* rawArgs) {
+            const_cast<ClassType&>(GetStaticClassFromType<T>()).methodTable[name] = [method](void* ctx, void* rawArgs) {
                 auto* obj = static_cast<T*>(ctx);
                 std::apply([&](Args... args) {
                     (obj->*method)(args...);
                 }, *static_cast<std::tuple<Args...>*>(rawArgs));
             };
         }
+*/
 
     static const ClassType& GetStaticClass();
 
@@ -87,7 +90,7 @@ public:
 
     // Returns all registered properties for a specified class
     template <typename T>
-    static const std::vector<Property>& GetStaticClassFromType() {
+    static const ClassType& GetStaticClassFromType() {
         return T::GetStaticClass();
     }
 

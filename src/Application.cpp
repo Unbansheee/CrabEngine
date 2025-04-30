@@ -57,6 +57,14 @@ Application::Application()
 		std::cerr << "Could not initialize GLFW!" << std::endl;
 	}
 
+	auto rootFS = std::make_unique<vfspp::NativeFileSystem>(std::filesystem::current_path().string());
+	rootFS->Initialize();
+
+	Filesystem::AddFileSystemDirectory("/engine", ENGINE_RESOURCE_DIR);
+
+	scriptEngine.reset(new ScriptEngine());
+	scriptEngine->Init();
+
 	std::cout << "Requesting adapter..." << std::endl;
 	wgpu::RequestAdapterOptions adapterOpts = {};
 	//surface = glfwGetWGPUSurface(wgpuInstance, window);
@@ -70,7 +78,6 @@ Application::Application()
 	requiredFeatures.push_back((WGPUFeatureName)wgpu::NativeFeature::TextureAdapterSpecificFormatFeatures);
 	requiredFeatures.push_back((WGPUFeatureName)wgpu::NativeFeature::VertexWritableStorage);
 	requiredFeatures.push_back((WGPUFeatureName)wgpu::NativeFeature::PushConstants);
-
 
 	std::cout << "Requesting device..." << std::endl;
 	wgpu::Limits requiredLimits = GetRequiredLimits(adapter);
@@ -114,21 +121,12 @@ Application::Application()
 	jobSystem = new JPH::JobSystemThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, maxConcurrentJobs - 1);
 	sceneTree.SetRoot(Node::NewNode());
 
-	std::cout << std::filesystem::current_path().string() << std::endl;
-
-	auto rootFS = std::make_unique<vfspp::NativeFileSystem>(std::filesystem::current_path().string());
-	rootFS->Initialize();
-
-
-	//Filesystem::AddFileSystemDirectory("/app", std::filesystem::current_path().string());
-	Filesystem::AddFileSystemDirectory("/engine", ENGINE_RESOURCE_DIR);
-
-	scriptEngine.Init();
 }
 
 
 Application::~Application()
 {
+	sceneTree.Clear();
 	// Unregisters all types with the factory and cleans up the default material
 	JPH::UnregisterJoltTypes();
 	// Destroy the factory

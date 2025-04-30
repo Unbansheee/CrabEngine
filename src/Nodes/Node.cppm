@@ -12,10 +12,12 @@ export import Engine.Reflection.Class;
 import Engine.Object.ObservableDtor;
 import Engine.SceneTree;
 import Engine.Object.Ref;
+import std;
 
 export class RenderVisitor;
 export class Renderer;
 
+// Function pointer type expected by C#
 export class Node : public Object {
 public:
 	CRAB_CLASS(Node, Object)
@@ -25,12 +27,10 @@ public:
 		ADD_PROPERTY("Hidden", isHidden)
 	END_PROPERTIES
 
-	static void RegisterMethods() {
-		BIND_METHOD(EnterTree)
-		BIND_METHOD(ExitTree)
-		BIND_METHOD(Ready)
-		BIND_METHOD(Update)
-	}
+	BIND_METHOD(void, Ready)
+	BIND_METHOD(void, EnterTree)
+	BIND_METHOD(void, ExitTree)
+	BIND_METHOD_PARAMS(void, Update, float dt, (dt))
 
 protected:
 	friend class Application;
@@ -320,6 +320,9 @@ protected:
 	bool isReady = false;
 private:
 	SceneTree* tree = nullptr;
+
+
+
 };
 
 

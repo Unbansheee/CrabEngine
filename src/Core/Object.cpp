@@ -10,6 +10,7 @@ import Engine.Application;
 BaseObjectRegistrationObject::BaseObjectRegistrationObject()
 {
     ClassDB::Get().RegisterClassType(Object::GetStaticClass());
+    Object::RegisterMethods();
 }
 
 Object::~Object() {

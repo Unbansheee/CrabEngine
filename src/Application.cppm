@@ -75,14 +75,14 @@ public:
 
     vfspp::VirtualFileSystemPtr GetFilesystem();
 
-    ScriptEngine* GetScriptEngine() {return &scriptEngine;};
+    ScriptEngine* GetScriptEngine() {return scriptEngine.get();};
 protected:
     SceneTree sceneTree;
     DeltaTicker deltaTime;
     float dt;
     bool bShouldClose = false;
 
-    ScriptEngine scriptEngine;
+    std::unique_ptr<ScriptEngine> scriptEngine;
 
     wgpu::Instance wgpuInstance = nullptr;
     wgpu::Device wgpuDevice = nullptr;
