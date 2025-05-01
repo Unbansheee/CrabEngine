@@ -9,7 +9,7 @@ import Engine.Variant;
     #Property
 
 #define BEGIN_PROPERTIES \
-virtual const std::vector<Property>& GetPropertiesFromThis() override { return GetClassProperties(); }\
+virtual const std::vector<Property>& GetPropertiesFromThis() override { if (scriptInstance.has_value()) { return scriptInstance->ScriptClass->Properties; } else return GetClassProperties(); } \
 static const auto& GetClassProperties() { \
 static const std::vector<Property> props = []{ \
 std::vector<Property> base = Super::GetClassProperties(); \

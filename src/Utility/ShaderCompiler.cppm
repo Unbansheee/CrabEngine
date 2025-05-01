@@ -50,7 +50,7 @@ private:
      std::vector<UniformMetadata::BufferField> ParseBufferSubfields(slang::TypeLayoutReflection* typeLayout);
 
      Slang::ComPtr<slang::ISession> session;
-     static inline std::vector<const char*> shaderSources = {ENGINE_RESOURCE_DIR};
+     static inline std::vector<const char*> shaderSources = {"/engine/", "/res/"};
 
      Slang::ComPtr<slang::IBlob> spirv;
      std::string wgsl;

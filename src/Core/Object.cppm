@@ -57,7 +57,12 @@ public:
 
     // Returns the class properties from an object instance. This indirection is required otherwise if getting properties for a
     // Node3D via a Node*, only the Node*'s properties would be returned. This function is implemented in the BEGIN_PROPERTIES macro
-    virtual const std::vector<Property>& GetPropertiesFromThis() { return GetClassProperties(); }
+    virtual const std::vector<Property>& GetPropertiesFromThis() {
+        if (scriptInstance.has_value()) {
+            return scriptInstance->ScriptClass->Properties;
+        }
+        return GetClassProperties();
+    }
 
     virtual const ClassType& GetStaticClassFromThis() {
         if (scriptInstance.has_value()) {
@@ -72,18 +77,6 @@ public:
         static const std::vector<Property> p;
         return p;
     }
-
-    /*
-    template<typename T = ThisClass, typename... Args>
-    static void RegisterMethod(const std::string& name, void (T::*method)(Args...)) {
-            const_cast<ClassType&>(GetStaticClassFromType<T>()).methodTable[name] = [method](void* ctx, void* rawArgs) {
-                auto* obj = static_cast<T*>(ctx);
-                std::apply([&](Args... args) {
-                    (obj->*method)(args...);
-                }, *static_cast<std::tuple<Args...>*>(rawArgs));
-            };
-        }
-*/
 
     static const ClassType& GetStaticClass();
 

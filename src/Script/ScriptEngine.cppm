@@ -13,14 +13,32 @@ module;
 export module Engine.ScriptEngine;
 import Engine.Assert;
 import std;
+import Engine.Reflection;
+import Engine.Variant;
 
 
+struct ScriptInstance;
 export class ScriptEngine;
-export struct ClassType;
+
+struct ScriptPropertyInfo {
+    const char* Name;
+    const char* Type;
+    const char* DisplayName;
+};
 
 struct ScriptInfo {
     const char* Name;
     const char* ParentClassName;
+    int PropertyCount;
+    ScriptPropertyInfo* Properties;
+};
+
+typedef void (*SetPropertyFunc)(void* instanceHandle, const char* propName, void* value);
+typedef void (*GetPropertyFunc)(void* instanceHandle, const char* propName, void* outValue);
+
+export struct ScriptInterop {
+    SetPropertyFunc Set;
+    GetPropertyFunc Get;
 };
 
 export template<typename T = void>
@@ -43,6 +61,7 @@ struct ScriptFunctionResult {
 class ScriptModule {
 public:
     ScriptModule(ScriptEngine* scriptEngine, const std::wstring& assemblyPath, const std::wstring& libName);
+    ~ScriptModule();
 
     std::list<ClassType> scriptClasses;
     std::unordered_map<std::wstring, void*> functionCache;
@@ -50,9 +69,9 @@ public:
     std::wstring libName;
     ScriptEngine* engine;
 
-    load_assembly_and_get_function_pointer_fn GetLoadAssemblyFn();
+    load_assembly_fn LoadAssemblyFn();
+    get_function_pointer_fn GetFunctionPointerFn();
 public:
-    const ClassType* GetClass(const std::wstring& className) const;
 
     template<typename ReturnType = void, typename... Args>
     ScriptFunctionResult<ReturnType> CallManaged(const std::wstring& className, const std::wstring& fnName, Args... args) {
@@ -64,11 +83,11 @@ public:
             fn = static_cast<ManagedFn>(functionCache.at(key));
         }
         else {
-            int rc = GetLoadAssemblyFn()(
-            assemblyPath.c_str(),
+            int rc = GetFunctionPointerFn()(
             (className + L", " + libName).c_str(),
             fnName.c_str(),
             UNMANAGEDCALLERSONLY_METHOD,
+            nullptr,
             nullptr,
             (void**)&fn
         );
@@ -131,8 +150,12 @@ export class ScriptEngine {
     hostfxr_initialize_for_runtime_config_fn init_fptr;
     hostfxr_get_runtime_delegate_fn get_delegate_fptr;
     hostfxr_close_fn close_fptr;
-    load_assembly_and_get_function_pointer_fn load_assembly_fn = nullptr;
-    std::vector<std::unique_ptr<ScriptModule>> loadedModules;
+    load_assembly_fn load_assembly;
+    get_function_pointer_fn get_fn_ptr;
+
+    //load_assembly_and_get_function_pointer_fn load_assembly_fn = nullptr;
+
+    std::unordered_map<std::wstring, std::unique_ptr<ScriptModule>> loadedModules;
 
     bool LoadHostFXR();
     bool GetManagedDelegate(const std::wstring& runtimeConfigPath);
@@ -140,10 +163,13 @@ export class ScriptEngine {
 public:
     void Init();
     void LoadModule(const std::wstring &assembly, const std::wstring &libName);
+    void UnloadModule(const std::wstring &assembly);
+    void ReloadModule(const std::wstring &assembly);
+
 
     template<typename ReturnType = void, typename... Args>
     ScriptFunctionResult<ReturnType> CallManaged(const std::wstring& className, const std::wstring& fnName, Args... args) {
-        for (auto& module : loadedModules) {
+        for (auto &module: loadedModules | std::views::values) {
             ScriptFunctionResult<ReturnType> res = module->CallManaged<ReturnType>(className, fnName, args...);
             if (res.SuccessfullyExecuted) {
                 return res;
@@ -154,7 +180,7 @@ public:
 
     template<typename ReturnType = void, typename... Args>
     ScriptFunctionResult<ReturnType> CallScriptMethod(void* managedHandle, const std::wstring& methodName, Args&&... args) {
-        for (auto& module : loadedModules) {
+        for (auto &module: loadedModules | std::views::values) {
             ScriptFunctionResult<ReturnType> res = module->CallScriptMethod(managedHandle, methodName, args...);
             if (res.SuccessfullyExecuted) {
                 return res;
@@ -162,8 +188,11 @@ public:
         }
         return {false, {}};
     }
-};
 
+private:
+    std::optional<Property> CreateScriptProperty(const ScriptPropertyInfo& info);
+
+};
 
 
 

@@ -8,16 +8,13 @@ module;
 export module Engine.Node;
 export import Engine.Object;
 export import Engine.Transform;
-export import Engine.Reflection.Class;
-import Engine.Object.ObservableDtor;
-import Engine.SceneTree;
 import Engine.Object.Ref;
 import std;
+import Engine.SceneTree;
 
 export class RenderVisitor;
 export class Renderer;
 
-// Function pointer type expected by C#
 export class Node : public Object {
 public:
 	CRAB_CLASS(Node, Object)
@@ -115,8 +112,8 @@ public:
 	// Walk the tree to the root node, and retrieve its Context
 	//Context& GetContext();
 
-	SceneTree* GetTree() {return tree;}
-	
+	SceneTree* GetTree();
+
 	// Walk the tree to find the outermost Node (Generally the SceneRoot)
 	Node* GetRootNode();
 
@@ -196,6 +193,7 @@ public:
 			UpdateTransform();
 			return created;
 		}
+
 
 	Node* AddChild(std::unique_ptr<Node> node);
 

@@ -87,6 +87,8 @@ protected:
     };
     
 public:
+    void RecompileShader();
+
     wgpu::Device m_device = nullptr;
     wgpu::raii::RenderPipeline m_pipeline{};
     wgpu::raii::ShaderModule m_shaderModule;
@@ -146,15 +148,13 @@ public:
     
     MaterialResource(wgpu::Device device, const std::string& moduleName, MaterialSettings settings = MaterialSettings()) : m_device(device), m_settings(settings)
     {
-        LoadFromShaderPath(device, moduleName, settings);
+        LoadFromShaderPath(device, moduleName, false, settings);
     }
 
-    void LoadFromShaderPath(wgpu::Device device, const std::string& moduleName, MaterialSettings settings = MaterialSettings());
+    void LoadFromShaderPath(wgpu::Device device, const std::string& moduleName, bool bForceRecompile, MaterialSettings settings = MaterialSettings());
 
     virtual void Initialize()
     {
-
-        //assert(TargetTextureFormat != wgpu::TextureFormat::Undefined);
         if (!m_device) m_device = Application::Get().GetDevice();
         m_pipeline = CreateRenderPipeline();
     }

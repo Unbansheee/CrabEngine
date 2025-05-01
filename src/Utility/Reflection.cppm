@@ -19,6 +19,7 @@ export namespace PropertyFlags
     constexpr uint32_t HideFromInspector = 1 << 2;
     constexpr uint32_t MaterialProperty = 1 << 3;
     constexpr uint32_t ColorHint = 1 << 4;
+    constexpr uint32_t ScriptProperty = 1 << 5;
 };
 
 template <typename>

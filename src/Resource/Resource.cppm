@@ -34,29 +34,23 @@ public:
 
     using Ptr = std::shared_ptr<Resource>;
     
-    void Serialize(nlohmann::json& archive) override { Object::Serialize(archive); }
-    void Deserialize(nlohmann::json& archive) override { Object::Deserialize(archive); }
+    void Serialize(nlohmann::json& archive) override;
+    void Deserialize(nlohmann::json& archive) override;
+    virtual ~Resource();
 
     // Triggers resources such as mesh data, texture data, to be loaded into memory / gpu
     // The idea is that a resource can exist as a shell, holding metadata, and its sub-data will only be loaded when explicitly needed
     // To prevent having to keep big resources in memory, but still being able to reference them
-    virtual void LoadData() { loaded = true; };
-    virtual bool IsLoaded() const {return loaded;}
-    void LoadIfRequired() const { if (!IsLoaded()) const_cast<Resource*>(this)->LoadData(); }
-
+    virtual void LoadData();
+    virtual bool IsLoaded() const;
+    void LoadIfRequired() const;
     virtual wgpu::raii::TextureView GetThumbnail();
-
-    const std::string& GetName() const {return name;}
-    bool IsSourceImported() const { return !bIsInline; }
-    bool IsInline() const { return bIsInline; }
-    const std::string& GetSourcePath() { return sourcePath; }
-    const std::string& GetAbsolutePath() {
-        if (absolutePath.empty()) {
-            absolutePath = Filesystem::AbsolutePath(sourcePath);
-        }
-        return absolutePath;
-    };
-    const std::shared_ptr<ResourceMetadata>& GetImportSettings() { return importSettings; };
+    const std::string& GetName() const;
+    bool IsSourceImported() const;
+    bool IsInline() const;
+    const std::string& GetSourcePath();
+    const std::string& GetAbsolutePath();;
+    const std::shared_ptr<ResourceMetadata>& GetImportSettings();;
 
     rocket::signal<void()> OnResourceSaved;
 protected:
@@ -69,11 +63,9 @@ protected:
 
     // Runtime only, not serialized
     std::string absolutePath{};
-
     std::filesystem::file_time_type resource_time;
 private:
     static inline std::shared_ptr<TextureResource> DefaultResourceThumbnail = nullptr;
-
 
     // C# Script lifetime management
     static void ReleaseResource(Resource* res);
@@ -81,6 +73,5 @@ private:
 
     static Resource* LoadResource(const char* path);
     BIND_STATIC_METHOD(Resource*, LoadResource)
-
 };
 

@@ -16,10 +16,9 @@ import Engine.WGPU;
 import Engine.Resource.ImportManager;
 import Engine.Reflection.ClassDB;
 import Engine.Assert;
-import Engine.ShaderParser;
-import fmt;
 import Engine.Application;
 import Engine.Filesystem;
+import fmt;
 
 bool ResourceManager::IsSourceFile(const std::filesystem::path& path)
 {
@@ -32,7 +31,7 @@ std::shared_ptr<Resource> ResourceManager::Load(const std::filesystem::path& pat
     {
         std::lock_guard lock(cacheMutex);
         // Existing resource loading logic
-        auto it = cache.FetchResourceByPath(path.string());
+        auto it = GetResourceCache().FetchResourceByPath(path.string());
         if (it) {
             return it;
         }
@@ -46,7 +45,7 @@ std::shared_ptr<Resource> ResourceManager::Load(const std::filesystem::path& pat
         {
 
             std::lock_guard lock(cacheMutex);
-            cache.AddResource(res);
+            GetResourceCache().AddResource(res);
         }
         return res;
     }
@@ -59,7 +58,7 @@ std::shared_ptr<Resource> ResourceManager::FindByID(const UID &id) {
     auto fs = Application::Get().GetFilesystem();
     {
         std::lock_guard lock(cacheMutex);
-        auto it = cache.FetchResourceByID(id);
+        auto it = GetResourceCache().FetchResourceByID(id);
         if (it) {
             return it;
         }
@@ -85,14 +84,14 @@ void ResourceManager::ReloadResource(const std::shared_ptr<Resource> &resource) 
         if (resource)
         {
             std::lock_guard lock(cacheMutex);
-            cache.AddResource(resource);
+            GetResourceCache().AddResource(resource);
         }
     }
 }
 
 bool ResourceManager::IsResourceLoaded(const std::filesystem::path &path) {
     std::lock_guard lock(cacheMutex);
-    return cache.FetchResourceByPath(path.string()) != nullptr;
+    return GetResourceCache().FetchResourceByPath(path.string()) != nullptr;
 }
 
 void ResourceManager::SaveToFile(const std::filesystem::path& path, nlohmann::json& json)
@@ -116,9 +115,30 @@ void ResourceManager::SaveImportSettings(const std::filesystem::path& sourcePath
     outFile.close();
 }
 
+void ResourceManager::SaveResource(const std::shared_ptr<Resource> &resource, const std::filesystem::path &path) {
+    auto savePath = path.empty() ? resource->GetSourcePath() : path;
+
+    if (savePath.extension() == ".res") {
+        nlohmann::json j;
+        resource->Serialize(j);
+        SaveToFile(savePath, j);
+    }
+    if (auto importSettings = resource->GetImportSettings()) {
+        importSettings->ResourceID = resource->GetID();
+        SaveImportSettings(savePath, importSettings);
+    }
+
+    resource->OnResourceSaved.invoke();
+}
+
 std::vector<std::shared_ptr<Resource>> ResourceManager::GetAllResources()
 {
-    return cache.GetAllResources();
+    return GetResourceCache().GetAllResources();
+}
+
+ResourceCache & ResourceManager::GetResourceCache() {
+    static ResourceCache cache;
+    return cache;
 }
 
 bool ResourceManager::loadGeometryFromObj(const std::filesystem::path &path, std::vector<MeshVertex> &vertexData) {
@@ -254,33 +274,6 @@ wgpu::Texture ResourceManager::loadTexture(wgpu::Device device, int width, int h
     
     writeMipMaps(device, texture, textureDesc.size, textureDesc.mipLevelCount, pixelData);
     return texture;
-}
-
-ShaderModule ResourceManager::loadShaderModule(const std::filesystem::path &path, wgpu::Device device) {
-    ShaderModule m;
-    std::ifstream file(path);
-    Assert::Check(file.is_open(), "file.is_open()", path.string());
-
-    file.seekg(0, std::ios::end);
-    size_t size = file.tellg();
-    std::string shaderSource(size, ' ');
-    file.seekg(0);
-    file.read(shaderSource.data(), size);
-
-    ShaderParser parser;
-    m.Metadata = parser.Parse(shaderSource);
-
-    wgpu::ShaderSourceWGSL shaderCodeDesc{};
-    shaderCodeDesc.chain.next = nullptr;
-    shaderCodeDesc.chain.sType = wgpu::SType::ShaderSourceWGSL;
-    shaderCodeDesc.code = {parser.GetProcessedSource().c_str(), parser.GetProcessedSource().length()};
-    //std::cout << shaderCodeDesc.code;
-
-    wgpu::ShaderModuleDescriptor shaderDesc{};
-    shaderDesc.nextInChain = &shaderCodeDesc.chain;
-    m.Module = device.createShaderModule(shaderDesc);
-    return m;
-
 }
 
 wgpu::ShaderModule ResourceManager::loadComputeShaderModule(const std::filesystem::path &path, wgpu::Device device, std::unordered_map<std::string, std::string>& formats)

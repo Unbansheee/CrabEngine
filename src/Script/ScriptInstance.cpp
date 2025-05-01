@@ -5,6 +5,7 @@
 module Engine.ScriptInstance;
 import Engine.Application;
 
+
 ScriptEngine * ScriptInstance::GetScriptEngine() {
     return Application::Get().GetScriptEngine();
 }

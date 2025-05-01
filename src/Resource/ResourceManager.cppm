@@ -87,30 +87,14 @@ public:
     static bool IsResourceLoaded(const std::filesystem::path& path);
     static void SaveToFile(const std::filesystem::path& path, nlohmann::json& json);
     static void SaveImportSettings(const std::filesystem::path& sourcePath, const std::shared_ptr<ResourceMetadata>& importSettings);
-    static void SaveResource(const std::shared_ptr<Resource>& resource, 
-                      const std::filesystem::path& path = {}) {
-        auto savePath = path.empty() ? resource->GetSourcePath() : path;
-
-        if (savePath.extension() == ".res") {
-            nlohmann::json j;
-            resource->Serialize(j);
-            SaveToFile(savePath, j);
-        }
-        if (auto importSettings = resource->GetImportSettings()) {
-            importSettings->ResourceID = resource->GetID();
-            SaveImportSettings(savePath, importSettings);
-        }
-
-        resource->OnResourceSaved.invoke();
-    }
+    static void SaveResource(const std::shared_ptr<Resource>& resource, const std::filesystem::path& path = {});
 
     static std::vector<std::shared_ptr<Resource>> GetAllResources();
     
 private:
     inline static std::mutex cacheMutex;
-    inline static ResourceCache cache;
+    static ResourceCache& GetResourceCache();
 
-    //TODO: Remove
 public:
     static bool loadGeometryFromObj(const std::filesystem::path& path,
     std::vector<MeshVertex> &vertexData);

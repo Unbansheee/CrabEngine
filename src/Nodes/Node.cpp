@@ -84,6 +84,8 @@ void Node::UpdateTransform()
 	});
 }
 
+SceneTree * Node::GetTree() {return tree;}
+
 /*
 void Node::GatherDrawCommands(std::vector<DrawCommand> &Commands) const {
 	for (auto& child : Children)

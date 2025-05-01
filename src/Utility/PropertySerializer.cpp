@@ -199,8 +199,6 @@ void PropertyDeserializer::operator()(PropertyView& prop, nlohmann::json* archiv
     auto& a = *archive;
     if (!a.contains(prop.name())) return;
 
-    std::cout << a[prop.name()].dump() << std::endl;
-
     std::array<std::vector<float>, 3> v = a[prop.name()].get<std::array<std::vector<float>, 3>>();
     val.Position = {v[0][0], v[0][1], v[0][2]};
     val.Orientation = {v[1][0], v[1][1], v[1][2], v[1][3]};

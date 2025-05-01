@@ -11,6 +11,7 @@ module Engine.ShaderCompiler;
 import Engine.Assert;
 import Engine.WGPU;
 import Engine.Application;
+import Engine.Filesystem;
 
 using namespace Slang;
 using namespace slang;
@@ -178,11 +179,13 @@ std::vector<UniformMetadata> ShaderCompiler::GetUniformMetadata() {
 std::vector<const char *> ShaderCompiler::GetShaderDirectories() {
     std::vector<const char *> result;
     for (auto path: shaderSources) {
-        char *str = new char[strlen(path) + 1];
-        strcpy(str, path);
+        auto absPath = Filesystem::AbsolutePath(path);
+
+        char *str = new char[absPath.size() + 1];
+        strcpy(str, absPath.c_str());
         result.push_back(str);
 
-        std::filesystem::path p = path;
+        std::filesystem::path p = absPath;
         auto it = std::filesystem::recursive_directory_iterator(p);
         for (auto dir: it) {
             if (dir.is_directory()) {

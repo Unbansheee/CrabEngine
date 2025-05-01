@@ -92,7 +92,7 @@ void MaterialResource::Serialize(nlohmann::json &archive) {
 void MaterialResource::Deserialize(nlohmann::json &archive) {
     Resource::Deserialize(archive);
 
-    LoadFromShaderPath(Application::Get().GetDevice(), ShaderModuleName);
+    LoadFromShaderPath(Application::Get().GetDevice(), ShaderModuleName, false);
 
     if (archive.contains("uniforms")) {
         nlohmann::json& uniformJson = archive.at("uniforms");
@@ -155,8 +155,12 @@ void MaterialResource::Deserialize(nlohmann::json &archive) {
 
 MaterialResource::MaterialResource(const std::string &moduleName, const MaterialSettings& settings) : Resource() {
     ShaderModuleName = moduleName;
-    LoadFromShaderPath(Application::Get().GetDevice(), moduleName, settings);
+    LoadFromShaderPath(Application::Get().GetDevice(), moduleName, false, settings);
     MaterialResource::LoadData();
+}
+
+void MaterialResource::RecompileShader() {
+    LoadFromShaderPath(m_device, ShaderModuleName, true, m_settings);
 }
 
 void MaterialResource::UpdateBindGroups() {
@@ -326,7 +330,7 @@ void MaterialResource::LoadData()
     Resource::LoadData();
 }
 
-void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::string& moduleName,
+void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::string& moduleName, bool bForceRecompile,
                                           MaterialSettings settings)
 {
     ShaderModuleName = moduleName;
@@ -338,7 +342,7 @@ void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::string
     m_pipelineLayout = {};
     m_pipeline = {};
 
-    ShaderCompiler c(ShaderModuleName, true);
+    ShaderCompiler c(ShaderModuleName, bForceRecompile);
 
     m_shaderModule = c.GetCompiledShaderModule();
     auto l = c.GetPipelineLayout();
@@ -357,7 +361,6 @@ void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::string
     Initialize();
     UpdateBindGroups();
     loaded = true;
-
 }
 
 void MaterialResource::InitializeProperties() {

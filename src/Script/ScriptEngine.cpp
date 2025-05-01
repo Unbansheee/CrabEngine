@@ -16,6 +16,25 @@ import Engine.Resource;
 
 std::wstring runtimeConfig = L"Dotnet/Scripts.runtimeconfig.json";
 
+std::wstring StringToWString(const std::string& str)
+{
+    std::wstring wstr;
+    size_t size;
+    wstr.resize(str.length());
+    mbstowcs_s(&size,&wstr[0],wstr.size()+1,str.c_str(),str.size());
+    return wstr;
+}
+
+std::string WStringToString(const std::wstring& wstr)
+{
+    std::string str;
+    size_t size;
+    str.resize(wstr.length());
+    wcstombs_s(&size, &str[0], str.size() + 1, wstr.c_str(), wstr.size());
+    return str;
+}
+
+
 void ScriptEngine::Init() {
     if (!LoadHostFXR()) {
         std::cerr << "Failed to load hostfxr." << std::endl;
@@ -29,7 +48,87 @@ void ScriptEngine::Init() {
 }
 
 void ScriptEngine::LoadModule(const std::wstring &assembly, const std::wstring& libName) {
-    loadedModules.emplace_back(std::make_unique<ScriptModule>(this, assembly, libName));
+    loadedModules.insert({assembly, std::make_unique<ScriptModule>(this, assembly, libName)});
+}
+
+void ScriptEngine::UnloadModule(const std::wstring &assembly) {
+    loadedModules.erase(assembly);
+}
+
+
+void ScriptEngine::ReloadModule(const std::wstring &assembly) {
+    std::wcout << "Reloading module: " << assembly << std::endl;
+    auto libName = loadedModules.at(assembly)->libName;
+    UnloadModule(assembly);
+    LoadModule(assembly, libName);
+    std::wcout << "Reloaded module: " << assembly << std::endl;
+}
+
+
+std::optional<Property> ScriptEngine::CreateScriptProperty(const ScriptPropertyInfo &info) {
+    std::string name = info.Name;
+    std::string displayName = info.DisplayName;
+    std::string type = info.Type;
+
+    uint32_t flags = PropertyFlags::ScriptProperty;
+
+    // Use some form of type registry or mapping to resolve the type
+    if (type == "System.Single" || type == "float") {
+        return Property(
+            name, displayName, "ScriptClass",
+            // getter
+            std::function<ValueVariant(void *)>(
+            // getter
+            [=](void *obj) -> ValueVariant {
+                return static_cast<Object*>(obj)->GetScriptInstance()->Get<float>(name);
+            }),
+            // setter
+            [=](void* obj, const ValueVariant& val) {
+                static_cast<Object*>(obj)->GetScriptInstance()->Set<float>(name, std::get<float>(val));
+            },
+            nullptr,
+            flags
+        );
+    }
+    else if (type == "System.Int32" || type == "int") {
+        return Property(
+            name, displayName, "ScriptClass",
+            std::function<ValueVariant(void *)>([=](void *obj) -> ValueVariant {
+                return static_cast<Object *>(obj)->GetScriptInstance()->Get<int>(name);
+            }),
+            [=](void *obj, const ValueVariant &val) {
+                static_cast<Object*>(obj)->GetScriptInstance()->Set<int>(name, std::get<int>(val));
+            },
+            nullptr, flags
+        );
+    }
+    else if (type == "System.Boolean" || type == "bool") {
+        return Property(
+            name, displayName, "ScriptClass",
+            std::function<ValueVariant(void *)>([=](void *obj) -> ValueVariant {
+                return static_cast<Object *>(obj)->GetScriptInstance()->Get<bool>(name);
+            }),
+            [=](void *obj, const ValueVariant &val) {
+                static_cast<Object*>(obj)->GetScriptInstance()->Set<bool>(name, std::get<bool>(val));
+            },
+            nullptr, flags
+        );
+    }
+    else if (type == "System.String" || type == "string") {
+        return Property(
+            name, displayName, "ScriptClass",
+            std::function<ValueVariant(void *)>([=](void *obj) -> ValueVariant {
+                return static_cast<Object *>(obj)->GetScriptInstance()->Get<std::string>(name);
+            }),
+            [=](void *obj, const ValueVariant &val) {
+                static_cast<Object*>(obj)->GetScriptInstance()->Set<std::string>(name, std::get<std::string>(val));
+            },
+            nullptr, flags
+        );
+    }
+
+    return {};
+
 }
 
 bool ScriptEngine::LoadHostFXR() {
@@ -58,26 +157,49 @@ bool ScriptEngine::GetManagedDelegate(const std::wstring& runtimeConfigPath) {
     int rc = init_fptr(runtimeConfigPath.c_str(), nullptr, &context);
     if (rc != 0 || context == nullptr) return false;
 
-    rc = get_delegate_fptr(context, hdt_load_assembly_and_get_function_pointer, (void**)&load_assembly_fn);
-    if (rc != 0 || load_assembly_fn == nullptr) return false;
+    rc = get_delegate_fptr(context, hdt_load_assembly, (void**)&load_assembly);
+    if (rc != 0 || load_assembly == nullptr) return false;
+
+    rc = get_delegate_fptr(context, hdt_get_function_pointer, (void**)&get_fn_ptr);
+    if (rc != 0 || get_fn_ptr == nullptr) return false;
 
     close_fptr(context);
     return true;
 }
 
 ScriptModule::ScriptModule(ScriptEngine *scriptEngine, const std::wstring &assembly, const std::wstring& libraryName): engine(scriptEngine), assemblyPath(assembly), libName(libraryName) {
+    LoadAssemblyFn()(assemblyPath.c_str(), nullptr, nullptr);
+
     CallManaged(L"Scripts.ScriptHost", L"RegisterAllScripts");
+
     int count = *CallManaged<int>(L"Scripts.ScriptHost", L"GetScriptCount");
-    ScriptInfo* script_info = *CallManaged<ScriptInfo*>(L"Scripts.ScriptHost", L"GetScriptInfoList");
+    auto cresult = CallManaged<ScriptInfo*>(L"Scripts.ScriptHost", L"GetScriptInfoList");
+    ScriptInfo* script_info = cresult.Result.value();
     for (int i = 0; i < count; i++) {
-        std::cout << script_info[i].Name << std::endl;
-
-
         scriptClasses.emplace_back();
-        auto& t = scriptClasses.back();
+        ClassType& t = scriptClasses.back();
         t.Flags |= ClassFlags::ScriptClass | ClassFlags::EditorVisible;
         t.Name = MakeStringID(script_info[i].Name);
         t.Parent = MakeStringID(script_info[i].ParentClassName);
+
+        std::string className = t.Name.string();
+        std::string parent = t.Parent.string();
+
+        if (auto parentClass = ClassDB::Get().GetClassByName(parent)) {
+            for (auto& prop : parentClass->Properties) {
+                t.Properties.push_back(prop);
+            }
+        }
+
+        for (int j = 0; j < script_info[i].PropertyCount; j++) {
+            auto& prop = script_info[i].Properties[j];
+            auto createdProp = engine->CreateScriptProperty(script_info[i].Properties[j]);
+            if (createdProp.has_value()) {
+                createdProp->ownerClass = className;
+                t.Properties.push_back(createdProp.value());
+            }
+        }
+
         ClassDB::Get().RegisterClassType(t);
     }
 
@@ -104,6 +226,7 @@ ScriptModule::ScriptModule(ScriptEngine *scriptEngine, const std::wstring &assem
             std::wstring wide = converter.from_bytes(name);
 
             inst.ManagedHandle = *CallManaged<void*>(L"Scripts.ScriptHost", L"CreateScriptInstance", (void*)obj, wide.c_str());
+            inst.interop = engine->CallManaged<ScriptInterop>(L"Scripts.InteropBootstrap", L"GetInterop").Result.value();
             obj->scriptInstance = inst;
 
             return obj;
@@ -111,13 +234,16 @@ ScriptModule::ScriptModule(ScriptEngine *scriptEngine, const std::wstring &assem
     }
 }
 
-load_assembly_and_get_function_pointer_fn ScriptModule::GetLoadAssemblyFn() {
-    return engine->load_assembly_fn;
+ScriptModule::~ScriptModule() {
+    for (auto& type : scriptClasses) {
+        ClassDB::Get().UnregisterClassType(type);
+    }
 }
 
-const ClassType * ScriptModule::GetClass(const std::wstring &className) const {
-    //for (auto& c : scriptClasses) {
-    //    if (c.Name == MakeStringID(className)) return &c;
-    //}
-    return nullptr;
+load_assembly_fn ScriptModule::LoadAssemblyFn() {
+    return engine->load_assembly;
+}
+
+get_function_pointer_fn ScriptModule::GetFunctionPointerFn() {
+    return engine->get_fn_ptr;
 }

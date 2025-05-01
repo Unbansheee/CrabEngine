@@ -55,6 +55,22 @@ public:
         std::cout << "Registered: " << classType.Name.string() << "\n";
     }
 
+    void UnregisterClassType(const ClassType& classType)
+    {
+        allClassTypes.erase(std::ranges::find(allClassTypes, &classType));
+        classNameLookup.erase(classType.Name);
+        classHierarchy.erase(classType.Name);
+        for (auto it = classHierarchy.begin(); it != classHierarchy.end(); ) {
+            if (it->second == &classType)
+                it = classHierarchy.erase(it);
+            else
+                ++it;
+        }
+
+
+        std::cout << "Unregistered: " << classType.Name.string() << "\n";
+    }
+
     template <typename T>
     void AddClassFlag(uint32_t flags)
     {
