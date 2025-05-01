@@ -12,7 +12,7 @@ import Engine.Reflection.ClassDB;
 import Engine.ScriptInstance;
 import Engine.Object;
 import Engine.Reflection.Class;
-
+import Engine.Resource;
 
 std::wstring runtimeConfig = L"Dotnet/Scripts.runtimeconfig.json";
 
@@ -36,6 +36,7 @@ bool ScriptEngine::LoadHostFXR() {
     char_t buffer[MAX_PATH];
     size_t size = sizeof(buffer) / sizeof(char_t);
     int rc = get_hostfxr_path(buffer, &size, nullptr);
+
     if (rc != 0) {
         std::cerr << "Failed to locate hostfxr.dll" << std::endl;
         return false;

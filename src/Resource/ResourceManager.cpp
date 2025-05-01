@@ -38,6 +38,8 @@ std::shared_ptr<Resource> ResourceManager::Load(const std::filesystem::path& pat
         }
     }
 
+    if (!std::filesystem::exists(absolutePath)) return nullptr;
+
     if (IsSourceFile(absolutePath)) {
         auto res = ImportManager::Get().Import(path);
         if (res)

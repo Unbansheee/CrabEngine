@@ -163,8 +163,18 @@ return ctx->Name(); \
 } \
 inline static auto Register_##Name = MethodRegister<ThisClass>(#Name, (void*)&Native##Name);
 
+#define BIND_STATIC_METHOD(ReturnType, Name) \
+inline static auto Register_##Name = MethodRegister<ThisClass>(#Name, (void*)&Name);
+
 #define BIND_METHOD_PARAMS(ReturnType, Name, ParamList, ArgList) \
 static ReturnType Native##Name(ThisClass* ctx, ParamList) { \
 return ctx->Name ArgList; \
+} \
+inline static auto Register_##Name = MethodRegister<ThisClass>(#Name, (void*)&Native##Name);
+
+
+#define BIND_METHOD_OUTPARAM(OutParamType, Name) \
+static void Native##Name(ThisClass* ctx, OutParamType* param) { \
+*param = ctx->Name(); \
 } \
 inline static auto Register_##Name = MethodRegister<ThisClass>(#Name, (void*)&Native##Name);

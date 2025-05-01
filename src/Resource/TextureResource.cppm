@@ -15,6 +15,9 @@ export class TextureResource : public Resource
 public:
     CRAB_CLASS(TextureResource, Resource)
 
+    BIND_METHOD(void, LoadData);
+    BIND_METHOD_OUTPARAM(Vector2U, GetSize);
+
     TextureResource() : Resource()
     {
     };
@@ -45,8 +48,7 @@ public:
         return view;
     }
 
-    glm::uvec2 GetSize() const {return {width, height};}
-
+    Vector2U GetSize() const { return Vector2U{width, height}; }
 
 
 protected:

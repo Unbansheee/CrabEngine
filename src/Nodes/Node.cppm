@@ -31,6 +31,16 @@ public:
 	BIND_METHOD(void, EnterTree)
 	BIND_METHOD(void, ExitTree)
 	BIND_METHOD_PARAMS(void, Update, float dt, (dt))
+	BIND_METHOD_PARAMS(void, SetName, char* name, (name))
+	static void NativeGetName(ThisClass* ctx, wchar_t* outString) {
+		auto name = ctx->GetName();
+		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+		std::wstring wideClass = converter.from_bytes(name);
+
+		std::wmemcpy(outString, wideClass.c_str(), name.size());
+		outString[name.size()] = L'\0'; // Null-terminate
+	};
+	BIND_STATIC_METHOD(const wchar_t*, NativeGetName);
 
 protected:
 	friend class Application;

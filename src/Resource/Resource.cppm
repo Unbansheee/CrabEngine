@@ -74,5 +74,13 @@ protected:
 private:
     static inline std::shared_ptr<TextureResource> DefaultResourceThumbnail = nullptr;
 
+
+    // C# Script lifetime management
+    static void ReleaseResource(Resource* res);
+    BIND_STATIC_METHOD(void, ReleaseResource);
+
+    static Resource* LoadResource(const char* path);
+    BIND_STATIC_METHOD(Resource*, LoadResource)
+
 };
 
