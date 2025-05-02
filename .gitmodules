@@ -7,3 +7,6 @@
 [submodule "vendor/vfspp"]
 	path = vendor/vfspp
 	url = https://github.com/nextgeniuspro/vfspp.git
+[submodule "vendor/fmt"]
+	path = vendor/fmt
+	url = https://github.com/fmtlib/fmt.git
