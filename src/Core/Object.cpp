@@ -14,9 +14,6 @@ BaseObjectRegistrationObject::BaseObjectRegistrationObject()
 }
 
 Object::~Object() {
-    if (scriptInstance.has_value()) {
-        Application::Get().GetScriptEngine()->CallManaged(L"Scripts.ScriptHost", L"DestroyScript", scriptInstance->ManagedHandle);
-    }
 }
 
 void Object::AddFlag(uint64_t Flag) {

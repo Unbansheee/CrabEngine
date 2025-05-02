@@ -9,7 +9,7 @@ import Engine.Variant;
     #Property
 
 #define BEGIN_PROPERTIES \
-virtual const std::vector<Property>& GetPropertiesFromThis() override { if (scriptInstance.has_value()) { return scriptInstance->ScriptClass->Properties; } else return GetClassProperties(); } \
+virtual const std::vector<Property>& GetPropertiesFromThis() override { if (scriptInstance) { return scriptInstance->ScriptClass->Properties; } else return GetClassProperties(); } \
 static const auto& GetClassProperties() { \
 static const std::vector<Property> props = []{ \
 std::vector<Property> base = Super::GetClassProperties(); \
@@ -124,7 +124,7 @@ static ClassType s\
 };\
 return s;\
 }\
-virtual const ClassType& GetStaticClassFromThis() override { if (scriptInstance.has_value()) {return *scriptInstance->ScriptClass;} return GetStaticClass(); } \
+virtual const ClassType& GetStaticClassFromThis() override { if (scriptInstance) {return *scriptInstance->ScriptClass;} return GetStaticClass(); } \
 [[maybe_unused]] inline static AutoClassRegister AutoRegistrationObject_##Class = AutoClassRegister(GetStaticClass()); \
 [[maybe_unused]] inline static AutoMethodRegister<ThisClass> AutoMethodRegistrationObject_##Class = AutoMethodRegister<ThisClass>();
 

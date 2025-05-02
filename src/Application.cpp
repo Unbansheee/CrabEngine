@@ -61,10 +61,13 @@ Application::Application()
 	rootFS->Initialize();
 
 	Filesystem::AddFileSystemDirectory("/engine", ENGINE_RESOURCE_DIR);
+	Filesystem::AddFileSystemDirectory("/dotnet", (std::filesystem::current_path() /= "Dotnet").generic_string());
+
 
 	scriptEngine.reset(new ScriptEngine());
 	scriptEngine->Init();
-	scriptEngine->LoadModule(L"Dotnet/Scripts.dll", L"Scripts");
+	scriptEngine->LoadModule(Filesystem::StringToWString(Filesystem::AbsolutePath("/dotnet/CrabApplication.dll")), L"CrabApplication");
+
 
 	std::cout << "Requesting adapter..." << std::endl;
 	wgpu::RequestAdapterOptions adapterOpts = {};

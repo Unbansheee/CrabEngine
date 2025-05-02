@@ -12,7 +12,10 @@ import Engine.Variant;
 
 
 export struct ScriptInstance {
-     const ClassType* ScriptClass = nullptr;
+    ~ScriptInstance();
+    ScriptInstance(const ClassType* classType, void* managedHandle, const ScriptInterop& interop) : ScriptClass(classType), ManagedHandle(managedHandle), interop(interop) {}
+
+    const ClassType* ScriptClass = nullptr;
      void* ManagedHandle = nullptr; // C# GCHandle
      ScriptInterop interop;
 
@@ -26,9 +29,6 @@ export struct ScriptInstance {
              return GetScriptEngine()->CallScriptMethod<ReturnValue>(ManagedHandle, method.c_str(), args...);
          }
      }
-
-    float GetFloat(const std::string& name);
-    void SetFloat(const std::string& name, float value);
 
     template<typename T>
     void Set(const std::string& prop, const T& value) {

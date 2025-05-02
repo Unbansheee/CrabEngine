@@ -13,26 +13,10 @@ import Engine.ScriptInstance;
 import Engine.Object;
 import Engine.Reflection.Class;
 import Engine.Resource;
+import Engine.Filesystem;
 
-std::wstring runtimeConfig = L"Dotnet/Scripts.runtimeconfig.json";
-
-std::wstring StringToWString(const std::string& str)
-{
-    std::wstring wstr;
-    size_t size;
-    wstr.resize(str.length());
-    mbstowcs_s(&size,&wstr[0],wstr.size()+1,str.c_str(),str.size());
-    return wstr;
-}
-
-std::string WStringToString(const std::wstring& wstr)
-{
-    std::string str;
-    size_t size;
-    str.resize(wstr.length());
-    wcstombs_s(&size, &str[0], str.size() + 1, wstr.c_str(), wstr.size());
-    return str;
-}
+std::wstring runtimeConfig = L"Dotnet/CrabEngine.runtimeconfig.json";
+std::wstring engineAssembly = L"Dotnet/CrabEngine.dll";
 
 
 void ScriptEngine::Init() {
@@ -45,10 +29,54 @@ void ScriptEngine::Init() {
         std::cerr << "Failed to initialize .NET runtime." << std::endl;
         return;
     }
+
+    load_assembly(engineAssembly.c_str(), nullptr, nullptr);
+
+    void* regFn = nullptr;
+    int rc1 = get_fn_ptr(
+        L"CrabEngine.ScriptHost, CrabEngine",
+        L"LoadScriptAssembly",
+        UNMANAGEDCALLERSONLY_METHOD,
+        nullptr, nullptr, &regFn);
+
+    void* createFn = nullptr;
+    int rc2 = get_fn_ptr(
+        L"CrabEngine.ScriptHost, CrabEngine",
+        L"CreateScriptInstance",
+        UNMANAGEDCALLERSONLY_METHOD,
+        nullptr, nullptr, &createFn);
+
+    if (rc1 != 0 || rc2 != 0 || !regFn || !createFn) {
+        std::cerr << "Failed to get function pointers!" << std::endl;
+        return;
+    }
+
+    using RegisterScriptAssemblyFn = void(*)(const wchar_t*, const wchar_t*);
+    using CreateScriptInstanceFn = void(*)(void*, const wchar_t*);
+
+    RegisterScriptAssembly = reinterpret_cast<RegisterScriptAssemblyFn>(regFn);
+    CreateScriptInstance = reinterpret_cast<CreateScriptInstanceFn>(createFn);
+
+    // Bind native class functions
+    for (auto& classType : ClassDB::Get().GetClasses()) {
+        if (!classType->HasFlag(ClassFlags::ScriptClass)) {
+            for (auto& [name, func] : classType->methodTable) {
+                std::string className = classType->Name.string();
+                std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+                std::wstring wideClass = converter.from_bytes(className);
+                std::wstring wideFn = converter.from_bytes(name);
+                CallManaged<void>(L"CrabEngine.ScriptHost", L"RegisterNativeFunction", (L"CrabEngine." + wideClass).c_str(), wideFn.c_str(), func);
+            }
+        }
+    }
 }
 
 void ScriptEngine::LoadModule(const std::wstring &assembly, const std::wstring& libName) {
-    loadedModules.insert({assembly, std::make_unique<ScriptModule>(this, assembly, libName)});
+    RegisterScriptAssembly(assembly.c_str(), libName.c_str());
+   loadedModules.insert({assembly, std::make_unique<ScriptModule>(this, assembly, libName)});
+
+    //CallManaged(L"CrabEngine.ScriptHost", L"LoadScriptAssembly", assembly.c_str());
+    //loadedModules.insert({assembly, std::make_unique<ScriptModule>(this, assembly, libName)});
 }
 
 void ScriptEngine::UnloadModule(const std::wstring &assembly) {
@@ -168,12 +196,11 @@ bool ScriptEngine::GetManagedDelegate(const std::wstring& runtimeConfigPath) {
 }
 
 ScriptModule::ScriptModule(ScriptEngine *scriptEngine, const std::wstring &assembly, const std::wstring& libraryName): engine(scriptEngine), assemblyPath(assembly), libName(libraryName) {
-    LoadAssemblyFn()(assemblyPath.c_str(), nullptr, nullptr);
+    //LoadAssemblyFn()(assemblyPath.c_str(), nullptr, nullptr);
+    //CallManaged(L"CrabEngine.ScriptHost", L"RegisterAllScripts");
 
-    CallManaged(L"Scripts.ScriptHost", L"RegisterAllScripts");
-
-    int count = *CallManaged<int>(L"Scripts.ScriptHost", L"GetScriptCount");
-    auto cresult = CallManaged<ScriptInfo*>(L"Scripts.ScriptHost", L"GetScriptInfoList");
+    int count = *scriptEngine->CallManaged<int>(L"CrabEngine.ScriptHost", L"GetScriptCount", assembly.c_str());
+    auto cresult = scriptEngine->CallManaged<ScriptInfo*>(L"CrabEngine.ScriptHost", L"GetScriptInfoList", assembly.c_str());
     ScriptInfo* script_info = cresult.Result.value();
     for (int i = 0; i < count; i++) {
         scriptClasses.emplace_back();
@@ -203,31 +230,16 @@ ScriptModule::ScriptModule(ScriptEngine *scriptEngine, const std::wstring &assem
         ClassDB::Get().RegisterClassType(t);
     }
 
-    // Bind native class functions
-    for (auto& classType : ClassDB::Get().GetClasses()) {
-        if (!classType->HasFlag(ClassFlags::ScriptClass)) {
-            for (auto& [name, func] : classType->methodTable) {
-                std::string className = classType->Name.string();
-                std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-                std::wstring wideClass = converter.from_bytes(className);
-                std::wstring wideFn = converter.from_bytes(name);
-                CallManaged<void>(L"Scripts.ScriptHost", L"RegisterNativeFunction", (L"Scripts." + wideClass).c_str(), wideFn.c_str(), func);
-            }
-        }
-    }
-
     for (auto& classType : scriptClasses) {
         classType.Initializer = [&] {
             auto obj = ClassDB::Get().GetNativeType(&classType)->Initializer();
-            ScriptInstance inst;
-            inst.ScriptClass = &classType;
             std::string name = {classType.Name.string()};
             std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
             std::wstring wide = converter.from_bytes(name);
 
-            inst.ManagedHandle = *CallManaged<void*>(L"Scripts.ScriptHost", L"CreateScriptInstance", (void*)obj, wide.c_str());
-            inst.interop = engine->CallManaged<ScriptInterop>(L"Scripts.InteropBootstrap", L"GetInterop").Result.value();
-            obj->scriptInstance = inst;
+            auto ManagedHandle = *(engine->CallManaged<void*>(L"CrabEngine.ScriptHost", L"CreateScriptInstance", (void*)obj, wide.c_str()));
+            auto interop = engine->CallManaged<ScriptInterop>(L"CrabEngine.InteropBootstrap", L"GetInterop").Result.value();
+            obj->scriptInstance = std::make_unique<ScriptInstance>(&classType, ManagedHandle, interop);
 
             return obj;
         };

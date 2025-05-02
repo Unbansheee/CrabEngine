@@ -25,23 +25,19 @@ public:
         ADD_PROPERTY("Transform", transform)
     END_PROPERTIES
 
-    BIND_METHOD_PARAMS(void, SetPosition, Vector3 position, (position))
-    BIND_METHOD_PARAMS(void, SetScale, Vector3 scale, (scale))
-    BIND_METHOD_PARAMS(void, SetOrientation, Quat orientation, (orientation))
-    BIND_METHOD_PARAMS(void, SetGlobalPosition, Vector3 position, (position))
-    BIND_METHOD_PARAMS(void, SetGlobalScale, Vector3 scale, (scale))
-    BIND_METHOD_PARAMS(void, SetGlobalOrientation, Quat orientation, (orientation))
+    BIND_METHOD_PARAMS(void, SetPosition, InteropVector3 position, (position))
+    BIND_METHOD_PARAMS(void, SetScale, InteropVector3 scale, (scale))
+    BIND_METHOD_PARAMS(void, SetOrientation, InteropQuat orientation, (orientation))
+    BIND_METHOD_PARAMS(void, SetGlobalPosition, InteropVector3 position, (position))
+    BIND_METHOD_PARAMS(void, SetGlobalScale, InteropVector3 scale, (scale))
+    BIND_METHOD_PARAMS(void, SetGlobalOrientation, InteropQuat orientation, (orientation))
 
-    BIND_METHOD(Vector3, GetPosition);
-    BIND_METHOD(Vector3, GetScale);
-    BIND_METHOD(Quat, GetOrientation);
-    BIND_METHOD(Vector3, GetGlobalPosition);
-    BIND_METHOD(Vector3, GetGlobalScale);
-    BIND_METHOD(Quat, GetGlobalOrientation);
-
-    static void RegisterMethods() {
-
-    }
+    BIND_METHOD(InteropVector3, GetPosition);
+    BIND_METHOD(InteropVector3, GetScale);
+    BIND_METHOD(InteropQuat, GetOrientation);
+    BIND_METHOD(InteropVector3, GetGlobalPosition);
+    BIND_METHOD(InteropVector3, GetGlobalScale);
+    BIND_METHOD(InteropQuat, GetGlobalOrientation);
     
     virtual void SetPosition(const Vector3& Pos);
     virtual void SetScale(const Vector3& Scale);

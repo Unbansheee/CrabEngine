@@ -64,7 +64,7 @@ public:
     ~ScriptModule();
 
     std::list<ClassType> scriptClasses;
-    std::unordered_map<std::wstring, void*> functionCache;
+
     std::wstring assemblyPath;
     std::wstring libName;
     ScriptEngine* engine;
@@ -72,10 +72,44 @@ public:
     load_assembly_fn LoadAssemblyFn();
     get_function_pointer_fn GetFunctionPointerFn();
 public:
+    template<typename ReturnType = void, typename... Args>
+    ScriptFunctionResult<ReturnType> CallScriptMethod(void* managedHandle, const std::wstring& methodName, Args&&... args);
+};
+
+export class ScriptEngine {
+
+    friend class ScriptModule;
+    using RegisterScriptAssemblyFn = void(*)(const wchar_t*, const wchar_t*);
+    using CreateScriptInstanceFn = void(*)(void* nativePtr, const wchar_t* typeName);
+
+    hostfxr_initialize_for_runtime_config_fn init_fptr;
+    hostfxr_get_runtime_delegate_fn get_delegate_fptr;
+    hostfxr_close_fn close_fptr;
+    load_assembly_fn load_assembly;
+    get_function_pointer_fn get_fn_ptr;
+
+    RegisterScriptAssemblyFn RegisterScriptAssembly = nullptr;
+    CreateScriptInstanceFn CreateScriptInstance = nullptr;
+
+    std::unordered_map<std::wstring, std::unique_ptr<ScriptModule>> loadedModules;
+    std::unordered_map<std::wstring, void*> functionCache;
+
+    bool LoadHostFXR();
+    bool GetManagedDelegate(const std::wstring& runtimeConfigPath);
+
+public:
+    ScriptEngine(const ScriptEngine& other) = delete;
+    ScriptEngine() = default;
+
+    void Init();
+    void LoadModule(const std::wstring &assembly, const std::wstring &libName);
+    void UnloadModule(const std::wstring &assembly);
+    void ReloadModule(const std::wstring &assembly);
+
 
     template<typename ReturnType = void, typename... Args>
     ScriptFunctionResult<ReturnType> CallManaged(const std::wstring& className, const std::wstring& fnName, Args... args) {
-        using ManagedFn = ReturnType(__stdcall*)(Args...);
+        using ManagedFn = ReturnType(__cdecl*)(Args...);
         ManagedFn fn = nullptr;
 
         auto key = className + L"." + fnName;
@@ -83,8 +117,8 @@ public:
             fn = static_cast<ManagedFn>(functionCache.at(key));
         }
         else {
-            int rc = GetFunctionPointerFn()(
-            (className + L", " + libName).c_str(),
+            int rc = get_fn_ptr(
+            (className + L", CrabEngine").c_str(),
             fnName.c_str(),
             UNMANAGEDCALLERSONLY_METHOD,
             nullptr,
@@ -111,75 +145,6 @@ public:
 
     template<typename ReturnType = void, typename... Args>
     ScriptFunctionResult<ReturnType> CallScriptMethod(void* managedHandle, const std::wstring& methodName, Args&&... args) {
-        void** argArray = nullptr;
-        int argCount = sizeof...(Args);
-
-        if constexpr (sizeof...(Args) > 0) {
-            static void* tempArgs[] = { (void*)&args... };
-            argArray = tempArgs;
-        }
-
-        void* returnBuffer = nullptr;
-        if constexpr (!std::is_void_v<ReturnType>) {
-            returnBuffer = alloca(sizeof(ReturnType));
-        }
-
-        auto ret = CallManaged<void>(
-            L"Scripts.ScriptHost",
-            L"CallScriptMethod",
-            managedHandle,
-            methodName.c_str(),
-            argArray,
-            static_cast<int>(sizeof...(Args)),
-            returnBuffer
-        );
-
-        if (!ret.SuccessfullyExecuted) return {false, {}};
-
-        if constexpr (!std::is_void_v<ReturnType>) {
-            return {true, *reinterpret_cast<ReturnType*>(returnBuffer)};
-        }
-        return {true, {}};
-    }
-};
-
-
-export class ScriptEngine {
-    friend class ScriptModule;
-
-    hostfxr_initialize_for_runtime_config_fn init_fptr;
-    hostfxr_get_runtime_delegate_fn get_delegate_fptr;
-    hostfxr_close_fn close_fptr;
-    load_assembly_fn load_assembly;
-    get_function_pointer_fn get_fn_ptr;
-
-    //load_assembly_and_get_function_pointer_fn load_assembly_fn = nullptr;
-
-    std::unordered_map<std::wstring, std::unique_ptr<ScriptModule>> loadedModules;
-
-    bool LoadHostFXR();
-    bool GetManagedDelegate(const std::wstring& runtimeConfigPath);
-
-public:
-    void Init();
-    void LoadModule(const std::wstring &assembly, const std::wstring &libName);
-    void UnloadModule(const std::wstring &assembly);
-    void ReloadModule(const std::wstring &assembly);
-
-
-    template<typename ReturnType = void, typename... Args>
-    ScriptFunctionResult<ReturnType> CallManaged(const std::wstring& className, const std::wstring& fnName, Args... args) {
-        for (auto &module: loadedModules | std::views::values) {
-            ScriptFunctionResult<ReturnType> res = module->CallManaged<ReturnType>(className, fnName, args...);
-            if (res.SuccessfullyExecuted) {
-                return res;
-            }
-        }
-        return {false, {}};
-    }
-
-    template<typename ReturnType = void, typename... Args>
-    ScriptFunctionResult<ReturnType> CallScriptMethod(void* managedHandle, const std::wstring& methodName, Args&&... args) {
         for (auto &module: loadedModules | std::views::values) {
             ScriptFunctionResult<ReturnType> res = module->CallScriptMethod(managedHandle, methodName, args...);
             if (res.SuccessfullyExecuted) {
@@ -197,3 +162,52 @@ private:
 
 
 
+template<typename ReturnType, typename ... Args>
+ScriptFunctionResult<ReturnType> ScriptModule::CallScriptMethod(void *managedHandle, const std::wstring &methodName,
+    Args &&...args) {
+    constexpr bool HasReturn = !std::is_void_v<ReturnType>;
+
+    // Allocate argument buffers safely
+    std::vector<std::unique_ptr<std::byte[]>> ownedArgs;
+    std::vector<void*> argArray;
+
+    auto pushArg = [&](auto&& arg) {
+        using ArgType = std::decay_t<decltype(arg)>;
+        auto buffer = std::make_unique<std::byte[]>(sizeof(ArgType));
+        std::memcpy(buffer.get(), &arg, sizeof(ArgType));
+        argArray.push_back(buffer.get());
+        ownedArgs.push_back(std::move(buffer));
+    };
+
+    (pushArg(std::forward<Args>(args)), ...);
+
+    void* returnBuffer = nullptr;
+    std::unique_ptr<std::byte[]> returnStorage;
+
+    if constexpr (HasReturn) {
+        returnStorage = std::make_unique<std::byte[]>(sizeof(ReturnType));
+        returnBuffer = returnStorage.get();
+    }
+
+    // Call the managed shim
+    auto result = engine->CallManaged<void>(
+        L"CrabEngine.ScriptHost",
+        L"CallScriptMethod",
+        managedHandle,
+        methodName.c_str(),
+        argArray.data(),
+        static_cast<int>(argArray.size()),
+        returnBuffer
+    );
+
+    if (!result.SuccessfullyExecuted)
+        return {false, {}};
+
+    if constexpr (HasReturn) {
+        ReturnType ret{};
+        std::memcpy(&ret, returnBuffer, sizeof(ReturnType));
+        return {true, ret};
+    } else {
+        return {true, {}};
+    }
+}

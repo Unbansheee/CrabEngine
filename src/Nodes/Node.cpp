@@ -212,6 +212,10 @@ void Node::Deserialize(nlohmann::json& archive)
 	{
 		auto childType = childJson.at("class").get<std::string>();
 		auto classType = ClassDB::Get().GetClassByName(childType);
+		if (!classType) {
+			std::cerr << "Could not instantiate Node with ClassType " << childType << std::endl;
+			continue;
+		}
 		if (classType->Initializer) {
 			Object* n = classType->Initializer();
 			Node* node = dynamic_cast<Node*>(n);

@@ -16,14 +16,59 @@ export typedef glm::mat2 Matrix2;
 export typedef glm::quat Quat;
 export template <typename T> using optional_ref = std::optional<std::reference_wrapper<T>>;
 
-export struct RawVec2U {
-    unsigned int x = 0;
-    unsigned int y = 0;
+export struct InteropVector2U {
+    unsigned int x, y = 0;
 
-    RawVec2U() = default;
-    RawVec2U(glm::uvec2 vec) {
+    InteropVector2U() = default;
+    InteropVector2U(glm::uvec2 vec) {
         x = vec.x;
         y = vec.y;
+    }
+    operator glm::uvec2() {
+        return {x, y};
+    }
+};
+
+export struct InteropVector3 {
+    float x, y, z = 0.f;
+
+    InteropVector3() = default;
+    InteropVector3(glm::vec3 vec) {
+        x = vec.x;
+        y = vec.y;
+        z = vec.z;
+    }
+    operator glm::vec3() {
+        return {x, y, z};
+    }
+};
+
+export struct InteropVector2 {
+    float x, y = 0.f;
+
+    InteropVector2() = default;
+    InteropVector2(glm::vec3 vec) {
+        x = vec.x;
+        y = vec.y;
+    }
+    operator glm::vec2() {
+        return {x, y};
+    }
+};
+
+export struct InteropQuat {
+    float w = 1.f;
+    float x, y, z = 0.f;
+
+    InteropQuat() = default;
+    InteropQuat(glm::quat vec) {
+        w = vec.w;
+        x = vec.x;
+        y = vec.y;
+        z = vec.z;
+    }
+    operator glm::quat() const {
+        return glm::quat(w, x, y, z);
     }
 };
 

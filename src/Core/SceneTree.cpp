@@ -65,7 +65,7 @@ void SceneTree::RegisterNode(Node* node)
             RegisterNode(child.Get());
         }
 
-        if (node->scriptInstance.has_value()) {
+        if (node->scriptInstance) {
             node->scriptInstance->Call<void>(L"EnterTree");
         }
         else {
@@ -87,7 +87,7 @@ void SceneTree::UnregisterNode(Node* node)
             UnregisterNode(child.Get());
         }
 
-        if (node->scriptInstance.has_value()) {
+        if (node->scriptInstance) {
             node->scriptInstance->Call<void>(L"ExitTree");
         }
         else {
@@ -98,7 +98,7 @@ void SceneTree::UnregisterNode(Node* node)
 
 void SceneTree::UpdateNode(Node* n, float dt, bool recursive)
 {
-    if (n->scriptInstance.has_value()) {
+    if (n->scriptInstance) {
         n->scriptInstance->Call<void>(L"Update", dt);
     }
     else {
@@ -107,10 +107,11 @@ void SceneTree::UpdateNode(Node* n, float dt, bool recursive)
 
     if (recursive)
     {
-        n->ForEachChild([this, dt, recursive](Node* child)
-        {
-            UpdateNode(child, dt, recursive);
-        });
+        for (auto& child : n->GetChildrenSafe()) {
+            if (child) {
+                UpdateNode(child.Get(), dt, recursive);
+            }
+        }
     }
 }
 
@@ -123,7 +124,7 @@ void SceneTree::ReadyNode(Node* n)
 
     if (!n->isReady)
     {
-        if (n->scriptInstance.has_value()) {
+        if (n->scriptInstance) {
             n->scriptInstance->Call<void>(L"Ready");
         }
         else {

@@ -48,7 +48,7 @@ public:
     bool HasFlag(ObjectFlags_ Flag);
 
     ScriptInstance* GetScriptInstance() {
-        if (scriptInstance.has_value()) return &scriptInstance.value();
+        if (scriptInstance) return scriptInstance.get();
         return nullptr;
     }
 
@@ -58,14 +58,14 @@ public:
     // Returns the class properties from an object instance. This indirection is required otherwise if getting properties for a
     // Node3D via a Node*, only the Node*'s properties would be returned. This function is implemented in the BEGIN_PROPERTIES macro
     virtual const std::vector<Property>& GetPropertiesFromThis() {
-        if (scriptInstance.has_value()) {
+        if (scriptInstance) {
             return scriptInstance->ScriptClass->Properties;
         }
         return GetClassProperties();
     }
 
     virtual const ClassType& GetStaticClassFromThis() {
-        if (scriptInstance.has_value()) {
+        if (scriptInstance) {
             return *scriptInstance->ScriptClass;
         }
         return GetStaticClass();
@@ -123,7 +123,7 @@ protected:
     friend class ScriptEngine;
 
     UID id;
-    std::optional<ScriptInstance> scriptInstance;
+    std::unique_ptr<ScriptInstance> scriptInstance;
 
     static void StaticOnPropertySet(void* obj, Property& prop) {
         auto o = static_cast<Object*>(obj);

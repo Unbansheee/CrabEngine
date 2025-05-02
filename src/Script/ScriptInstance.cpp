@@ -6,6 +6,12 @@ module Engine.ScriptInstance;
 import Engine.Application;
 
 
+ScriptInstance::~ScriptInstance() {
+    if (ManagedHandle) {
+        Application::Get().GetScriptEngine()->CallManaged(L"CrabEngine.ScriptHost", L"DestroyScript", ManagedHandle);
+    }
+}
+
 ScriptEngine * ScriptInstance::GetScriptEngine() {
     return Application::Get().GetScriptEngine();
 }
