@@ -75,6 +75,20 @@ void Object::OnPropertySet(Property& prop)
 {
 }
 
+void Object::InvalidateScriptInstance() {
+    scriptInstance.reset();
+}
+
+void Object::ReloadScriptInstance() {
+    const ClassType* newType = ClassDB::Get().GetClassByName(scriptTypeName);
+    if (!newType) {
+        std::cout << "Type not found for Object reinstancing: " << scriptTypeName << std::endl;
+        return;
+    }
+
+    scriptInstance = std::move(Application::Get().GetScriptEngine()->CreateScriptInstance(this, newType));
+}
+
 bool Object::IsA(const ClassType& type)
 {
     return GetStaticClassFromThis().IsSubclassOf(type);

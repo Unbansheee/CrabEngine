@@ -92,6 +92,7 @@ add_subdirectory(vendor/string_id)
 add_subdirectory(vendor/jolt)
 add_subdirectory(vendor/fmt)
 add_subdirectory(vendor/vfspp vfspp_build)
+add_subdirectory(vendor/esfw)
 
 
 find_library(LIB_slang slang ${CMAKE_CURRENT_SOURCE_DIR}/vendor/slang/lib)
@@ -107,6 +108,7 @@ target_link_libraries(CrabEngine PRIVATE
         ${LIB_slang}
         ${LIB_slangGFX}
         ${LIB_nethost}
+        efsw-static
         )
 
 target_link_libraries(CrabEngine PUBLIC
@@ -148,8 +150,6 @@ else()
             ENGINE_RESOURCE_DIR="./Engine/resources"
     )
 
-
-
 endif()
 
 target_compile_definitions(CrabEngine PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
@@ -173,6 +173,7 @@ target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/
 target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/slang)
 target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nativefiledialog-extended/src/include)
 target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nethost/include)
+target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/esfw/include)
 target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_include_directories(CrabEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Nodes)
 target_include_directories(CrabEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer)

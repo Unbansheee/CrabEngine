@@ -9,14 +9,14 @@ import Engine.Reflection.Class;
 import Engine.ScriptEngine;
 import Engine.Variant;
 
-
-
 export struct ScriptInstance {
     ~ScriptInstance();
-    ScriptInstance(const ClassType* classType, void* managedHandle, const ScriptInterop& interop) : ScriptClass(classType), ManagedHandle(managedHandle), interop(interop) {}
+    ScriptInstance(Object* owner, const ClassType* classType, void* managedHandle, const ScriptInterop& interop);
 
-    const ClassType* ScriptClass = nullptr;
+     Object* InstanceOwner = nullptr;
+     const ClassType* ScriptClass = nullptr;
      void* ManagedHandle = nullptr; // C# GCHandle
+     ScriptModule* Module = nullptr;
      ScriptInterop interop;
 
      template<typename ReturnValue, typename ...Args>

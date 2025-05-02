@@ -11,6 +11,7 @@ export class BAD_OBJECT
 };
 
 export class Object;
+export class ScriptModule;
 
 struct NoCopy{
     // having the defaulted constructor is required for C++20 aggregate initialization to work
@@ -51,6 +52,7 @@ export struct ClassType : NoCopy
     string_id Parent = MakeStringID("null");
     ClassFlags_ Flags = 0;
     std::unordered_map<std::string, void*> methodTable{};
+    ScriptModule* ScriptModule = nullptr;
 
     bool operator==(const ClassType& other) const
     {

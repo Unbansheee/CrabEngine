@@ -15,9 +15,11 @@ import Engine.Assert;
 import std;
 import Engine.Reflection;
 import Engine.Variant;
+import efsw;
 
 
-struct ScriptInstance;
+
+export struct ScriptInstance;
 export class ScriptEngine;
 
 struct ScriptPropertyInfo {
@@ -58,16 +60,23 @@ struct ScriptFunctionResult {
     }
 };
 
-class ScriptModule {
+export class ScriptModule {
 public:
     ScriptModule(ScriptEngine* scriptEngine, const std::wstring& assemblyPath, const std::wstring& libName);
     ~ScriptModule();
+
+    std::vector<Object*> Unload();
+
+    void RegisterInstance(ScriptInstance* inst);
+    void UnregisterInstance(ScriptInstance* inst);
+    std::vector<Object*> GetRegisteredObjects();
 
     std::list<ClassType> scriptClasses;
 
     std::wstring assemblyPath;
     std::wstring libName;
     ScriptEngine* engine;
+    std::vector<ScriptInstance*> registeredScripts{};
 
     load_assembly_fn LoadAssemblyFn();
     get_function_pointer_fn GetFunctionPointerFn();
@@ -76,11 +85,14 @@ public:
     ScriptFunctionResult<ReturnType> CallScriptMethod(void* managedHandle, const std::wstring& methodName, Args&&... args);
 };
 
+
+
 export class ScriptEngine {
 
     friend class ScriptModule;
     using RegisterScriptAssemblyFn = void(*)(const wchar_t*, const wchar_t*);
     using CreateScriptInstanceFn = void(*)(void* nativePtr, const wchar_t* typeName);
+    using UnregisterScriptAssemblyFn = void(*)(const wchar_t*);
 
     hostfxr_initialize_for_runtime_config_fn init_fptr;
     hostfxr_get_runtime_delegate_fn get_delegate_fptr;
@@ -89,7 +101,8 @@ export class ScriptEngine {
     get_function_pointer_fn get_fn_ptr;
 
     RegisterScriptAssemblyFn RegisterScriptAssembly = nullptr;
-    CreateScriptInstanceFn CreateScriptInstance = nullptr;
+    UnregisterScriptAssemblyFn UnregisterScriptAssembly = nullptr;
+    CreateScriptInstanceFn CreateScriptInstanceManaged = nullptr;
 
     std::unordered_map<std::wstring, std::unique_ptr<ScriptModule>> loadedModules;
     std::unordered_map<std::wstring, void*> functionCache;
@@ -103,9 +116,12 @@ public:
 
     void Init();
     void LoadModule(const std::wstring &assembly, const std::wstring &libName);
-    void UnloadModule(const std::wstring &assembly);
+    std::vector<Object*> UnloadModule(const std::wstring &assembly);
     void ReloadModule(const std::wstring &assembly);
+    const std::unordered_map<std::wstring, std::unique_ptr<ScriptModule>>& GetModules();
+    std::unique_ptr<ScriptInstance> CreateScriptInstance(Object* instanceOwner, const ClassType* type);
 
+    std::unique_ptr<efsw::FileWatcher> fileWatcher;
 
     template<typename ReturnType = void, typename... Args>
     ScriptFunctionResult<ReturnType> CallManaged(const std::wstring& className, const std::wstring& fnName, Args... args) {
@@ -144,26 +160,22 @@ public:
     }
 
     template<typename ReturnType = void, typename... Args>
-    ScriptFunctionResult<ReturnType> CallScriptMethod(void* managedHandle, const std::wstring& methodName, Args&&... args) {
-        for (auto &module: loadedModules | std::views::values) {
-            ScriptFunctionResult<ReturnType> res = module->CallScriptMethod(managedHandle, methodName, args...);
-            if (res.SuccessfullyExecuted) {
-                return res;
-            }
-        }
-        return {false, {}};
-    }
+    ScriptFunctionResult<ReturnType> CallScriptMethod(void* managedHandle, const std::wstring& methodName, Args&&... args);
+
+
 
 private:
     std::optional<Property> CreateScriptProperty(const ScriptPropertyInfo& info);
 
 };
 
-
+const std::unordered_map<std::wstring, std::unique_ptr<ScriptModule>>& ScriptEngine::GetModules() {
+    return loadedModules;
+}
 
 
 template<typename ReturnType, typename ... Args>
-ScriptFunctionResult<ReturnType> ScriptModule::CallScriptMethod(void *managedHandle, const std::wstring &methodName,
+ScriptFunctionResult<ReturnType> ScriptEngine::CallScriptMethod(void *managedHandle, const std::wstring &methodName,
     Args &&...args) {
     constexpr bool HasReturn = !std::is_void_v<ReturnType>;
 
@@ -190,7 +202,7 @@ ScriptFunctionResult<ReturnType> ScriptModule::CallScriptMethod(void *managedHan
     }
 
     // Call the managed shim
-    auto result = engine->CallManaged<void>(
+    auto result = CallManaged<void>(
         L"CrabEngine.ScriptHost",
         L"CallScriptMethod",
         managedHandle,

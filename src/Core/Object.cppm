@@ -108,7 +108,9 @@ public:
         }
         return nullptr;
     }
-    
+
+    void InvalidateScriptInstance();
+    void ReloadScriptInstance();
 
     bool IsA(const ClassType& type);
     template<typename T>
@@ -124,6 +126,7 @@ protected:
 
     UID id;
     std::unique_ptr<ScriptInstance> scriptInstance;
+    std::string scriptTypeName;
 
     static void StaticOnPropertySet(void* obj, Property& prop) {
         auto o = static_cast<Object*>(obj);

@@ -9,15 +9,45 @@ module;
 
 module Engine.ScriptEngine;
 import Engine.Reflection.ClassDB;
-import Engine.ScriptInstance;
 import Engine.Object;
 import Engine.Reflection.Class;
 import Engine.Resource;
 import Engine.Filesystem;
+import Engine.ScriptInstance;
 
 std::wstring runtimeConfig = L"Dotnet/CrabEngine.runtimeconfig.json";
 std::wstring engineAssembly = L"Dotnet/CrabEngine.dll";
 
+
+class DLLListener : public efsw::FileWatchListener {
+public:
+    DLLListener(ScriptEngine* engine) : scriptEngine(engine) {  } ;
+    ScriptEngine* scriptEngine;
+
+    void handleFileAction( efsw::WatchID watchid, const std::string& dir,
+                           const std::string& filename, efsw::Action action,
+                           std::string oldFilename ) override {
+
+        std::filesystem::path item = dir.substr(0, dir.length()-1);
+        item /= filename;
+
+        auto extension = item.extension();
+        auto stem = item.stem();
+        auto n = item.filename();
+        auto path = item.generic_wstring();
+
+        switch ( action ) {
+            case efsw::Actions::Modified:
+                if (item.extension() == ".dll") {
+                    scriptEngine->ReloadModule(item.generic_wstring());
+                }
+
+            break;
+            default:
+                return;
+        }
+    }
+};
 
 void ScriptEngine::Init() {
     if (!LoadHostFXR()) {
@@ -39,23 +69,28 @@ void ScriptEngine::Init() {
         UNMANAGEDCALLERSONLY_METHOD,
         nullptr, nullptr, &regFn);
 
-    void* createFn = nullptr;
+    void* unRegFn = nullptr;
     int rc2 = get_fn_ptr(
+        L"CrabEngine.ScriptHost, CrabEngine",
+        L"UnloadScriptAssembly",
+        UNMANAGEDCALLERSONLY_METHOD,
+        nullptr, nullptr, &unRegFn);
+
+    void* createFn = nullptr;
+    int rc3 = get_fn_ptr(
         L"CrabEngine.ScriptHost, CrabEngine",
         L"CreateScriptInstance",
         UNMANAGEDCALLERSONLY_METHOD,
         nullptr, nullptr, &createFn);
 
-    if (rc1 != 0 || rc2 != 0 || !regFn || !createFn) {
+    if (rc1 != 0 || rc2 != 0 || rc3 != 0 || !regFn || !createFn || !unRegFn) {
         std::cerr << "Failed to get function pointers!" << std::endl;
         return;
     }
 
-    using RegisterScriptAssemblyFn = void(*)(const wchar_t*, const wchar_t*);
-    using CreateScriptInstanceFn = void(*)(void*, const wchar_t*);
-
     RegisterScriptAssembly = reinterpret_cast<RegisterScriptAssemblyFn>(regFn);
-    CreateScriptInstance = reinterpret_cast<CreateScriptInstanceFn>(createFn);
+    CreateScriptInstanceManaged = reinterpret_cast<CreateScriptInstanceFn>(createFn);
+    UnregisterScriptAssembly = reinterpret_cast<UnregisterScriptAssemblyFn>(unRegFn);
 
     // Bind native class functions
     for (auto& classType : ClassDB::Get().GetClasses()) {
@@ -69,29 +104,60 @@ void ScriptEngine::Init() {
             }
         }
     }
+
+    // TODO: Manage memory on this
+    DLLListener* listener = new DLLListener(this);
+    fileWatcher = std::make_unique<efsw::FileWatcher>();
+    efsw::WatchID watchID = fileWatcher->addWatch( Filesystem::AbsolutePath("/dotnet/"), listener, true );
+    fileWatcher->watch();
 }
 
 void ScriptEngine::LoadModule(const std::wstring &assembly, const std::wstring& libName) {
     RegisterScriptAssembly(assembly.c_str(), libName.c_str());
-   loadedModules.insert({assembly, std::make_unique<ScriptModule>(this, assembly, libName)});
-
-    //CallManaged(L"CrabEngine.ScriptHost", L"LoadScriptAssembly", assembly.c_str());
-    //loadedModules.insert({assembly, std::make_unique<ScriptModule>(this, assembly, libName)});
+    loadedModules.insert({assembly, std::make_unique<ScriptModule>(this, assembly, libName)});
 }
 
-void ScriptEngine::UnloadModule(const std::wstring &assembly) {
-    loadedModules.erase(assembly);
+std::vector<Object*> ScriptEngine::UnloadModule(const std::wstring &assembly) {
+    if (loadedModules.contains(assembly)) {
+        auto invalidatedObjects = loadedModules[assembly]->Unload();
+        loadedModules.erase(assembly);
+        return invalidatedObjects;
+    }
+    else {
+        std::wcerr << "Failed to unload " << assembly <<". No modules loaded with this path. Ensure you use the exact path. Current modules: \n";
+        for (auto& [modname, mod] : loadedModules) {
+            std::wcerr << modname << "\n";
+        }
+        std::wcerr << std::endl;
+    }
+    return {};
 }
 
 
 void ScriptEngine::ReloadModule(const std::wstring &assembly) {
     std::wcout << "Reloading module: " << assembly << std::endl;
     auto libName = loadedModules.at(assembly)->libName;
-    UnloadModule(assembly);
+    auto invalidatedObjects = UnloadModule(assembly);
     LoadModule(assembly, libName);
+
+    for (auto object : invalidatedObjects) {
+        object->ReloadScriptInstance();
+    }
     std::wcout << "Reloaded module: " << assembly << std::endl;
 }
 
+std::unique_ptr<ScriptInstance> ScriptEngine::CreateScriptInstance(Object *instanceOwner, const ClassType *type) {
+    std::string name = type->Name.string();
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    std::wstring wide = converter.from_bytes(name);
+
+    auto ManagedHandle = *(CallManaged<void*>(L"CrabEngine.ScriptHost", L"CreateScriptInstance", (void*)instanceOwner, wide.c_str()));
+    auto interop = CallManaged<ScriptInterop>(L"CrabEngine.InteropBootstrap", L"GetInterop").Result.value();
+    auto module = type->ScriptModule;
+    auto inst = std::make_unique<ScriptInstance>(instanceOwner, type, ManagedHandle, interop);
+    module->RegisterInstance(inst.get()); // TODO: Move this all to module code?
+    return inst;
+}
 
 std::optional<Property> ScriptEngine::CreateScriptProperty(const ScriptPropertyInfo &info) {
     std::string name = info.Name;
@@ -208,6 +274,7 @@ ScriptModule::ScriptModule(ScriptEngine *scriptEngine, const std::wstring &assem
         t.Flags |= ClassFlags::ScriptClass | ClassFlags::EditorVisible;
         t.Name = MakeStringID(script_info[i].Name);
         t.Parent = MakeStringID(script_info[i].ParentClassName);
+        t.ScriptModule = this;
 
         std::string className = t.Name.string();
         std::string parent = t.Parent.string();
@@ -234,22 +301,51 @@ ScriptModule::ScriptModule(ScriptEngine *scriptEngine, const std::wstring &assem
         classType.Initializer = [&] {
             auto obj = ClassDB::Get().GetNativeType(&classType)->Initializer();
             std::string name = {classType.Name.string()};
-            std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-            std::wstring wide = converter.from_bytes(name);
 
-            auto ManagedHandle = *(engine->CallManaged<void*>(L"CrabEngine.ScriptHost", L"CreateScriptInstance", (void*)obj, wide.c_str()));
-            auto interop = engine->CallManaged<ScriptInterop>(L"CrabEngine.InteropBootstrap", L"GetInterop").Result.value();
-            obj->scriptInstance = std::make_unique<ScriptInstance>(&classType, ManagedHandle, interop);
+            obj->scriptInstance = engine->CreateScriptInstance(obj, &classType);
+            obj->scriptTypeName = name;
 
             return obj;
         };
     }
 }
 
+std::vector<Object *> ScriptModule::GetRegisteredObjects() {
+    std::vector<Object *> objects;
+    for (auto& script : registeredScripts) {
+        objects.push_back(script->InstanceOwner);
+    }
+
+    return objects;
+}
+
 ScriptModule::~ScriptModule() {
+}
+
+std::vector<Object*> ScriptModule::Unload() {
     for (auto& type : scriptClasses) {
         ClassDB::Get().UnregisterClassType(type);
     }
+    engine->UnregisterScriptAssembly(assemblyPath.c_str());
+
+    std::vector<Object*> objects;
+
+    for (auto object : registeredScripts) {
+        objects.push_back(object->InstanceOwner);
+        object->InstanceOwner->InvalidateScriptInstance();
+    }
+
+    registeredScripts.clear();
+
+    return objects;
+}
+
+void ScriptModule::RegisterInstance(ScriptInstance *inst) {
+    registeredScripts.push_back(inst);
+}
+
+void ScriptModule::UnregisterInstance(ScriptInstance *inst) {
+    registeredScripts.erase(std::ranges::find(registeredScripts, inst));
 }
 
 load_assembly_fn ScriptModule::LoadAssemblyFn() {
