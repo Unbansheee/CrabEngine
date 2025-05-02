@@ -90,7 +90,10 @@ vendor/glfw/src/glfw3ConfigVersion.cmake
 
 !vendor/webgpu/bin/**/*
 !vendor/slang/bin/*
+!vendor/slang/lib/*
 !vendor/nethost/*
+!vendor/*
+!vendor/**/*
 
 *.log
 *.vcxproj.*
