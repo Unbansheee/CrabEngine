@@ -76,7 +76,9 @@ public:
     std::wstring assemblyPath;
     std::wstring libName;
     ScriptEngine* engine;
-    std::vector<ScriptInstance*> registeredScripts{};
+    std::list<ScriptInstance*> registeredScripts{};
+
+    bool unloading = false;
 
     load_assembly_fn LoadAssemblyFn();
     get_function_pointer_fn GetFunctionPointerFn();
@@ -84,8 +86,6 @@ public:
     template<typename ReturnType = void, typename... Args>
     ScriptFunctionResult<ReturnType> CallScriptMethod(void* managedHandle, const std::wstring& methodName, Args&&... args);
 };
-
-
 
 export class ScriptEngine {
 
@@ -115,6 +115,10 @@ public:
     ScriptEngine() = default;
 
     void Init();
+
+    void EnqueueModuleReload(const std::wstring& path);
+    void ProcessReloadQueue();
+
     void LoadModule(const std::wstring &assembly, const std::wstring &libName);
     std::vector<Object*> UnloadModule(const std::wstring &assembly);
     void ReloadModule(const std::wstring &assembly);
@@ -122,6 +126,9 @@ public:
     std::unique_ptr<ScriptInstance> CreateScriptInstance(Object* instanceOwner, const ClassType* type);
 
     std::unique_ptr<efsw::FileWatcher> fileWatcher;
+
+    std::mutex reloadMutex;
+    std::queue<std::wstring> pendingReloads;
 
     template<typename ReturnType = void, typename... Args>
     ScriptFunctionResult<ReturnType> CallManaged(const std::wstring& className, const std::wstring& fnName, Args... args) {

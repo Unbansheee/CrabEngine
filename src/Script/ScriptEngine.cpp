@@ -28,23 +28,12 @@ public:
                            const std::string& filename, efsw::Action action,
                            std::string oldFilename ) override {
 
-        std::filesystem::path item = dir.substr(0, dir.length()-1);
-        item /= filename;
-
-        auto extension = item.extension();
-        auto stem = item.stem();
-        auto n = item.filename();
-        auto path = item.generic_wstring();
-
-        switch ( action ) {
-            case efsw::Actions::Modified:
-                if (item.extension() == ".dll") {
-                    scriptEngine->ReloadModule(item.generic_wstring());
-                }
-
-            break;
-            default:
-                return;
+        if (action == efsw::Actions::Modified) {
+            std::filesystem::path item = dir.substr(0, dir.length()-1);
+            item /= filename;
+            if (item.extension() == ".dll") {
+                scriptEngine->EnqueueModuleReload(item.generic_wstring());
+            }
         }
     }
 };
@@ -110,6 +99,28 @@ void ScriptEngine::Init() {
     fileWatcher = std::make_unique<efsw::FileWatcher>();
     efsw::WatchID watchID = fileWatcher->addWatch( Filesystem::AbsolutePath("/dotnet/"), listener, true );
     fileWatcher->watch();
+}
+
+void ScriptEngine::EnqueueModuleReload(const std::wstring &path) {
+    std::lock_guard<std::mutex> lock(reloadMutex);
+    pendingReloads.push(path);
+}
+
+void ScriptEngine::ProcessReloadQueue() {
+    std::queue<std::wstring> localQueue;
+
+    // Move all pending reloads to a local queue
+    {
+        std::lock_guard<std::mutex> lock(reloadMutex);
+        std::swap(localQueue, pendingReloads);
+    }
+
+    // Process each reload safely on the main thread
+    while (!localQueue.empty()) {
+        const std::wstring& path = localQueue.front();
+        ReloadModule(path);  // safe to call here
+        localQueue.pop();
+    }
 }
 
 void ScriptEngine::LoadModule(const std::wstring &assembly, const std::wstring& libName) {
@@ -330,10 +341,15 @@ std::vector<Object*> ScriptModule::Unload() {
 
     std::vector<Object*> objects;
 
-    for (auto object : registeredScripts) {
-        objects.push_back(object->InstanceOwner);
-        object->InstanceOwner->InvalidateScriptInstance();
+    std::list<ScriptInstance*>::iterator i = registeredScripts.begin();
+
+    unloading = true;
+    while (i != registeredScripts.end()) {
+        objects.push_back((*i)->InstanceOwner);
+        (*i)->InstanceOwner->InvalidateScriptInstance();
+        i = registeredScripts.erase(i);
     }
+    unloading = false;
 
     registeredScripts.clear();
 
@@ -345,7 +361,8 @@ void ScriptModule::RegisterInstance(ScriptInstance *inst) {
 }
 
 void ScriptModule::UnregisterInstance(ScriptInstance *inst) {
-    registeredScripts.erase(std::ranges::find(registeredScripts, inst));
+    if (!unloading)
+        registeredScripts.erase(std::ranges::find(registeredScripts, inst));
 }
 
 load_assembly_fn ScriptModule::LoadAssemblyFn() {

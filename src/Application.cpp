@@ -165,6 +165,7 @@ void Application::Update()
 {
 	dt = deltaTime.Tick((float)glfwGetTime());
 	sceneTree.Update(dt);
+	scriptEngine->ProcessReloadQueue();
 }
 
 void Application::Close()
