@@ -51,6 +51,8 @@ public:
     static vfspp::VirtualFileSystemPtr GetFilesystem();
     static std::vector<std::pair<std::string, std::string>>& GetRegisteredDirectories();
 
+    static bool IsAliasRegistered(const std::string &alias);
+
     static void AddFileSystemDirectory(const std::string& alias, const std::string& root);
     static void AddMemoryDirectory(const std::string& alias);
 

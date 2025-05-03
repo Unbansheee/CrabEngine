@@ -11,6 +11,12 @@ vfspp::VirtualFileSystemPtr Filesystem::GetFilesystem() {
     return g_applicationFileSystem;
 }
 
+bool Filesystem::IsAliasRegistered(const std::string &alias) {
+    auto& dirs = GetRegisteredDirectories();
+    auto it = std::ranges::find(dirs, alias, &std::pair<std::string, std::string>::first);
+    return it != dirs.end();
+}
+
 std::vector<std::pair<std::string, std::string>> & Filesystem::GetRegisteredDirectories() {
     static std::vector<std::pair<std::string, std::string>> g_registeredDirectories;
     return g_registeredDirectories;

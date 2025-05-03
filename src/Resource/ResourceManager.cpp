@@ -141,6 +141,34 @@ ResourceCache & ResourceManager::GetResourceCache() {
     return cache;
 }
 
+MeshVertex BuildVertex(const tinyobj::index_t& idx, const tinyobj::attrib_t& attrib) {
+    MeshVertex vertex;
+
+    vertex.position = {
+        attrib.vertices[3 * idx.vertex_index + 0],
+        -attrib.vertices[3 * idx.vertex_index + 2],
+        attrib.vertices[3 * idx.vertex_index + 1]
+    };
+
+    vertex.normal = {
+        attrib.normals[3 * idx.normal_index + 0],
+        -attrib.normals[3 * idx.normal_index + 2],
+        attrib.normals[3 * idx.normal_index + 1]
+    };
+
+
+    vertex.color = {
+        attrib.colors[3 * idx.vertex_index + 0],
+        attrib.colors[3 * idx.vertex_index + 1],
+        attrib.colors[3 * idx.vertex_index + 2]
+    };
+    vertex.uv = {
+        attrib.texcoords[2 * idx.texcoord_index + 0],
+        1.0f - attrib.texcoords[2 * idx.texcoord_index + 1]
+    };
+    return vertex;
+}
+
 bool ResourceManager::loadGeometryFromObj(const std::filesystem::path &path, std::vector<MeshVertex> &vertexData) {
 
     auto absPath = Filesystem::AbsolutePath(path.string());
@@ -174,31 +202,24 @@ bool ResourceManager::loadGeometryFromObj(const std::filesystem::path &path, std
         size_t offset = vertexData.size();
         vertexData.resize(offset + shape.mesh.indices.size());
 
-        for (size_t i = 0; i < shape.mesh.indices.size(); ++i) {
-            const tinyobj::index_t& idx = shape.mesh.indices[i];
+        // Assume triangulated mesh
+        for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); ++f) {
+            size_t i0 = shape.mesh.indices[3 * f + 0].vertex_index;
+            size_t i1 = shape.mesh.indices[3 * f + 1].vertex_index;
+            size_t i2 = shape.mesh.indices[3 * f + 2].vertex_index;
 
-            vertexData[offset + i].position = {
-                attrib.vertices[3 * idx.vertex_index + 0],
-                -attrib.vertices[3 * idx.vertex_index + 2],
-                attrib.vertices[3 * idx.vertex_index + 1]
-            };
+            // Reverse winding: i0, i1, i2 → i0, i2, i1
+            tinyobj::index_t idx0 = shape.mesh.indices[3 * f + 0];
+            tinyobj::index_t idx1 = shape.mesh.indices[3 * f + 1];
+            tinyobj::index_t idx2 = shape.mesh.indices[3 * f + 2];
 
-            vertexData[offset + i].normal = {
-                attrib.normals[3 * idx.normal_index + 0],
-                -attrib.normals[3 * idx.normal_index + 2],
-                attrib.normals[3 * idx.normal_index + 1]
-            };
+            MeshVertex v0 = BuildVertex(idx0, attrib);
+            MeshVertex v1 = BuildVertex(idx1, attrib);
+            MeshVertex v2 = BuildVertex(idx2, attrib);
 
-            vertexData[offset + i].color = {
-                attrib.colors[3 * idx.vertex_index + 0],
-                attrib.colors[3 * idx.vertex_index + 1],
-                attrib.colors[3 * idx.vertex_index + 2]
-            };
-
-            vertexData[offset + i].uv = {
-                attrib.texcoords[2 * idx.texcoord_index + 0],
-                1 - attrib.texcoords[2 * idx.texcoord_index + 1]
-            };
+            vertexData.push_back(v0);
+            vertexData.push_back(v1);
+            vertexData.push_back(v2);
         }
     }
 

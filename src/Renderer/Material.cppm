@@ -41,7 +41,7 @@ struct SamplerBinding {
 export struct MaterialSettings
 {
     wgpu::PrimitiveTopology PrimitiveTopology = wgpu::PrimitiveTopology::TriangleList;
-    wgpu::FrontFace FrontFace = wgpu::FrontFace::CW;
+    wgpu::FrontFace FrontFace = wgpu::FrontFace::CCW;
     wgpu::CullMode CullMode = wgpu::CullMode::Back;
     wgpu::CompareFunction DepthCompare = WGPUCompareFunction_Less;
     bool bUseBlending = true;

@@ -5,6 +5,8 @@ set(CRAB_ENGINE_CMAKE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake" CACHE INTERNAL "")
 set(CRAB_ENGINE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE INTERNAL "")
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+option(DEV_MODE ON "On means resources will not be read from the build directory, but from the root project")
+
 set(CRAB_ENGINE_DLLS
         "${CRAB_ENGINE_SOURCE_DIR}/vendor/slang/bin/slang.dll"
         "${CRAB_ENGINE_SOURCE_DIR}/vendor/nethost/nethost.dll"
@@ -42,7 +44,7 @@ target_compile_definitions(CrabEngine PUBLIC
         "$<$<CONFIG:Debug>:_DEBUG>"
         "$<$<CONFIG:Debug>:ENGINE_ENABLE_ASSERTS>"
         GLM_FORCE_DEPTH_ZERO_TO_ONE
-        GLM_FORCE_LEFT_HANDED
+
 )
 
 target_link_options(CrabEngine INTERFACE
@@ -64,6 +66,7 @@ target_include_directories(CrabEngine
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Nodes
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer
+        PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/vendor/PlatformFolders/sago
         PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/src
         PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/src/Utility
         PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/vendor
@@ -86,6 +89,8 @@ add_subdirectory(vendor/jolt)
 add_subdirectory(vendor/fmt)
 add_subdirectory(vendor/vfspp vfspp_build)
 add_subdirectory(vendor/esfw)
+add_subdirectory(vendor/PlatformFolders)
+
 
 foreach(target webgpu imgui glfw ...)
     if (TARGET ${target})
@@ -111,6 +116,7 @@ target_link_libraries(CrabEngine
         ${LIB_slangGFX}
         ${LIB_nethost}
         efsw-static
+        platform_folders
 )
 
 target_link_libraries(CrabEngine PUBLIC
@@ -137,8 +143,6 @@ set_target_properties(Jolt PROPERTIES FOLDER "CrabEngine/Dependencies")
 # Dotnet detection and propagation
 detect_dotnet()
 
-# Development mode
-option(DEV_MODE "Set up development helper settings" ON)
 if (DEV_MODE)
     target_compile_definitions(CrabEngine PUBLIC ENGINE_RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources")
 else()
