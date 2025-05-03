@@ -73,11 +73,6 @@ target_include_directories(CrabEngine
         PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/vendor/esfw/include
 )
 
-#Suppress cmake version errors
-cmake_policy(SET CMP0000 OLD)
-cmake_policy(SET CMP0011 OLD)
-cmake_policy(SET CMP0025 OLD)
-
 # Link dependencies
 add_subdirectory(vendor/webgpu)
 add_subdirectory(vendor/glfw)
@@ -131,8 +126,11 @@ set_target_properties(glfw3webgpu PROPERTIES FOLDER "CrabEngine/Dependencies/GLF
 set_target_properties(update_mappings PROPERTIES FOLDER "CrabEngine/Dependencies/GLFW3")
 set_target_properties(imgui PROPERTIES FOLDER "CrabEngine/Dependencies")
 set_target_properties(nfd PROPERTIES FOLDER "CrabEngine/Dependencies")
-set_target_properties(foonathan_string_id PROPERTIES FOLDER "CrabEngine/Dependencies/string_id")
-set_target_properties(foonathan_string_id_example PROPERTIES FOLDER "CrabEngine/Dependencies/string_id")
+set_target_properties(foonathan_string_id PROPERTIES FOLDER "CrabEngine/Dependencies")
+set_target_properties(fmt PROPERTIES FOLDER "CrabEngine/Dependencies")
+set_target_properties(efsw PROPERTIES FOLDER "CrabEngine/Dependencies")
+set_target_properties(Jolt PROPERTIES FOLDER "CrabEngine/Dependencies")
+
 
 # Dotnet detection and propagation
 detect_dotnet()
