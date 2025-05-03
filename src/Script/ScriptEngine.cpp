@@ -14,9 +14,10 @@ import Engine.Reflection.Class;
 import Engine.Resource;
 import Engine.Filesystem;
 import Engine.ScriptInstance;
+import Engine.Filesystem;
 
-std::wstring runtimeConfig = L"Dotnet/CrabEngine.runtimeconfig.json";
-std::wstring engineAssembly = L"Dotnet/CrabEngine.dll";
+std::string runtimeConfig = "/dotnet/CrabEngine.runtimeconfig.json";
+std::string engineAssembly = "/dotnet/CrabEngine.dll";
 
 
 class DLLListener : public efsw::FileWatchListener {
@@ -44,12 +45,12 @@ void ScriptEngine::Init() {
         return;
     }
 
-    if (!GetManagedDelegate(runtimeConfig)) {
+    if (!GetManagedDelegate(Filesystem::StringToWString(Filesystem::AbsolutePath(runtimeConfig)))) {
         std::cerr << "Failed to initialize .NET runtime." << std::endl;
         return;
     }
 
-    load_assembly(engineAssembly.c_str(), nullptr, nullptr);
+    load_assembly(Filesystem::StringToWString(Filesystem::AbsolutePath(engineAssembly)).c_str(), nullptr, nullptr);
 
     void* regFn = nullptr;
     int rc1 = get_fn_ptr(
