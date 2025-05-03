@@ -73,6 +73,11 @@ target_include_directories(CrabEngine
         PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/vendor/esfw/include
 )
 
+#Suppress cmake version errors
+cmake_policy(SET CMP0000 OLD)
+cmake_policy(SET CMP0011 OLD)
+cmake_policy(SET CMP0025 OLD)
+
 # Link dependencies
 add_subdirectory(vendor/webgpu)
 add_subdirectory(vendor/glfw)
@@ -154,6 +159,7 @@ target_sources(CrabEngine
 
 
 add_custom_target(BuildCrabEngineDotNet ALL
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/.nuget
         COMMAND dotnet pack ${CMAKE_CURRENT_SOURCE_DIR}/script/CrabEngine/CrabEngine.csproj -c Release -o ${CMAKE_CURRENT_SOURCE_DIR}/.nuget
         COMMENT "Building CrabEngine C# bindings NuGet package"
 )
