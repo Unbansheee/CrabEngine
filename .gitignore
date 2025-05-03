@@ -104,3 +104,8 @@ vendor/glfw/src/glfw3ConfigVersion.cmake
 *.d.json
 *.command
 *cmake-build*/
+.nuget
+script/CrabEngine/bin
+script/CrabEngine/obj
+script/Generators/bin
+script/Generators/obj

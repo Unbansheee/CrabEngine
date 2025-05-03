@@ -5,12 +5,14 @@ set(CRAB_ENGINE_CMAKE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake" CACHE INTERNAL "")
 set(CRAB_ENGINE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE INTERNAL "")
 
 set(CRAB_ENGINE_DLLS
-        "${CMAKE_CURRENT_SOURCE_DIR}/vendor/slang/bin/slang.dll"
-        "${CMAKE_CURRENT_SOURCE_DIR}/vendor/nethost/nethost.dll"
+        "${CRAB_ENGINE_SOURCE_DIR}/vendor/slang/bin/slang.dll"
+        "${CRAB_ENGINE_SOURCE_DIR}/vendor/nethost/nethost.dll"
+
         CACHE INTERNAL "CrabEngine DLLs to copy"
 )
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CrabEngineHelpers.cmake)
+include(${CRAB_ENGINE_SOURCE_DIR}/cmake/CrabEngineHelpers.cmake)
+include(${CRAB_ENGINE_SOURCE_DIR}/cmake/AddDotnetSupport.cmake)
 
 file(GLOB_RECURSE SOURCES
         src/*.h
@@ -149,3 +151,16 @@ target_sources(CrabEngine
         BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
         FILES ${MODULE_FILES}
 )
+
+
+add_custom_target(BuildCrabEngineDotNet ALL
+        COMMAND dotnet pack ${CMAKE_CURRENT_SOURCE_DIR}/script/CrabEngine/CrabEngine.csproj -c Release -o ${CMAKE_CURRENT_SOURCE_DIR}/.nuget
+        COMMENT "Building CrabEngine C# bindings NuGet package"
+)
+
+add_dotnet_project(CrabEngine
+        ${CMAKE_SOURCE_DIR}/vendor/CrabEngine/script/CrabEngine/CrabEngine.csproj
+        $<TARGET_FILE_DIR:CrabEngine>/Dotnet)
+
+add_dependencies(BuildCrabEngineDotNet Build_CrabEngine_Scripts)
+add_dependencies(CrabEngine BuildCrabEngineDotNet)

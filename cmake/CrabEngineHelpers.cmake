@@ -77,4 +77,29 @@ function(target_copy_crabengine_dependencies TARGET)
 
     # Invoke target_copy_webgpu_binaries on the target project
     target_copy_webgpu_binaries(${TARGET})
+
+    target_copy_if_exists(
+            ${TARGET}
+            $<TARGET_FILE_DIR:CrabEngine>/Dotnet/CrabEngine.dll
+            "$<TARGET_FILE_DIR:${TARGET}>/Dotnet"  # Output to target's binary dir
+    )
+
+    target_copy_if_exists(
+            ${TARGET}
+            $<TARGET_FILE_DIR:CrabEngine>/Dotnet/CrabEngine.runtimeconfig.json
+            "$<TARGET_FILE_DIR:${TARGET}>/Dotnet"  # Output to target's binary dir
+    )
+
+    target_copy_if_exists(
+            ${TARGET}
+            $<TARGET_FILE_DIR:CrabEngine>/Dotnet/CrabEngine.deps.json
+            "$<TARGET_FILE_DIR:${TARGET}>/Dotnet"  # Output to target's binary dir
+    )
+
+    target_copy_if_exists(
+            ${TARGET}
+            $<TARGET_FILE_DIR:CrabEngine>/Dotnet/CrabEngine.pdb
+            "$<TARGET_FILE_DIR:${TARGET}>/Dotnet"  # Output to target's binary dir
+    )
+
 endfunction()
