@@ -18,6 +18,8 @@ import Engine.GFX.View;
 
 using namespace wgpu;
 
+
+
 void NodeWindow::EnterTree()
 {
     if (GetTree()->IsInEditor()) return;
@@ -128,6 +130,37 @@ float NodeWindow::GetAspectRatio() const
     return GetWindowSize().x / GetWindowSize().y;
 }
 
+void NodeWindow::SetMouseVisible(bool visible) {
+    glfwSetInputMode(window, GLFW_CURSOR, visible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+}
+
+bool NodeWindow::IsMouseVisible() const {
+    int mode = glfwGetInputMode(window, GLFW_CURSOR);
+    return mode != GLFW_CURSOR_DISABLED;
+}
+
+void NodeWindow::SetMouseCursor(int shape) {
+    static std::unordered_map<int, GLFWcursor*> cursorCache;
+
+    if (cursorCache.find(shape) == cursorCache.end())
+    {
+        GLFWcursor* cursor = glfwCreateStandardCursor(shape);
+        cursorCache[shape] = cursor;
+    }
+
+    glfwSetCursor(window, cursorCache[shape]);
+}
+
+void NodeWindow::SetMousePosition(double x, double y) {
+    glfwSetCursorPos(window, x, y);
+}
+
+Vector2 NodeWindow::GetMousePosition() const {
+    double xpos, ypos;
+    glfwGetCursorPos(window, &xpos, &ypos);
+    return { xpos, ypos };
+}
+
 void NodeWindow::InitializeRenderer()
 {
     auto& app = Application::Get();
@@ -153,6 +186,51 @@ void NodeWindow::RequestResize()
         resizeRequest.height = size.y;
     }
 
+}
+
+void NodeWindow::OnKey(int key, int scancode, int action, int mods) {
+    InputEvent event;
+    event.type = InputEvent::Type::Key;
+    event.key = { key, scancode, action, mods };
+    PropagateInputToChildren(this, event);
+}
+
+void NodeWindow::OnScroll(double xoffset, double yoffset) {
+    InputEvent event;
+    event.type = InputEvent::Type::Scroll;
+    event.scroll = { xoffset, yoffset };
+    PropagateInputToChildren(this, event);
+}
+
+void NodeWindow::OnMouseMove(double xpos, double ypos) {
+    InputEvent event;
+    event.type = InputEvent::Type::MouseMove;
+    event.mouseMove = { xpos, ypos };
+    PropagateInputToChildren(this, event);
+}
+
+void NodeWindow::OnMouseButton(int button, int action, int mods) {
+    InputEvent event;
+    event.type = InputEvent::Type::MouseButton;
+    event.mouseButton = { button, action, mods };
+    PropagateInputToChildren(this, event);
+}
+
+InputResult NodeWindow::PropagateInputToChildren(Node* parent, const InputEvent& event) {
+    for (auto it = parent->Children.rbegin(); it != parent->Children.rend(); ++it)
+    {
+        Node* child = it->get(); // or use your ObjectRef<Node> if applicable
+        if (child)
+        {
+            InputResult result = child->HandleInput(event);
+            if (result == InputResult::Handled)
+                return InputResult::Handled;
+
+            if (PropagateInputToChildren(child, event) == InputResult::Handled)
+                return InputResult::Handled;
+        }
+    }
+    return InputResult::Ignored;
 }
 
 wgpu::raii::TextureView NodeWindow::GetCurrentTextureView() const

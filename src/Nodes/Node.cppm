@@ -11,6 +11,7 @@ export import Engine.Transform;
 import Engine.Object.Ref;
 import std;
 import Engine.SceneTree;
+export import Engine.Input;
 
 export class RenderVisitor;
 export class Renderer;
@@ -54,6 +55,8 @@ protected:
 	virtual void DrawGUI()
 	{
 	};
+
+	virtual InputResult HandleInput(const InputEvent& event) { return InputResult::Ignored; }
 
 public:
 	virtual ~Node() override;
