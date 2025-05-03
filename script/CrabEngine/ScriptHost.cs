@@ -92,7 +92,7 @@ public static class ScriptHost
         var types = mod.GetScriptTypes();
 
         _marshaler = new ScriptInfoMarshaler();
-        IntPtr scriptList = _marshaler.MarshalScriptInfoList(_scriptTypes);
+        IntPtr scriptList = _marshaler.MarshalScriptInfoList(types);
         
         return scriptList;
     }

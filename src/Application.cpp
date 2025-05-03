@@ -122,7 +122,7 @@ Application::Application()
 
 	scriptEngine.reset(new ScriptEngine());
 	scriptEngine->Init();
-	scriptEngine->LoadModule(Filesystem::StringToWString(Filesystem::AbsolutePath("/dotnet/CrabApplication.dll")), L"CrabApplication");
+
 
 	sceneTree.SetRoot(Node::NewNode());
 }

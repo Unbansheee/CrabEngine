@@ -26,7 +26,7 @@ public class ScriptModule
     private Assembly _loadedAssembly;
     private string _libName;
     
-    private static List<Type> _scriptTypes = new();
+    private List<Type> _scriptTypes = new();
 
     public string AssemblyPath { get; }
 
