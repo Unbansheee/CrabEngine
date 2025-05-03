@@ -5,6 +5,41 @@
 
 module;
 
+#include <filesystem>
+
+#ifdef _WIN32
+#include <windows.h>
+#elif __APPLE__
+
+#include <mach-o/dyld.h>
+#include <climits>
+
+#elif
+#include <unistd.h>
+#endif
+// https://stackoverflow.com/questions/50889647/best-way-to-get-exe-folder-path/51023983#51023983
+std::filesystem::path _GetExeDirectory() {
+#ifdef _WIN32
+    // Windows specific
+    wchar_t szPath[MAX_PATH];
+    GetModuleFileNameW( NULL, szPath, MAX_PATH );
+#elif __APPLE__
+    char szPath[PATH_MAX];
+    uint32_t bufsize = PATH_MAX;
+    if (!_NSGetExecutablePath(szPath, &bufsize))
+        return std::filesystem::path{szPath}.parent_path() / ""; // to finish the folder path with (back)slash
+    return {};  // some error
+#else
+    // Linux specific
+    char szPath[PATH_MAX];
+    ssize_t count = readlink( "/proc/self/exe", szPath, PATH_MAX );
+    if( count < 0 || count >= PATH_MAX )
+        return {}; // some error
+    szPath[count] = '\0';
+#endif
+    return std::filesystem::path(szPath).parent_path();
+}
+
 export module Engine.Filesystem;
 import Engine.Assert;
 import vfspp;
@@ -19,7 +54,7 @@ public:
     static void AddFileSystemDirectory(const std::string& alias, const std::string& root);
     static void AddMemoryDirectory(const std::string& alias);
 
-
+    static std::filesystem::path GetProgramDirectory() { return _GetExeDirectory(); }
     static bool IsVirtualPath(const std::string& path);
 
     static vfspp::IFileSystem::TFileList GetAllFiles();

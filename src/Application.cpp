@@ -57,16 +57,12 @@ Application::Application()
 		std::cerr << "Could not initialize GLFW!" << std::endl;
 	}
 
-	auto rootFS = std::make_unique<vfspp::NativeFileSystem>(std::filesystem::current_path().string());
+	auto currentDir = Filesystem::GetProgramDirectory();
+	auto rootFS = std::make_unique<vfspp::NativeFileSystem>(currentDir.generic_string());
 	rootFS->Initialize();
 
 	Filesystem::AddFileSystemDirectory("/engine", ENGINE_RESOURCE_DIR);
-	Filesystem::AddFileSystemDirectory("/dotnet", (std::filesystem::current_path() /= "Dotnet").generic_string());
-
-
-	scriptEngine.reset(new ScriptEngine());
-	scriptEngine->Init();
-	scriptEngine->LoadModule(Filesystem::StringToWString(Filesystem::AbsolutePath("/dotnet/CrabApplication.dll")), L"CrabApplication");
+	Filesystem::AddFileSystemDirectory("/dotnet", (currentDir /= "Dotnet").generic_string());
 
 
 	std::cout << "Requesting adapter..." << std::endl;
@@ -123,8 +119,12 @@ Application::Application()
 	JPH::RegisterJoltTypes();
 	tempAllocator = new JPH::TempAllocatorImpl(10 * 1024 * 1024);
 	jobSystem = new JPH::JobSystemThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, maxConcurrentJobs - 1);
-	sceneTree.SetRoot(Node::NewNode());
 
+	scriptEngine.reset(new ScriptEngine());
+	scriptEngine->Init();
+	scriptEngine->LoadModule(Filesystem::StringToWString(Filesystem::AbsolutePath("/dotnet/CrabApplication.dll")), L"CrabApplication");
+
+	sceneTree.SetRoot(Node::NewNode());
 }
 
 
