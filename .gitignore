@@ -94,6 +94,7 @@ vendor/glfw/src/glfw3ConfigVersion.cmake
 !vendor/nethost/*
 !vendor/*
 !vendor/**/*
+!resources/**
 
 *.log
 *.vcxproj.*
