@@ -10,6 +10,8 @@ function(add_dotnet_project TARGET_NAME CSHARP_PROJECT_PATH OUTPUT_DIR)
             USES_TERMINAL
     )
 
+    set_target_properties(Build_${PROJ_NAME}_Scripts PROPERTIES FOLDER ${TARGET_NAME}/Scripts)
+
     add_dependencies(${TARGET_NAME} Build_${PROJ_NAME}_Scripts)
 
 endfunction()

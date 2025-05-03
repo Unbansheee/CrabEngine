@@ -3,6 +3,7 @@ project(CrabEngine VERSION 0.1.0 LANGUAGES CXX C)
 
 set(CRAB_ENGINE_CMAKE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake" CACHE INTERNAL "")
 set(CRAB_ENGINE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE INTERNAL "")
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(CRAB_ENGINE_DLLS
         "${CRAB_ENGINE_SOURCE_DIR}/vendor/slang/bin/slang.dll"
@@ -129,6 +130,7 @@ set_target_properties(nfd PROPERTIES FOLDER "CrabEngine/Dependencies")
 set_target_properties(foonathan_string_id PROPERTIES FOLDER "CrabEngine/Dependencies")
 set_target_properties(fmt PROPERTIES FOLDER "CrabEngine/Dependencies")
 set_target_properties(efsw PROPERTIES FOLDER "CrabEngine/Dependencies")
+set_target_properties(efsw-static PROPERTIES FOLDER "CrabEngine/Dependencies")
 set_target_properties(Jolt PROPERTIES FOLDER "CrabEngine/Dependencies")
 
 
@@ -168,3 +170,6 @@ add_dotnet_project(CrabEngine
 
 add_dependencies(BuildCrabEngineDotNet Build_CrabEngine_Scripts)
 add_dependencies(CrabEngine BuildCrabEngineDotNet)
+
+set_target_properties(BuildCrabEngineDotNet PROPERTIES FOLDER "CrabEngine/Dotnet")
+set_target_properties(Build_CrabEngine_Scripts PROPERTIES FOLDER "CrabEngine/Dotnet")
