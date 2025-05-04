@@ -76,9 +76,8 @@ std::string Filesystem::VirtualPath(const std::string &absolutePath) {
 
         // Check if the absolute path starts with this physical path
         if (normalizedAbs.compare(0, physLen, normalizedPhys) == 0) {
-            // Ensure the match is either exact or followed by a slash
             if (physLen == normalizedAbs.length() || normalizedAbs[physLen] == '/') {
-                if (physLen > bestLength) {  // Prefer the longest match
+                if (physLen > bestLength) {
                     bestLength = physLen;
                     bestVirtual = virtualPath;
                 }
@@ -90,12 +89,9 @@ std::string Filesystem::VirtualPath(const std::string &absolutePath) {
         return "";  // No matching VFS path found
     }
 
-    // Extract the remaining path after the matched physical part
     std::string remaining = normalizedAbs.substr(bestLength);
-
-    // Combine virtual path and remaining using filesystem::path for proper handling
     std::string virtualPath = bestVirtual + remaining;
-    return virtualPath;  // Ensure forward slashes
+    return virtualPath;
 }
 
 std::string Filesystem::AbsolutePath(const std::string &relativePath) {
@@ -106,16 +102,13 @@ std::string Filesystem::AbsolutePath(const std::string &relativePath) {
     std::string bestPhysical;
     size_t bestAliasLength = 0;
 
-    // Iterate through all registered directories to find the best match
     for (const auto& [alias, physical] : GetRegisteredDirectories()) {
         std::string normalizedAlias = NormalizePath(alias);
         size_t aliasLen = normalizedAlias.length();
 
         // Check if the virtual path starts with this alias
         if (normalizedVirtual.compare(0, aliasLen, normalizedAlias) == 0) {
-            // Ensure the match is followed by a '/' or is the full path
             if (aliasLen == normalizedVirtual.length() || normalizedVirtual[aliasLen] == '/') {
-                // Prefer the longest matching alias
                 if (aliasLen > bestAliasLength) {
                     bestAliasLength = aliasLen;
                     bestPhysical = physical;
@@ -128,15 +121,12 @@ std::string Filesystem::AbsolutePath(const std::string &relativePath) {
         return ""; // No matching alias found
     }
 
-    // Extract the remaining part of the virtual path after the alias
     std::string remaining = normalizedVirtual.substr(bestAliasLength);
 
-    // Remove leading slash from remaining (if present)
     if (!remaining.empty() && remaining[0] == '/') {
         remaining.erase(0, 1);
     }
 
-    // Normalize the physical path and concatenate with the remaining part
     std::string normalizedPhysical = NormalizePath(bestPhysical);
     std::filesystem::path absolutePath = std::filesystem::path(normalizedPhysical) / remaining;
 

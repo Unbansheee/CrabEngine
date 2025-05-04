@@ -50,22 +50,36 @@ export class Filesystem {
 
 public:
     static vfspp::VirtualFileSystemPtr GetFilesystem();
+    // Get a map of all registered aliases and directories
     static std::vector<std::pair<std::string, std::string>>& GetRegisteredDirectories();
 
     static bool IsAliasRegistered(const std::string &alias);
 
+    // Add a new physical directory with an alias
     static void AddFileSystemDirectory(const std::string& alias, const std::string& root);
+
+    // Add a virtual memory directory with an alias
     static void AddMemoryDirectory(const std::string& alias);
 
+    // Get the folder that the exe is in
     static std::filesystem::path GetProgramDirectory() { return _GetExeDirectory(); }
+
+    // Is the supplied path a virtual path (eg /res/stuff/things.txt)
     static bool IsVirtualPath(const std::string& path);
 
+    // Get all files under all directorues. Files may double up if they exist under multiple directories
     static vfspp::IFileSystem::TFileList GetAllFiles();
 
+    // Convert absolute to virtual path
     static std::string VirtualPath(const std::string& absolutePath);
+
+    // Convert virtual path to absolute path
     static std::string AbsolutePath(const std::string& relativePath);
+
+    // Normalize path and ensure all slashes are forward slashes
     static std::string NormalizePath(const std::string& path);
 
+    // Convert std::string to std::wstring
     static std::wstring StringToWString(const std::string& str)
     {
         std::wstring wstr;
@@ -75,6 +89,7 @@ public:
         return wstr;
     }
 
+    // Convert std::wstring to std::string
     static std::string WStringToString(const std::wstring& wstr)
     {
         std::string str;
