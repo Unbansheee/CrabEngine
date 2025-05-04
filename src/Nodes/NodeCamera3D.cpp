@@ -7,9 +7,11 @@ import Engine.GLM;
 void NodeCamera3D::EnterTree()
 {
     Node3D::EnterTree();
-    if (auto w = GetAncestorOfType<NodeWindow>())
-    {
-        w->ActiveCamera = this;
+    if (!GetTree()->IsInEditor()) {
+        if (auto w = GetAncestorOfType<NodeWindow>())
+        {
+            w->ActiveCamera = this;
+        }
     }
 }
 
@@ -27,8 +29,7 @@ void NodeCamera3D::ExitTree()
 
 Matrix4 NodeCamera3D::GetViewMatrix() const
 {
-    //return glm::lookAt(GetGlobalPosition(), GetGlobalPosition() + GetForwardVector(), {0, 0, 1});
-
+    return glm::lookAt(GetGlobalPosition(), GetGlobalPosition() + GetForwardVector(), {0, 0, 1});
     //glm::mat4 view = glm::translate(glm::mat4(1.0f), GetGlobalPosition() * -1.0f) * glm::inverse(glm::mat4_cast(GetGlobalOrientation()));
-    return glm::inverse(GetTransform().GetWorldModelMatrix());
+    //return glm::inverse(GetTransform().GetWorldModelMatrix());
 }

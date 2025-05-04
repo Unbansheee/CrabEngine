@@ -136,3 +136,93 @@ public class SerializeFieldAttribute : Attribute
         DisplayName = displayName;
     }
 }
+
+public enum InputEventType
+{
+    Key,
+    MouseMove,
+    MouseButton,
+    Scroll
+}
+
+[InteropType(typeof(InputEventInterop))]
+public struct InputEvent
+{
+    public InputEventType Type;
+
+    // Key
+    public Input.Key.Code Key;
+    public int KeyScancode;
+    public Input.Key.Action KeyAction;
+    public int KeyMods;
+
+    // Mouse move
+    public Vector2 MousePos;
+
+    // Mouse button
+    public Input.Mouse.Button MouseButton;
+    public Input.Mouse.Action MouseButtonAction;
+    public int MouseButtonMods;
+
+    // Scroll
+    public Vector2 ScrollOffset;
+    
+    // Implicit conversion to managed InputEvent
+    public static implicit operator InputEvent(InputEventInterop e) => new InputEvent
+    {
+        Type = e.Type,
+        Key = (Input.Key.Code)e.Key,
+        KeyScancode = e.KeyScancode,
+        KeyAction = (Input.Key.Action)e.KeyAction,
+        KeyMods = e.KeyMods,
+        MousePos = new Vector2((float)e.MouseX, (float)e.MouseY),
+        MouseButton = (Input.Mouse.Button)e.MouseButton,
+        MouseButtonAction = (Input.Mouse.Action)e.MouseButtonAction,
+        MouseButtonMods = e.MouseButtonMods,
+        ScrollOffset = new Vector2((float)e.ScrollX, (float)e.ScrollY)
+    };
+    
+    // Implicit conversion back to interop
+    public static implicit operator InputEventInterop(InputEvent e) => new InputEventInterop
+    {
+        Type = e.Type,
+        Key = (int)e.Key,
+        KeyScancode = e.KeyScancode,
+        KeyAction = (int)e.KeyAction,
+        KeyMods = e.KeyMods,
+        MouseX = e.MousePos.X,
+        MouseY = e.MousePos.Y,
+        MouseButton = (int)e.MouseButton,
+        MouseButtonAction = (int)e.MouseButtonAction,
+        MouseButtonMods = e.MouseButtonMods,
+        ScrollX = e.ScrollOffset.X,
+        ScrollY = e.ScrollOffset.Y
+    };
+}
+
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct InputEventInterop
+{
+    public InputEventType Type;
+
+    public int Key;
+    public int KeyScancode;
+    public int KeyAction;
+    public int KeyMods;
+
+    public double MouseX;
+    public double MouseY;
+
+    public int MouseButton;
+    public int MouseButtonAction;
+    public int MouseButtonMods;
+
+    public double ScrollX;
+    public double ScrollY;
+}
+
+public enum InputResult
+{
+    Ignored = 0,
+    Handled = 1
+}

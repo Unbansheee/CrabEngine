@@ -176,12 +176,45 @@ public static class ScriptHost
         var convertedArgs = new object?[argCount];
         for (int i = 0; i < argCount; i++) {
             var paramType = parameters[i].ParameterType;
-            convertedArgs[i] = Marshal.PtrToStructure(new IntPtr(args[i]), paramType);
+            
+            var interopAttr = paramType.GetCustomAttribute<InteropTypeAttribute>();
+            if (interopAttr != null)
+            {
+                var interopType = interopAttr.InteropType;
+                var rawInterop = Marshal.PtrToStructure(new IntPtr(args[i]), interopType);
+
+                // Look for implicit operator in paramType that takes interopType
+                var op = paramType
+                    .GetMethods(BindingFlags.Public | BindingFlags.Static)
+                    .FirstOrDefault(m =>
+                        m.Name == "op_Implicit" &&
+                        m.ReturnType == paramType &&
+                        m.GetParameters().Length == 1 &&
+                        m.GetParameters()[0].ParameterType == interopType);
+
+                if (op == null)
+                    throw new InvalidOperationException($"Missing implicit operator for converting {interopType} to {paramType}");
+                
+                var newObj = op.Invoke(null, new[] { rawInterop });
+                convertedArgs[i] = newObj;
+            }
+            else
+            {
+                convertedArgs[i] = Marshal.PtrToStructure(new IntPtr(args[i]), paramType);
+            }
         }
 
         object? result = method.Invoke(instance, convertedArgs);
         if (returnBuffer != null && result != null) {
-            Marshal.StructureToPtr(result, new IntPtr(returnBuffer), false);
+            if (result.GetType().IsEnum)
+            {
+                Marshal.StructureToPtr((int)result, new IntPtr(returnBuffer), false);
+            }
+            else
+            {
+                Marshal.StructureToPtr(result, new IntPtr(returnBuffer), false);
+            }
+            
         }
         
     }

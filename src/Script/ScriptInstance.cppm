@@ -20,14 +20,8 @@ export struct ScriptInstance {
      ScriptInterop interop;
 
      template<typename ReturnValue, typename ...Args>
-     ReturnValue Call(const std::wstring& method, Args... args) {
-         if constexpr (std::is_same_v<ReturnValue, void>) {
-             GetScriptEngine()->CallScriptMethod<ReturnValue>(ManagedHandle, method.c_str(), args...);
-             return;
-         }
-         else {
-             return GetScriptEngine()->CallScriptMethod<ReturnValue>(ManagedHandle, method.c_str(), args...);
-         }
+     ScriptFunctionResult<ReturnValue> Call(const std::wstring& method, Args... args) {
+         return GetScriptEngine()->CallScriptMethod<ReturnValue>(ManagedHandle, method.c_str(), args...);
      }
 
     template<typename T>

@@ -16,10 +16,10 @@ import Engine.Filesystem;
 import Engine.ScriptInstance;
 import Engine.Filesystem;
 
-std::string runtimeConfig = "/dotnet/CrabEngine.runtimeconfig.json";
-std::string engineAssembly = "/dotnet/CrabEngine.dll";
+const std::string runtimeConfig = "/dotnet/CrabEngine.runtimeconfig.json";
+const std::string engineAssembly = "/dotnet/CrabEngine.dll";
 
-
+// Watches the dotnet folder for any changes and reloads modules accordingly
 class DLLListener : public efsw::FileWatchListener {
 public:
     DLLListener(ScriptEngine* engine) : scriptEngine(engine) {  } ;
@@ -32,7 +32,7 @@ public:
         if (action == efsw::Actions::Modified) {
             std::filesystem::path item = dir.substr(0, dir.length()-1);
             item /= filename;
-            if (item.extension() == ".dll") {
+            if (item.extension() == ".dll" && item.filename() != "CrabEngine.dll") {
                 scriptEngine->EnqueueModuleReload(item.generic_wstring());
             }
         }
@@ -148,10 +148,9 @@ std::vector<Object*> ScriptEngine::UnloadModule(const std::wstring &assembly) {
 
 void ScriptEngine::ReloadModule(const std::wstring &assembly) {
     std::wcout << "Reloading module: " << assembly << std::endl;
-    auto libName = loadedModules.at(assembly)->libName;
+    auto libName = loadedModules.at(assembly)->GetName();
     auto invalidatedObjects = UnloadModule(assembly);
     LoadModule(assembly, libName);
-
     for (auto object : invalidatedObjects) {
         object->ReloadScriptInstance();
     }
@@ -176,19 +175,18 @@ std::optional<Property> ScriptEngine::CreateScriptProperty(const ScriptPropertyI
     std::string displayName = info.DisplayName;
     std::string type = info.Type;
 
+    // TODO: Add more attributes to C# SerializeField
     uint32_t flags = PropertyFlags::ScriptProperty;
 
-    // Use some form of type registry or mapping to resolve the type
+    // Script to Engine types
+    // TODO: Fill this out for every ValueVariant type, maybe create a registry or template this idk
     if (type == "System.Single" || type == "float") {
         return Property(
             name, displayName, "ScriptClass",
-            // getter
             std::function<ValueVariant(void *)>(
-            // getter
             [=](void *obj) -> ValueVariant {
                 return static_cast<Object*>(obj)->GetScriptInstance()->Get<float>(name);
             }),
-            // setter
             [=](void* obj, const ValueVariant& val) {
                 static_cast<Object*>(obj)->GetScriptInstance()->Set<float>(name, std::get<float>(val));
             },
@@ -234,7 +232,6 @@ std::optional<Property> ScriptEngine::CreateScriptProperty(const ScriptPropertyI
     }
 
     return {};
-
 }
 
 bool ScriptEngine::LoadHostFXR() {
@@ -274,9 +271,6 @@ bool ScriptEngine::GetManagedDelegate(const std::wstring& runtimeConfigPath) {
 }
 
 ScriptModule::ScriptModule(ScriptEngine *scriptEngine, const std::wstring &assembly, const std::wstring& libraryName): engine(scriptEngine), assemblyPath(assembly), libName(libraryName) {
-    //LoadAssemblyFn()(assemblyPath.c_str(), nullptr, nullptr);
-    //CallManaged(L"CrabEngine.ScriptHost", L"RegisterAllScripts");
-
     int count = *scriptEngine->CallManaged<int>(L"CrabEngine.ScriptHost", L"GetScriptCount", assembly.c_str());
     auto cresult = scriptEngine->CallManaged<ScriptInfo*>(L"CrabEngine.ScriptHost", L"GetScriptInfoList", assembly.c_str());
     ScriptInfo* script_info = cresult.Result.value();

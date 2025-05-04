@@ -29,6 +29,10 @@ public class Node : Object
     [NativeBind("NativeGetName", typeof(void), typeof(IntPtr), typeof(nint))]
     private static NativeGetNameDelegate? NativeGetName;
     
+    [NativeBind("HandleInput", typeof(InputResult), typeof(IntPtr), typeof(InputEventInterop))]
+    private static HandleInputDelegate? NativeHandleInput;
+
+    
     protected virtual void EnterTree() {  
         NativeEnterTree?.Invoke(_nativeOwner);
     }
@@ -48,6 +52,11 @@ public class Node : Object
         NativeUpdate?.Invoke(_nativeOwner, dt);
     }
 
+    protected virtual InputResult HandleInput(InputEvent inputEvent)
+    {
+        return NativeHandleInput!.Invoke(_nativeOwner, inputEvent);
+    }
+    
     public string Name
     {
         get

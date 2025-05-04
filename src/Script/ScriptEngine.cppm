@@ -18,7 +18,6 @@ import Engine.Variant;
 import efsw;
 
 
-
 export struct ScriptInstance;
 export class ScriptEngine;
 
@@ -38,6 +37,7 @@ struct ScriptInfo {
 typedef void (*SetPropertyFunc)(void* instanceHandle, const char* propName, void* value);
 typedef void (*GetPropertyFunc)(void* instanceHandle, const char* propName, void* outValue);
 
+// Setter and getter functions for scripts
 export struct ScriptInterop {
     SetPropertyFunc Set;
     GetPropertyFunc Get;
@@ -60,24 +60,37 @@ struct ScriptFunctionResult {
     }
 };
 
+// Represents a loaded dll
 export class ScriptModule {
 public:
     ScriptModule(ScriptEngine* scriptEngine, const std::wstring& assemblyPath, const std::wstring& libName);
     ~ScriptModule();
+    ScriptModule(const ScriptModule& other) = delete;
 
+    // Unloads the module and returns a list of Objects that were actively using types from this module and have been invalidated
     std::vector<Object*> Unload();
 
+    // Scripts should register to the module when created and unregister when deleted
+    // This is so when the module is unloaded, any objects using its scripts can be invalidated
     void RegisterInstance(ScriptInstance* inst);
     void UnregisterInstance(ScriptInstance* inst);
     std::vector<Object*> GetRegisteredObjects();
 
-    std::list<ClassType> scriptClasses;
+    const std::wstring& GetName() { return libName; }
+    const std::wstring& GetPath() { return assemblyPath; }
 
-    std::wstring assemblyPath;
-    std::wstring libName;
-    ScriptEngine* engine;
+private:
     std::list<ScriptInstance*> registeredScripts{};
+    // All ClassTypes from this module are stored with the module
+    std::list<ClassType> scriptClasses;
+    // Path to the dll
+    std::wstring assemblyPath;
+    // Library name, for our reference
+    std::wstring libName;
 
+    ScriptEngine* engine;
+
+    // Is currently unloading flag
     bool unloading = false;
 
     load_assembly_fn LoadAssemblyFn();
@@ -87,19 +100,23 @@ public:
     ScriptFunctionResult<ReturnType> CallScriptMethod(void* managedHandle, const std::wstring& methodName, Args&&... args);
 };
 
+// Handles loading of hostfxr and coreclr
+// Contains all loaded script modules
+// Represents CrabEngine.dll
 export class ScriptEngine {
-
     friend class ScriptModule;
     using RegisterScriptAssemblyFn = void(*)(const wchar_t*, const wchar_t*);
     using CreateScriptInstanceFn = void(*)(void* nativePtr, const wchar_t* typeName);
     using UnregisterScriptAssemblyFn = void(*)(const wchar_t*);
 
+    // hostfxr and coreclr functions
     hostfxr_initialize_for_runtime_config_fn init_fptr;
     hostfxr_get_runtime_delegate_fn get_delegate_fptr;
     hostfxr_close_fn close_fptr;
     load_assembly_fn load_assembly;
     get_function_pointer_fn get_fn_ptr;
 
+    // CrabEngine.dll method pointers (TODO: use these instead of calling by string all the time)
     RegisterScriptAssemblyFn RegisterScriptAssembly = nullptr;
     UnregisterScriptAssemblyFn UnregisterScriptAssembly = nullptr;
     CreateScriptInstanceFn CreateScriptInstanceManaged = nullptr;
@@ -108,6 +125,7 @@ export class ScriptEngine {
     std::unordered_map<std::wstring, void*> functionCache;
 
     bool LoadHostFXR();
+    // Initializes CoreCLR runtime
     bool GetManagedDelegate(const std::wstring& runtimeConfigPath);
 
 public:
@@ -116,60 +134,37 @@ public:
 
     void Init();
 
+    // Queue a dll path to be reloaded next frame of the event loop
     void EnqueueModuleReload(const std::wstring& path);
+    // Should be called on the engine event loop. Polls reload queue and reloads any changed dlls
     void ProcessReloadQueue();
 
+    // Loads a DLL as a module using an absolute path
     void LoadModule(const std::wstring &assembly, const std::wstring &libName);
+    // Unloads a DLL module. Must use the path it was loaded with
     std::vector<Object*> UnloadModule(const std::wstring &assembly);
-    void ReloadModule(const std::wstring &assembly);
+
+    // Gets all loaded C# modules
     const std::unordered_map<std::wstring, std::unique_ptr<ScriptModule>>& GetModules();
+
+    // Create a managed script instance for an object
     std::unique_ptr<ScriptInstance> CreateScriptInstance(Object* instanceOwner, const ClassType* type);
 
-    std::unique_ptr<efsw::FileWatcher> fileWatcher;
-
-    std::mutex reloadMutex;
-    std::queue<std::wstring> pendingReloads;
-
+    // Calls a managed function from CrabEngine.dll. The function cannot be from a module
     template<typename ReturnType = void, typename... Args>
-    ScriptFunctionResult<ReturnType> CallManaged(const std::wstring& className, const std::wstring& fnName, Args... args) {
-        using ManagedFn = ReturnType(__cdecl*)(Args...);
-        ManagedFn fn = nullptr;
+    ScriptFunctionResult<ReturnType> CallManaged(const std::wstring& className, const std::wstring& fnName, Args... args);
 
-        auto key = className + L"." + fnName;
-        if (functionCache.contains(key)) {
-            fn = static_cast<ManagedFn>(functionCache.at(key));
-        }
-        else {
-            int rc = get_fn_ptr(
-            (className + L", CrabEngine").c_str(),
-            fnName.c_str(),
-            UNMANAGEDCALLERSONLY_METHOD,
-            nullptr,
-            nullptr,
-            (void**)&fn
-        );
-
-            if (rc != 0 || !fn) {
-                std::wcerr << "Failed to load managed method: " << className << "." << fnName << "()" << ". HRESULT: 0x" << std::hex << rc << std::endl;
-                return { false, {} };
-            }
-
-            functionCache.insert({key, static_cast<void*>(fn)});
-        }
-
-        if constexpr (std::is_same_v<ReturnType, void>) {
-            fn(args...);
-            return {true, {}};
-        }
-        else {
-            return {true, fn(args...)};
-        }
-    }
-
+    // Calls a method on a Managed script object.
     template<typename ReturnType = void, typename... Args>
     ScriptFunctionResult<ReturnType> CallScriptMethod(void* managedHandle, const std::wstring& methodName, Args&&... args);
+private:
+    // Called by ProcessReloadQueue
+    void ReloadModule(const std::wstring &assembly);
 
-
+    // Hot reloading
+    std::unique_ptr<efsw::FileWatcher> fileWatcher;
+    std::mutex reloadMutex;
+    std::queue<std::wstring> pendingReloads;
 
 private:
     std::optional<Property> CreateScriptProperty(const ScriptPropertyInfo& info);
@@ -182,11 +177,48 @@ const std::unordered_map<std::wstring, std::unique_ptr<ScriptModule>>& ScriptEng
 
 
 template<typename ReturnType, typename ... Args>
+ScriptFunctionResult<ReturnType> ScriptEngine::CallManaged(const std::wstring &className, const std::wstring &fnName,
+    Args... args) {
+    using ManagedFn = ReturnType(__cdecl*)(Args...);
+    ManagedFn fn = nullptr;
+
+    auto key = className + L"." + fnName;
+    if (functionCache.contains(key)) {
+        fn = static_cast<ManagedFn>(functionCache.at(key));
+    }
+    else {
+        int rc = get_fn_ptr(
+            (className + L", CrabEngine").c_str(),
+            fnName.c_str(),
+            UNMANAGEDCALLERSONLY_METHOD,
+            nullptr,
+            nullptr,
+            (void**)&fn
+        );
+
+        if (rc != 0 || !fn) {
+            std::wcerr << "Failed to load managed method: " << className << "." << fnName << "()" << ". HRESULT: 0x" << std::hex << rc << std::endl;
+            return { false, {} };
+        }
+
+        functionCache.insert({key, static_cast<void*>(fn)});
+    }
+
+    if constexpr (std::is_same_v<ReturnType, void>) {
+        fn(args...);
+        return {true, {}};
+    }
+    else {
+        return {true, fn(args...)};
+    }
+}
+
+template<typename ReturnType, typename ... Args>
 ScriptFunctionResult<ReturnType> ScriptEngine::CallScriptMethod(void *managedHandle, const std::wstring &methodName,
     Args &&...args) {
     constexpr bool HasReturn = !std::is_void_v<ReturnType>;
 
-    // Allocate argument buffers safely
+    // Allocating argument buffers safely to prevent garbage data
     std::vector<std::unique_ptr<std::byte[]>> ownedArgs;
     std::vector<void*> argArray;
 
@@ -208,7 +240,7 @@ ScriptFunctionResult<ReturnType> ScriptEngine::CallScriptMethod(void *managedHan
         returnBuffer = returnStorage.get();
     }
 
-    // Call the managed shim
+    // Call into CrabEngine.dll to trigger a script method call on the current handle
     auto result = CallManaged<void>(
         L"CrabEngine.ScriptHost",
         L"CallScriptMethod",
@@ -223,6 +255,7 @@ ScriptFunctionResult<ReturnType> ScriptEngine::CallScriptMethod(void *managedHan
         return {false, {}};
 
     if constexpr (HasReturn) {
+        // TODO: this could be done better
         ReturnType ret{};
         std::memcpy(&ret, returnBuffer, sizeof(ReturnType));
         return {true, ret};

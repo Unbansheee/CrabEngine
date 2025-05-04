@@ -100,7 +100,9 @@ void NodeWindow::Update(float dt)
             viewData.ViewMatrix = ActiveCamera->GetViewMatrix();
             viewData.ProjectionMatrix = glm::perspectiveRH(ActiveCamera->FOV, GetAspectRatio(), ActiveCamera->NearClippingPlane, ActiveCamera->FarClippingPlane);
         }
-        renderer.RenderNodeTree(this, viewData, *SurfaceView, *DepthView, PickingPassTexture);
+        if (SurfaceView) {
+            renderer.RenderNodeTree(this, viewData, *SurfaceView, *DepthView, PickingPassTexture);
+        }
     }
     renderer.Flush();
     
@@ -222,9 +224,16 @@ InputResult NodeWindow::PropagateInputToChildren(Node* parent, const InputEvent&
         Node* child = it->get(); // or use your ObjectRef<Node> if applicable
         if (child)
         {
-            InputResult result = child->HandleInput(event);
-            if (result == InputResult::Handled)
-                return InputResult::Handled;
+            if (auto script = child->GetScriptInstance()) {
+                InputResult result = *script->Call<InputResult>(L"HandleInput", static_cast<InputEventInterop>(event));
+                if (result == InputResult::Handled)
+                    return InputResult::Handled;
+            }
+            else {
+                InputResult result = child->HandleInput(event);
+                if (result == InputResult::Handled)
+                    return InputResult::Handled;
+            }
 
             if (PropagateInputToChildren(child, event) == InputResult::Handled)
                 return InputResult::Handled;

@@ -39,6 +39,7 @@ public:
 		outString[name.size()] = L'\0'; // Null-terminate
 	};
 	BIND_STATIC_METHOD(const wchar_t*, NativeGetName);
+	BIND_METHOD_PARAMS(InputResult, HandleInput, InputEventInterop event, (event))
 
 protected:
 	friend class Application;

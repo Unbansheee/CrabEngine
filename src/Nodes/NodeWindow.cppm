@@ -31,7 +31,6 @@ export class NodeWindow : public Node
 public:
     CRAB_CLASS(NodeWindow, Node)
     CLASS_FLAG(EditorVisible)
-
     
     void EnterTree() override;
     void Update(float dt) override;
@@ -60,12 +59,11 @@ public:
     void SetMousePosition(double x, double y);
     Vector2 GetMousePosition() const;
 
+    static InputResult PropagateInputToChildren(Node* parent, const InputEvent& event);
 protected:
     void InitializeRenderer();
     void TerminateSurface();
     void CreateIDPassTextures(uint32_t width, uint32_t height);
-
-    InputResult PropagateInputToChildren(Node* parent, const InputEvent& event);
 
     virtual void RequestResize();
     virtual void OnKey(int key, int scancode, int action, int mods);
