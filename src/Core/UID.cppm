@@ -7,53 +7,26 @@ export module Engine.UID;
 export import <vendor/uuid.h>;
 export struct UID
 {
-    UID()
-    {
-        std::random_device rd;
-        auto seed_data = std::array<int, std::mt19937::state_size> {};
-        std::generate(std::begin(seed_data), std::end(seed_data), std::ref(rd));
-        std::seed_seq seq(std::begin(seed_data), std::end(seed_data));
-        std::mt19937 generator(seq);
-        uuids::uuid_random_generator gen{generator};
-        id = gen();
-    }
+    // Default constructor creates a new UID. For an empty one use UID::Empty();
+    UID();
 
-    UID(uuids::uuid _id)
-    {
-        id = _id;
-    }
+    // Construct from an underlying uuid object
+    UID(uuids::uuid _id);
 
-    UID(const UID& other)
-    {
-        id = other.id;
-    }
+    // Copy ctor
+    UID(const UID& other);
 
-    UID(const std::string& string)
-    {
-        auto ret = uuids::uuid::from_string(string);
-        if (ret.has_value())
-        {
-            id = ret.value();
-        }
-        else assert(false);
-    }
+    // Construct from a valid UID string
+    UID(const std::string& string);
 
-    bool operator==(const UID& other) const
-    {
-        return id == other.id;
-    }
-    
-    std::string to_string() const
-    {
-        return uuids::to_string(id);
-    }
+    bool operator==(const UID& other) const;
 
-    static UID empty()
-    {
-        static UID id = (uuids::uuid());
-        return id;
-    }
-    
+    // Get as a string
+    std::string ToString() const;
+
+    // Return an empty UID
+    static UID Empty();
+
 private:
     friend struct std::hash<UID>;
     uuids::uuid id;

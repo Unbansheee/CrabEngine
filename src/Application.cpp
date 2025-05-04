@@ -18,6 +18,10 @@ import Engine.Resource.ResourceManager;
 #  include <emscripten.h>
 #endif // __EMSCRIPTEN__
 
+
+// Jolt stuff
+// TODO: Move jolt stuff into its own module
+
 using namespace std::string_view_literals;
 // Callback for traces, connect this to your own trace function if you have one
 static void TraceImpl(const char *inFMT, ...)
@@ -45,6 +49,8 @@ static bool AssertFailedImpl(const char *inExpression, const char *inMessage, co
 };
 #endif // JPH_ENABLE_ASSERTS
 
+
+
 Application::Application()
 {
 	WGPUInstanceDescriptor instanceDesc{};
@@ -57,10 +63,14 @@ Application::Application()
 		std::cerr << "Could not initialize GLFW!" << std::endl;
 	}
 
+	// Set up engine directories
+	auto currentDir = Filesystem::GetProgramDirectory();
+	Filesystem::AddFileSystemDirectory("/engine", ENGINE_RESOURCE_DIR);
+	Filesystem::AddFileSystemDirectory("/dotnet", (currentDir /= "Dotnet").generic_string());
+
+	// Initialize WGPU
 	std::cout << "Requesting adapter..." << std::endl;
 	wgpu::RequestAdapterOptions adapterOpts = {};
-	//surface = glfwGetWGPUSurface(wgpuInstance, window);
-	//adapterOpts.compatibleSurface = surface;
 	adapterOpts.featureLevel = WGPUFeatureLevel_Core;
 
 	wgpu::Adapter adapter = wgpuInstance.requestAdapter(adapterOpts);
@@ -70,7 +80,6 @@ Application::Application()
 	requiredFeatures.push_back((WGPUFeatureName)wgpu::NativeFeature::TextureAdapterSpecificFormatFeatures);
 	requiredFeatures.push_back((WGPUFeatureName)wgpu::NativeFeature::VertexWritableStorage);
 	requiredFeatures.push_back((WGPUFeatureName)wgpu::NativeFeature::PushConstants);
-
 
 	std::cout << "Requesting device..." << std::endl;
 	wgpu::Limits requiredLimits = GetRequiredLimits(adapter);
@@ -103,8 +112,15 @@ Application::Application()
 
 	std::cout << "Got device: " << wgpuDevice << std::endl;
 
+
+
+	// Intialize native file dialog
 	NFD::Init();
 
+
+
+
+	// Initialize Jolt physics
 	JPH::RegisterDefaultAllocator();
 	JPH::Trace = TraceImpl;
 	JPH_IF_ENABLE_ASSERTS(JPH::AssertFailed = AssertFailedImpl;)
@@ -112,21 +128,18 @@ Application::Application()
 	JPH::RegisterJoltTypes();
 	tempAllocator = new JPH::TempAllocatorImpl(10 * 1024 * 1024);
 	jobSystem = new JPH::JobSystemThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, maxConcurrentJobs - 1);
+
+	// Initialize C# Script engine. Possible replace Init with RAII
+	scriptEngine.reset(new ScriptEngine());
+	scriptEngine->Init();
+
 	sceneTree.SetRoot(Node::NewNode());
-
-	std::cout << std::filesystem::current_path().string() << std::endl;
-
-	auto rootFS = std::make_unique<vfspp::NativeFileSystem>(std::filesystem::current_path().string());
-	rootFS->Initialize();
-
-
-	//Filesystem::AddFileSystemDirectory("/app", std::filesystem::current_path().string());
-	Filesystem::AddFileSystemDirectory("/engine", ENGINE_RESOURCE_DIR);
 }
 
 
 Application::~Application()
 {
+	sceneTree.Clear();
 	// Unregisters all types with the factory and cleans up the default material
 	JPH::UnregisterJoltTypes();
 	// Destroy the factory
@@ -135,6 +148,11 @@ Application::~Application()
 
 	NFD::Quit();
 	glfwTerminate();
+}
+
+Application & Application::Get() {
+	static Application s;
+	return s;
 }
 
 void Application::Begin()
@@ -154,8 +172,14 @@ bool Application::ShouldClose() const
 
 void Application::Update()
 {
+	// Tick deltatime
 	dt = deltaTime.Tick((float)glfwGetTime());
+
+	// Update SceneTree
 	sceneTree.Update(dt);
+
+	// Hot reload dll's if needed
+	scriptEngine->ProcessReloadQueue();
 }
 
 void Application::Close()
@@ -167,20 +191,6 @@ wgpu::Limits Application::GetRequiredLimits(wgpu::Adapter adapter)
 {
 	wgpu::Limits supportedLimits;
 	adapter.getLimits(&supportedLimits);
-
-	int monitorCount;
-	GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
-	int largestWidth = 0;
-	int largestHeight = 0;
-	for (int i = 0; i < monitorCount; i++) {
-		int xpos;
-		int ypos;
-		int width;
-		int height;
-		glfwGetMonitorWorkarea(monitors[i], &xpos, &ypos, &width, &height);
-		largestWidth += width;
-		largestHeight += height;
-	}
 
 	wgpu::Limits requiredLimits = wgpu::Default;
 	requiredLimits.maxVertexAttributes = 6;
@@ -195,8 +205,8 @@ wgpu::Limits Application::GetRequiredLimits(wgpu::Adapter adapter)
 	requiredLimits.maxUniformBuffersPerShaderStage = 8;
 	requiredLimits.maxUniformBufferBindingSize = 65536;
 	requiredLimits.maxDynamicUniformBuffersPerPipelineLayout = 1;
-	requiredLimits.maxTextureDimension1D = std::max(largestWidth, largestHeight);
-	requiredLimits.maxTextureDimension2D = std::max(largestWidth, largestHeight);
+	requiredLimits.maxTextureDimension1D = 8192;
+	requiredLimits.maxTextureDimension2D = 8192;
 	requiredLimits.maxTextureArrayLayers = 1;
 	requiredLimits.maxSampledTexturesPerShaderStage = 4;
 	requiredLimits.maxSamplersPerShaderStage = 4;
@@ -211,3 +221,17 @@ wgpu::Limits Application::GetRequiredLimits(wgpu::Adapter adapter)
 
 	return requiredLimits;
 }
+
+sid::default_database & Application::GetStringDB() {
+	static sid::default_database s_defaultStringDatabase;
+	return s_defaultStringDatabase;
+}
+
+JPH::TempAllocator * Application::GetPhysicsAllocator() const {return tempAllocator;}
+
+JPH::JobSystem * Application::GetJobSystem() const {return jobSystem;}
+
+vfspp::VirtualFileSystemPtr Application::GetFilesystem() {
+	return Filesystem::GetFilesystem();
+}
+

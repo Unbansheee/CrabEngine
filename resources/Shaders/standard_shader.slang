@@ -46,13 +46,18 @@ public struct StandardRendererParameters{
 
 public float3 BlinnPhong(in DirectionalLight light, in StandardMaterial material, float3 normal, float3 baseColor, float3 viewDirection)
 {
-    var lightColor = light.Color.rgb;
-    var L = normalize(light.Direction.xyz);
-    var R = reflect(-L, normal);
+    float3 lightColor = light.Color.rgb;
+    float3 L = normalize(light.Direction.xyz);
+    float3 V = normalize(viewDirection);
+    float3 H = reflect(-L, normal);;
 
-    var diffuse = max(0.1, dot(R, viewDirection)) * lightColor;
+    // Diffuse
+    float diff = max(dot(normal, L), 0.0);
+    float3 diffuse = baseColor * material.Kd * diff * lightColor;
 
-    var RoV = max(0.0, dot(R, viewDirection));
-    var specular = pow(RoV, material.Hardness);
-    return (baseColor * material.Kd * diffuse) + (material.Ks * specular);
+    // Specular
+    float spec = pow(max(dot(normal, H), 0.0), material.Hardness);
+    float3 specular = material.Ks * spec * lightColor;
+
+    return diffuse + specular;
 }

@@ -91,3 +91,8 @@ Quat Transform::WorldToLocalRotation(const Quat& in) const
 {
     return normalize(Quat(glm::inverse(Matrix3(GetWorldModelMatrix()))) * in);
 }
+
+const Transform & Transform::identity() {
+    static Transform s;
+    return s;
+}

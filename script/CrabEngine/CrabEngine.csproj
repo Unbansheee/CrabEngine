@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <SelfContained>false</SelfContained> <!-- Force runtime info -->
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+        <LangVersion>13</LangVersion>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <PlatformTarget>x64</PlatformTarget>
+        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <PublishAot>false</PublishAot>
+        <PublishTrimmed>false</PublishTrimmed>
+        <AssemblyName>CrabEngine</AssemblyName>
+        <RootNamespace>CrabEngine</RootNamespace>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <OutputType>Library</OutputType>
+
+
+        <!-- Default output path for standalone builds -->
+        <OutputPath Condition=" '$(CmakeOutputDir)' == '' ">bin\$(Configuration)\</OutputPath>
+        <!-- Override output path when built via CMake -->
+        <OutputPath Condition=" '$(CmakeOutputDir)' != '' ">$(CmakeOutputDir)\Dotnet\</OutputPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Generators\Generators.csproj"
+                       OutputItemType="Analyzer"
+                       ReferenceOutputAssembly="false" />
+    </ItemGroup>
+</Project>

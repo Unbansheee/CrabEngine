@@ -13,7 +13,6 @@ std::unordered_set<std::string> TextureImporter::GetSupportedExtensions() const
 
 Resource::Ptr TextureImporter::Import(const std::filesystem::path& sourcePath, const ResourceMetadata& settings)
 {
-    const auto& texSettings = static_cast<const TextureImportSettings&>(settings);
     auto tex = std::make_shared<ImageTextureResource>();
     tex->imageFilePath = sourcePath.string();
     return tex;

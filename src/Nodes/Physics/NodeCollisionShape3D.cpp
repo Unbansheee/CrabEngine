@@ -55,11 +55,11 @@ JPH::ShapeRefC NodeCollisionShape3D::GetShapeTree() {
     }
     s.AddShape({}, {0, 0, 0, 1}, scaledShape.Get());
 
-    auto tree = s.Create();
-    if (tree.HasError()) {
-        std::cout << tree.GetError() << std::endl;
+    auto shapeTree = s.Create();
+    if (shapeTree.HasError()) {
+        std::cout << shapeTree.GetError() << std::endl;
     }
-    return tree.Get();
+    return shapeTree.Get();
 }
 
 void NodeSphereShape3D::Render(Renderer &renderer) {

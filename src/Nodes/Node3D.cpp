@@ -12,9 +12,9 @@ import Engine.Types;
 
 void Node3D::UpdateTransform()
 {
-    if (Parent)
+    if (auto parent = GetParent())
     {
-        transform.ModelMatrix = Parent->GetTransform().GetWorldModelMatrix() * transform.GetLocalModelMatrix();
+        transform.ModelMatrix = parent->GetTransform().GetWorldModelMatrix() * transform.GetLocalModelMatrix();
     }
     else
     {
@@ -60,7 +60,7 @@ Quat Node3D::GetOrientation() const
 
 Vector3 Node3D::GetGlobalPosition() const
 {
-    if (Parent)
+    if (GetParent())
     {
         return GetParentTransform().LocalToWorldPosition(GetPosition());
     }
@@ -72,7 +72,7 @@ Vector3 Node3D::GetGlobalPosition() const
 
 Vector3 Node3D::GetGlobalScale() const
 {
-    if (Parent)
+    if (GetParent())
     {
         return GetParentTransform().LocalToWorldScale(GetScale());
     }
@@ -84,9 +84,8 @@ Vector3 Node3D::GetGlobalScale() const
 
 Quat Node3D::GetGlobalOrientation() const
 {
-    if (Parent)
+    if (GetParent())
     {
-        // TODO: test this
         return GetParentTransform().LocalToWorldRotation(GetOrientation());
     }
     else
@@ -97,7 +96,7 @@ Quat Node3D::GetGlobalOrientation() const
 
 void Node3D::SetGlobalPosition(const Vector3& NewPosition)
 {
-    if (Parent)
+    if (GetParent())
     {
         transform.Position = GetParentTransform().WorldToLocalPosition(NewPosition);
     }
@@ -110,7 +109,7 @@ void Node3D::SetGlobalPosition(const Vector3& NewPosition)
 
 void Node3D::SetGlobalScale(const Vector3& NewScale)
 {
-    if (Parent)
+    if (GetParent())
     {
         transform.Scale = GetParentTransform().WorldToLocalScale(NewScale);
     }
@@ -123,7 +122,7 @@ void Node3D::SetGlobalScale(const Vector3& NewScale)
 
 void Node3D::SetGlobalOrientation(const Quat& NewOrientation)
 {
-    if (Parent)
+    if (GetParent())
     {
         transform.Orientation = GetParentTransform().WorldToLocalRotation(NewOrientation);
     }

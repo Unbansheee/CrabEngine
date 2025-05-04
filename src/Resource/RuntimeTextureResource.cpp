@@ -19,11 +19,11 @@ void RuntimeTextureResource::LoadData()
     
 }
 
-void RuntimeTextureResource::LoadFromPixelData(int width, int height, int channels, unsigned char* pixelData)
+void RuntimeTextureResource::LoadFromPixelData(int texWith, int texHeight, int channels, unsigned char* pixelData)
 {
-    texture = ResourceManager::loadTexture(Application::Get().GetDevice(), width, height, channels, pixelData, &*view);
-    this->width = width;
-    this->height = height;
+    texture = ResourceManager::loadTexture(Application::Get().GetDevice(), texWith, texHeight, channels, pixelData, &*view);
+    this->width = texWith;
+    this->height = texHeight;
 
     loaded = true;
 }

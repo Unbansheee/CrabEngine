@@ -5,7 +5,6 @@
 module Engine.SceneSerializer;
 import Engine.Reflection.ClassDB;
 import Engine.Assert;
-//import json;
 
 
 void SceneSerializer::SerializeScene(Node* rootNode, const std::filesystem::path& destination)

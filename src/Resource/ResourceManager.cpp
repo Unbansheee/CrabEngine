@@ -16,10 +16,9 @@ import Engine.WGPU;
 import Engine.Resource.ImportManager;
 import Engine.Reflection.ClassDB;
 import Engine.Assert;
-import Engine.ShaderParser;
-import fmt;
 import Engine.Application;
 import Engine.Filesystem;
+import fmt;
 
 bool ResourceManager::IsSourceFile(const std::filesystem::path& path)
 {
@@ -32,11 +31,13 @@ std::shared_ptr<Resource> ResourceManager::Load(const std::filesystem::path& pat
     {
         std::lock_guard lock(cacheMutex);
         // Existing resource loading logic
-        auto it = cache.FetchResourceByPath(path.string());
+        auto it = GetResourceCache().FetchResourceByPath(path.string());
         if (it) {
             return it;
         }
     }
+
+    if (!std::filesystem::exists(absolutePath)) return nullptr;
 
     if (IsSourceFile(absolutePath)) {
         auto res = ImportManager::Get().Import(path);
@@ -44,7 +45,7 @@ std::shared_ptr<Resource> ResourceManager::Load(const std::filesystem::path& pat
         {
 
             std::lock_guard lock(cacheMutex);
-            cache.AddResource(res);
+            GetResourceCache().AddResource(res);
         }
         return res;
     }
@@ -57,7 +58,7 @@ std::shared_ptr<Resource> ResourceManager::FindByID(const UID &id) {
     auto fs = Application::Get().GetFilesystem();
     {
         std::lock_guard lock(cacheMutex);
-        auto it = cache.FetchResourceByID(id);
+        auto it = GetResourceCache().FetchResourceByID(id);
         if (it) {
             return it;
         }
@@ -83,14 +84,14 @@ void ResourceManager::ReloadResource(const std::shared_ptr<Resource> &resource) 
         if (resource)
         {
             std::lock_guard lock(cacheMutex);
-            cache.AddResource(resource);
+            GetResourceCache().AddResource(resource);
         }
     }
 }
 
 bool ResourceManager::IsResourceLoaded(const std::filesystem::path &path) {
     std::lock_guard lock(cacheMutex);
-    return cache.FetchResourceByPath(path.string()) != nullptr;
+    return GetResourceCache().FetchResourceByPath(path.string()) != nullptr;
 }
 
 void ResourceManager::SaveToFile(const std::filesystem::path& path, nlohmann::json& json)
@@ -114,9 +115,58 @@ void ResourceManager::SaveImportSettings(const std::filesystem::path& sourcePath
     outFile.close();
 }
 
+void ResourceManager::SaveResource(const std::shared_ptr<Resource> &resource, const std::filesystem::path &path) {
+    auto savePath = path.empty() ? resource->GetSourcePath() : path;
+
+    if (savePath.extension() == ".res") {
+        nlohmann::json j;
+        resource->Serialize(j);
+        SaveToFile(savePath, j);
+    }
+    if (auto importSettings = resource->GetImportSettings()) {
+        importSettings->ResourceID = resource->GetID();
+        SaveImportSettings(savePath, importSettings);
+    }
+
+    resource->OnResourceSaved.invoke();
+}
+
 std::vector<std::shared_ptr<Resource>> ResourceManager::GetAllResources()
 {
-    return cache.GetAllResources();
+    return GetResourceCache().GetAllResources();
+}
+
+ResourceCache & ResourceManager::GetResourceCache() {
+    static ResourceCache cache;
+    return cache;
+}
+
+MeshVertex BuildVertex(const tinyobj::index_t& idx, const tinyobj::attrib_t& attrib) {
+    MeshVertex vertex;
+
+    vertex.position = {
+        attrib.vertices[3 * idx.vertex_index + 0],
+        -attrib.vertices[3 * idx.vertex_index + 2],
+        attrib.vertices[3 * idx.vertex_index + 1]
+    };
+
+    vertex.normal = {
+        attrib.normals[3 * idx.normal_index + 0],
+        -attrib.normals[3 * idx.normal_index + 2],
+        attrib.normals[3 * idx.normal_index + 1]
+    };
+
+
+    vertex.color = {
+        attrib.colors[3 * idx.vertex_index + 0],
+        attrib.colors[3 * idx.vertex_index + 1],
+        attrib.colors[3 * idx.vertex_index + 2]
+    };
+    vertex.uv = {
+        attrib.texcoords[2 * idx.texcoord_index + 0],
+        1.0f - attrib.texcoords[2 * idx.texcoord_index + 1]
+    };
+    return vertex;
 }
 
 bool ResourceManager::loadGeometryFromObj(const std::filesystem::path &path, std::vector<MeshVertex> &vertexData) {
@@ -152,31 +202,24 @@ bool ResourceManager::loadGeometryFromObj(const std::filesystem::path &path, std
         size_t offset = vertexData.size();
         vertexData.resize(offset + shape.mesh.indices.size());
 
-        for (size_t i = 0; i < shape.mesh.indices.size(); ++i) {
-            const tinyobj::index_t& idx = shape.mesh.indices[i];
+        // Assume triangulated mesh
+        for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); ++f) {
+            //size_t i0 = shape.mesh.indices[3 * f + 0].vertex_index;
+            //size_t i1 = shape.mesh.indices[3 * f + 1].vertex_index;
+            //size_t i2 = shape.mesh.indices[3 * f + 2].vertex_index;
 
-            vertexData[offset + i].position = {
-                attrib.vertices[3 * idx.vertex_index + 0],
-                -attrib.vertices[3 * idx.vertex_index + 2],
-                attrib.vertices[3 * idx.vertex_index + 1]
-            };
+            // Reverse winding: i0, i1, i2 → i0, i2, i1
+            tinyobj::index_t idx0 = shape.mesh.indices[3 * f + 0];
+            tinyobj::index_t idx1 = shape.mesh.indices[3 * f + 1];
+            tinyobj::index_t idx2 = shape.mesh.indices[3 * f + 2];
 
-            vertexData[offset + i].normal = {
-                attrib.normals[3 * idx.normal_index + 0],
-                -attrib.normals[3 * idx.normal_index + 2],
-                attrib.normals[3 * idx.normal_index + 1]
-            };
+            MeshVertex v0 = BuildVertex(idx0, attrib);
+            MeshVertex v1 = BuildVertex(idx1, attrib);
+            MeshVertex v2 = BuildVertex(idx2, attrib);
 
-            vertexData[offset + i].color = {
-                attrib.colors[3 * idx.vertex_index + 0],
-                attrib.colors[3 * idx.vertex_index + 1],
-                attrib.colors[3 * idx.vertex_index + 2]
-            };
-
-            vertexData[offset + i].uv = {
-                attrib.texcoords[2 * idx.texcoord_index + 0],
-                1 - attrib.texcoords[2 * idx.texcoord_index + 1]
-            };
+            vertexData.push_back(v0);
+            vertexData.push_back(v1);
+            vertexData.push_back(v2);
         }
     }
 
@@ -252,33 +295,6 @@ wgpu::Texture ResourceManager::loadTexture(wgpu::Device device, int width, int h
     
     writeMipMaps(device, texture, textureDesc.size, textureDesc.mipLevelCount, pixelData);
     return texture;
-}
-
-ShaderModule ResourceManager::loadShaderModule(const std::filesystem::path &path, wgpu::Device device) {
-    ShaderModule m;
-    std::ifstream file(path);
-    Assert::Check(file.is_open(), "file.is_open()", path.string());
-
-    file.seekg(0, std::ios::end);
-    size_t size = file.tellg();
-    std::string shaderSource(size, ' ');
-    file.seekg(0);
-    file.read(shaderSource.data(), size);
-
-    ShaderParser parser;
-    m.Metadata = parser.Parse(shaderSource);
-
-    wgpu::ShaderSourceWGSL shaderCodeDesc{};
-    shaderCodeDesc.chain.next = nullptr;
-    shaderCodeDesc.chain.sType = wgpu::SType::ShaderSourceWGSL;
-    shaderCodeDesc.code = {parser.GetProcessedSource().c_str(), parser.GetProcessedSource().length()};
-    //std::cout << shaderCodeDesc.code;
-
-    wgpu::ShaderModuleDescriptor shaderDesc{};
-    shaderDesc.nextInChain = &shaderCodeDesc.chain;
-    m.Module = device.createShaderModule(shaderDesc);
-    return m;
-
 }
 
 wgpu::ShaderModule ResourceManager::loadComputeShaderModule(const std::filesystem::path &path, wgpu::Device device, std::unordered_map<std::string, std::string>& formats)

@@ -5,10 +5,14 @@ import Engine.UID;
 import Engine.Reflection.ClassDB;
 import Engine.Reflection.Class;
 import Engine.StringID;
+import Engine.Application;
 
 BaseObjectRegistrationObject::BaseObjectRegistrationObject()
 {
     ClassDB::Get().RegisterClassType(Object::GetStaticClass());
+}
+
+Object::~Object() {
 }
 
 void Object::AddFlag(uint64_t Flag) {
@@ -17,6 +21,24 @@ void Object::AddFlag(uint64_t Flag) {
 
 bool Object::HasFlag(uint64_t Flag) {
     return ObjectFlags & Flag;
+}
+
+ScriptInstance * Object::GetScriptInstance() {
+    return scriptInstance.get();
+}
+
+const std::vector<Property> & Object::GetPropertiesFromThis() {
+    if (scriptInstance) {
+        return scriptInstance->ScriptClass->Properties;
+    }
+    return GetClassProperties();
+}
+
+const ClassType & Object::GetStaticClassFromThis() {
+    if (scriptInstance) {
+        return *scriptInstance->ScriptClass;
+    }
+    return GetStaticClass();
 }
 
 const ClassType& Object::GetStaticClass()
@@ -40,7 +62,7 @@ const UID& Object::GetID() const
 void Object::Serialize(nlohmann::json& archive)
 {
     archive["class"] = GetStaticClassFromThis().Name.string();
-    archive["uid"] = id.to_string();
+    archive["uid"] = id.ToString();
     archive["flags"] = ObjectFlags;
     auto& properties = archive["properties"];
 
@@ -68,6 +90,20 @@ void Object::Deserialize(nlohmann::json& archive)
 
 void Object::OnPropertySet(Property& prop)
 {
+}
+
+void Object::InvalidateScriptInstance() {
+    scriptInstance.reset();
+}
+
+void Object::ReloadScriptInstance() {
+    const ClassType* newType = ClassDB::Get().GetClassByName(scriptTypeName);
+    if (!newType) {
+        std::cout << "Type not found for Object reinstancing: " << scriptTypeName << std::endl;
+        return;
+    }
+
+    scriptInstance = std::move(Application::Get().GetScriptEngine()->CreateScriptInstance(this, newType));
 }
 
 bool Object::IsA(const ClassType& type)

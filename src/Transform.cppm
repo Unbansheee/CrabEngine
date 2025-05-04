@@ -79,9 +79,5 @@ export struct Transform
 	Quat WorldToLocalRotation(const Quat& in) const;
 
 public:
-	static const Transform& identity() {
-		const Transform s;
-		return s;
-	}
-
+	static const Transform& identity();
 };

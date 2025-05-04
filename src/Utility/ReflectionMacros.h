@@ -9,11 +9,12 @@ import Engine.Variant;
     #Property
 
 #define BEGIN_PROPERTIES \
-virtual const std::vector<Property>& GetPropertiesFromThis() override { return GetClassProperties(); }\
+virtual const std::vector<Property>& GetPropertiesFromThis() override { if (scriptInstance) { return scriptInstance->ScriptClass->Properties; } else return GetClassProperties(); } \
 static const auto& GetClassProperties() { \
 static const std::vector<Property> props = []{ \
 std::vector<Property> base = Super::GetClassProperties(); \
 std::vector<Property> custom;
+
 
 
 #define BEGIN_STRUCT_PROPERTIES(Struct) \
@@ -123,8 +124,9 @@ static ClassType s\
 };\
 return s;\
 }\
-virtual const ClassType& GetStaticClassFromThis() override { return GetStaticClass(); } \
-[[maybe_unused]] inline static AutoClassRegister AutoRegistrationObject_##Class = AutoClassRegister(GetStaticClass());
+virtual const ClassType& GetStaticClassFromThis() override { if (scriptInstance) {return *scriptInstance->ScriptClass;} return GetStaticClass(); } \
+[[maybe_unused]] inline static AutoClassRegister AutoRegistrationObject_##Class = AutoClassRegister(GetStaticClass()); \
+
 
 
 #define CRAB_ABSTRACT_CLASS(Class, ParentClass) \
@@ -152,3 +154,26 @@ virtual const ClassType& GetStaticClassFromThis() override { return GetStaticCla
 
 #define REGISTER_RESOURCE_IMPORTER(Type)\
 [[maybe_unused]] inline static AutoRegisterResourceImporter<Type> ImporterRegistrationObject_##Type = AutoRegisterResourceImporter<Type>();
+
+
+#define BIND_METHOD(ReturnType, Name) \
+static ReturnType Native##Name(ThisClass* ctx) { \
+return ctx->Name(); \
+} \
+inline static auto Register_##Name = MethodRegister<ThisClass>(#Name, (void*)&Native##Name);
+
+#define BIND_STATIC_METHOD(ReturnType, Name) \
+inline static auto Register_##Name = MethodRegister<ThisClass>(#Name, (void*)&Name);
+
+#define BIND_METHOD_PARAMS(ReturnType, Name, ParamList, ArgList) \
+static ReturnType Native##Name(ThisClass* ctx, ParamList) { \
+return ctx->Name ArgList; \
+} \
+inline static auto Register_##Name = MethodRegister<ThisClass>(#Name, (void*)&Native##Name);
+
+
+#define BIND_METHOD_OUTPARAM(OutParamType, Name) \
+static void Native##Name(ThisClass* ctx, OutParamType* param) { \
+*param = ctx->Name(); \
+} \
+inline static auto Register_##Name = MethodRegister<ThisClass>(#Name, (void*)&Native##Name);

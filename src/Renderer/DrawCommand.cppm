@@ -4,6 +4,8 @@ import Engine.Resource.Material;
 import Engine.Types;
 import Engine.WGPU;
 
+export class Node;
+
 export struct DrawCommand
 {
     MaterialResource* material;

@@ -9,6 +9,9 @@ module;
 //#include "webgpu/webgpu.hpp"
 #include "tiny_gltf.h"
 
+////////////////////////////////////////
+/// CURRENTLY UNUSED
+////////////////////////////////////////
 
 export module Engine.GLTFSceneParser;
 import Engine.Resource.Mesh;

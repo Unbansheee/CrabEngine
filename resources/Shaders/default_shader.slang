@@ -57,7 +57,8 @@ float4 fs_main(in StandardShaderFragmentInput input)
     float3 baseColor = AlbedoTexture.Sample(StandardTextureSampler, input.UV).rgb;
 
     float3 color = {0,0,0};
-    for(int i = 0; i < uRendererParams.uLightingData.DirectionalLightCount; i++){
+    [ForceUnroll]
+    for(int i = 0; i < 4; i++){
         color += BlinnPhong(uRendererParams.uLightingData.DirectionalLights[i], uMaterialProperties, N, baseColor, V);
     }
 

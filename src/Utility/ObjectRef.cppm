@@ -5,9 +5,8 @@
 
 export module Engine.Object.Ref;
 import Engine.Object.ObservableDtor;
-import Engine.Reflection.Class;
 import Engine.Assert;
-
+export class Object;
 
 export class _ObjectRefBase {
 
@@ -26,7 +25,7 @@ struct ObjectRefUnderlyingType<ObjectRef<U>> {
     using type = U; // Extract U from ObjectRef<U>
 };
 
-// A Handle is a wrapper for a pointer. Upon destruction of the underlying object, the pointer will be set to null
+// An ObjectRef is a wrapper for an Object pointer. Upon destruction of the underlying object, the pointer will be set to null
 // Objects referenced by a Handle must inherit observable_dtor
 // The purpose of this class is to have a weak_ptr alternative that does require the ownership semantics of shared_ptr
 // Holding a handle to an object will not keep it alive
@@ -39,10 +38,6 @@ public:
 
     // Empty constructor
     ObjectRef();
-    // Construct a handle from another object
-    //ObjectRef(T* node);
-    // Construct a handle from another handle
-    //ObjectRef(const ObjectRef& other);
     // Dtor
     ~ObjectRef();
 
@@ -78,9 +73,6 @@ public:
     bool operator==(T* other) const;
     // Underlying object comparison
     bool operator==(const T* other) const;
-
-    //ObjectRef& operator=(const ObjectRef& other);
-    //ObjectRef& operator=(ObjectRef& other);
 
     // Assign from another ObjectRef
     ObjectRef<T>& operator=(const ObjectRef<T>& other);
@@ -218,43 +210,18 @@ ObjectRef<T>& ObjectRef<T>::operator=(T* other)
     return *this;
 }
 
-/*
-template <typename T>
-ObjectRef<T>& ObjectRef<T>::operator=(const T*& other)
-{
-    static_assert(std::is_base_of_v<observable_dtor, T>, "T must implement observable_dtor");
-    Clear();
-    connection = other->destroyed_signal.template connect<&ObjectRef::OnResourceDestroyed>(this);
-    node = other;
-    return *this;
-}
-*/
 
 template<typename T>
 ObjectRef<T> & ObjectRef<T>::operator=(const ObjectRef &other) {
     Clear();
 
     if (other.IsValid()) {
-        //assert(other.Get()->GetStaticClassFromThis().IsSubclassOf(*baseClass));
-
         connection = other.Get()->destroyed_signal.template connect<&ObjectRef::OnResourceDestroyed>(this);
         node = other.Get();
     }
 
     return (*this);
 }
-
-/*
-template<typename T>
-ObjectRef<T> & ObjectRef<T>::operator=(ObjectRef &other) {
-    Clear();
-    if (other.IsValid()) {
-        connection = other.Get()->destroyed_signal.template connect<&ObjectRef::OnResourceDestroyed>(this);
-        node = other.Get();
-    }
-    return (*this);
-}
-*/
 
 template <typename T>
 ObjectRef<T>::ObjectRef(): node(nullptr)

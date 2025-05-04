@@ -15,5 +15,5 @@ export class ResourceMetadata : public Object
         ADD_PROPERTY("ResourceID", ResourceID)
     END_PROPERTIES
 
-    UID ResourceID = UID::empty();
+    UID ResourceID = UID::Empty();
 };

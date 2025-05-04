@@ -92,7 +92,7 @@ void MaterialResource::Serialize(nlohmann::json &archive) {
 void MaterialResource::Deserialize(nlohmann::json &archive) {
     Resource::Deserialize(archive);
 
-    LoadFromShaderPath(Application::Get().GetDevice(), ShaderModuleName);
+    LoadFromShaderPath(Application::Get().GetDevice(), ShaderModuleName, false);
 
     if (archive.contains("uniforms")) {
         nlohmann::json& uniformJson = archive.at("uniforms");
@@ -102,7 +102,6 @@ void MaterialResource::Deserialize(nlohmann::json &archive) {
         if (!uniformJson.contains(uniformName)) continue;
 
         if (uniform.BindingType == Buffer) {
-            auto& b = m_cpuBuffers.at(uniformName);
             for (auto& field : uniform.BufferFields) {
                 if (!uniformJson.at(uniformName).contains(field.Name)) { continue; }
                 nlohmann::json& fieldJson = uniformJson.at(uniformName).at(field.Name);
@@ -127,7 +126,6 @@ void MaterialResource::Deserialize(nlohmann::json &archive) {
 
         else if (uniform.BindingType == Texture) {
             auto& current = uniformJson.at(uniformName);
-            auto& b = m_textures.at(uniformName);
             bool isInline = current.at("import_type").get<std::string>() == "inline";
             bool isSource = current.at("import_type").get<std::string>() == "file";
             if (!isInline && !isSource) continue;
@@ -155,8 +153,12 @@ void MaterialResource::Deserialize(nlohmann::json &archive) {
 
 MaterialResource::MaterialResource(const std::string &moduleName, const MaterialSettings& settings) : Resource() {
     ShaderModuleName = moduleName;
-    LoadFromShaderPath(Application::Get().GetDevice(), moduleName, settings);
+    LoadFromShaderPath(Application::Get().GetDevice(), moduleName, false, settings);
     MaterialResource::LoadData();
+}
+
+void MaterialResource::RecompileShader() {
+    LoadFromShaderPath(m_device, ShaderModuleName, true, m_settings);
 }
 
 void MaterialResource::UpdateBindGroups() {
@@ -209,9 +211,9 @@ void MaterialResource::UpdateBindGroups() {
         m_dirtyGroups[group] = false;
     }
 
-    for (auto& [name, cpuBuffer] : m_cpuBuffers) {
+    for (auto& [bufferName, cpuBuffer] : m_cpuBuffers) {
         if (cpuBuffer.isDirty) {
-            wgpu::raii::Buffer& gpuBuffer = m_buffers[name].buffer;
+            wgpu::raii::Buffer& gpuBuffer = m_buffers[bufferName].buffer;
             Application::Get().GetQueue().writeBuffer(*gpuBuffer, 0, cpuBuffer.data.data(), cpuBuffer.size);
             cpuBuffer.isDirty = false;
         }
@@ -225,8 +227,8 @@ wgpu::raii::TextureView MaterialResource::GetThumbnail() {
     return MaterialResourceThumbnail->GetInternalTextureView();
 }
 
-std::vector<uint8_t> MaterialResource::GetUniformData(const std::string &name) {
-    return m_cpuBuffers.at(name).data;
+std::vector<uint8_t> MaterialResource::GetUniformData(const std::string &uniformName) {
+    return m_cpuBuffers.at(uniformName).data;
 }
 
 void MaterialResource::SetUniformData(const std::string& uniformName, void* data, uint32_t size, uint32_t offset) {
@@ -295,11 +297,11 @@ std::vector<uint8_t> MaterialResource::ReadBufferData(const wgpu::raii::Buffer &
     return std::vector<uint8_t>(data, data + size);
 }
 
-void MaterialResource::CreateBuffer(const std::string &name, uint32_t size, bool isDynamic) {
+void MaterialResource::CreateBuffer(const std::string &bufferName, uint32_t size, bool isDynamic) {
     auto device = Application::Get().GetDevice();
 
     WGPUBufferDescriptor desc = {
-        .label = {name.c_str(), name.length()},
+        .label = {bufferName.c_str(), bufferName.length()},
         .usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::CopySrc | wgpu::BufferUsage::Uniform,
         .size = size
     };
@@ -310,23 +312,19 @@ void MaterialResource::CreateBuffer(const std::string &name, uint32_t size, bool
         .isDynamic = isDynamic
     };
 
-    m_buffers[name] =  binding;
-    // Initialize CPU mirror
+    m_buffers[bufferName] =  binding;
 
-    m_cpuBuffers[name] = CPUBuffer{
+    // Initialize CPU mirror
+    m_cpuBuffers[bufferName] = CPUBuffer{
         std::vector<uint8_t>(size, 0),
         true,
         size,
-        m_uniformMetadata.at(name)
+        m_uniformMetadata.at(bufferName)
     };
 }
 
-void MaterialResource::LoadData()
-{
-    Resource::LoadData();
-}
 
-void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::string& moduleName,
+void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::string& moduleName, bool bForceRecompile,
                                           MaterialSettings settings)
 {
     ShaderModuleName = moduleName;
@@ -338,7 +336,7 @@ void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::string
     m_pipelineLayout = {};
     m_pipeline = {};
 
-    ShaderCompiler c(ShaderModuleName, true);
+    ShaderCompiler c(ShaderModuleName, bForceRecompile);
 
     m_shaderModule = c.GetCompiledShaderModule();
     auto l = c.GetPipelineLayout();
@@ -357,7 +355,6 @@ void MaterialResource::LoadFromShaderPath(wgpu::Device device, const std::string
     Initialize();
     UpdateBindGroups();
     loaded = true;
-
 }
 
 void MaterialResource::InitializeProperties() {
@@ -417,17 +414,6 @@ void MaterialResource::InitializeProperties() {
 }
 
 
-void MaterialResource::OnPropertySet(Property& prop)
-{
-    Resource::OnPropertySet(prop);
-
-    if ((prop.flags & PropertyFlags::MaterialProperty))
-    {
-
-        //MarkBindGroupsDirty();
-    }
-}
-
 wgpu::raii::RenderPipeline MaterialResource::CreateRenderPipeline()
 {
     Vertex::VertexBufferLayout layout;
@@ -482,15 +468,8 @@ wgpu::raii::RenderPipeline MaterialResource::CreateRenderPipeline()
     depthStencilState.stencilReadMask = 0;
     depthStencilState.stencilWriteMask = 0;
     pipelineDesc.depthStencil = &depthStencilState;
-    
-    //auto bindGroupLayouts = CreateMaterialBindGroupLayouts();
-    //wgpu::PipelineLayoutDescriptor layoutDesc{};
-    //layoutDesc.bindGroupLayoutCount = bindGroupLayouts.size();
-    //layoutDesc.bindGroupLayouts = (WGPUBindGroupLayout*)bindGroupLayouts.data();
+
     pipelineDesc.layout = *m_pipelineLayout;
-
-
-    
 
     return m_device.createRenderPipeline(pipelineDesc);
 }

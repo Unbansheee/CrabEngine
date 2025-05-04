@@ -9,6 +9,7 @@
 module Engine.Node.ImGuiContextWindow;
 import Engine.Application;
 import Engine.WGPU;
+import Engine.Filesystem;
 
 void NodeImGUIContextWindow::EnterTree()
 {
@@ -17,6 +18,25 @@ void NodeImGUIContextWindow::EnterTree()
 
     imguiContext = ImGui::CreateContext();
     ImGui::SetCurrentContext(imguiContext);
+
+    if (Filesystem::IsAliasRegistered("/appdata")) {
+        fs::path userIniPath = fs::path(Filesystem::AbsolutePath("/appdata/imgui.ini"));
+        fs::path userDir = Filesystem::AbsolutePath("/appdata");
+        if (!fs::exists(userDir)) {
+            fs::create_directories(userDir);
+        }
+
+        if (!fs::exists(userIniPath)) {
+            fs::path exeDir = Filesystem::GetProgramDirectory();
+            fs::path defaultIniPath = exeDir / "imgui.ini";
+            if (fs::exists(defaultIniPath)) {
+                fs::copy_file(defaultIniPath, userIniPath);
+            }
+        }
+
+        ImGui::GetIO().IniFilename = _strdup(userIniPath.string().c_str());
+    }
+
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -49,10 +69,7 @@ void NodeImGUIContextWindow::EnterTree()
 void NodeImGUIContextWindow::Update(float dt)
 {
     if (GetTree()->IsInEditor()) return;
-    //auto next = GetCurrentTextureView();
-    //if (next == nullptr) return;
 
-    auto& io = ImGui::GetIO();
     ImGui_ImplWGPU_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();

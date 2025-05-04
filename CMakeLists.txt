@@ -1,60 +1,86 @@
 cmake_minimum_required(VERSION 3.28)
-project(
-    CrabEngine # name of the project, which will also be the name of the visual studio solution if you use it
-    VERSION 0.1.0 # any version number
-    LANGUAGES CXX C # programming languages used by the project
+project(CrabEngine VERSION 0.1.0 LANGUAGES CXX C)
+
+set(CRAB_ENGINE_CMAKE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/cmake" CACHE INTERNAL "")
+set(CRAB_ENGINE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE INTERNAL "")
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+option(DEV_MODE ON "On means resources will not be read from the build directory, but from the root project")
+
+set(CRAB_ENGINE_DLLS
+        "${CRAB_ENGINE_SOURCE_DIR}/vendor/slang/bin/slang.dll"
+        "${CRAB_ENGINE_SOURCE_DIR}/vendor/nethost/nethost.dll"
+
+        CACHE INTERNAL "CrabEngine DLLs to copy"
 )
 
-include(CrabEngine.cmake)
+set(CMAKE_EXPERIMENTAL_CXX_MODULE_CMAKE_API ON)
+
+include(${CRAB_ENGINE_SOURCE_DIR}/cmake/CrabEngineHelpers.cmake)
+include(${CRAB_ENGINE_SOURCE_DIR}/cmake/AddDotnetSupport.cmake)
 
 file(GLOB_RECURSE SOURCES
         src/*.h
-        src/*.c
         src/*.hpp
+        src/*.c
         src/*.cpp
-        resources/*.wgsl
         vendor/ImGuizmo/ImGuizmo.cpp
         vendor/ImGuizmo/ImGuizmo.h
 )
 
-# Find all module interface files
-file(GLOB_RECURSE MODULE_FILES 
-    CONFIGURE_DEPENDS  # Optional: Watch for new files
-    LIST_DIRECTORIES false
-    src/*.cppm
-)
+file(GLOB_RECURSE MODULE_FILES CONFIGURE_DEPENDS LIST_DIRECTORIES false src/*.cppm)
 
-add_library(CrabEngine STATIC
-        ${SOURCES}
-)
+add_library(CrabEngine STATIC ${SOURCES})
+
 
 set_target_properties(CrabEngine PROPERTIES
-    CXX_STANDARD 23
-    CXX_STANDARD_REQUIRED ON
-    CXX_EXTENSIONS OFF
-    COMPILE_WARNING_AS_ERROR OFF
+        CXX_STANDARD 23
+        CXX_STANDARD_REQUIRED ON
+        CXX_EXTENSIONS OFF
+        COMPILE_WARNING_AS_ERROR OFF
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+        FOLDER "CrabEngine"
 )
-set(INTERPROCEDURAL_OPTIMIZATION ON)
 
-target_compile_definitions(CrabEngine PUBLIC "$<$<CONFIG:Debug>:_DEBUG>")
-target_compile_definitions(CrabEngine PUBLIC "$<$<CONFIG:Debug>:ENGINE_ENABLE_ASSERTS>")
+target_compile_definitions(CrabEngine PUBLIC
+        "$<$<CONFIG:Debug>:_DEBUG>"
+        "$<$<CONFIG:Debug>:ENGINE_ENABLE_ASSERTS>"
+        GLM_FORCE_DEPTH_ZERO_TO_ONE
 
+)
 
+target_link_options(CrabEngine INTERFACE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wl,--whole-archive CrabEngine -Wl --no-whole-archive>
+        $<$<CXX_COMPILER_ID:MSVC>:/WHOLEARCHIVE:CrabEngine>
+)
+
+target_compile_options(CrabEngine PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -pedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4 /MP /wd4244 /wd4100 /wd4201 /wd5103 /bigobj /Z7>
+)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(CrabEngine PRIVATE -fmodules-ts -fmodule-header)
-
-endif()
-
-if (MSVC)
-    target_compile_options(CrabEngine PRIVATE /W4)
-    #target_compile_options(CrabEngine PRIVATE /Z7)
-else()
-    target_compile_options(CrabEngine PRIVATE -Wall -Wextra -pedantic)
 endif()
 
 
-set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+# Include paths
+target_include_directories(CrabEngine
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Nodes
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer
+        PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/vendor/PlatformFolders/sago
+        PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/src
+        PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/src/Utility
+        PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/vendor
+        PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui
+        PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/vendor/slang
+        PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nativefiledialog-extended/src/include
+        PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nethost/include
+        PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/vendor/esfw/include
+)
+
+# Link dependencies
 add_subdirectory(vendor/webgpu)
 add_subdirectory(vendor/glfw)
 add_subdirectory(vendor/glfw3webgpu)
@@ -65,19 +91,36 @@ add_subdirectory(vendor/string_id)
 add_subdirectory(vendor/jolt)
 add_subdirectory(vendor/fmt)
 add_subdirectory(vendor/vfspp vfspp_build)
+add_subdirectory(vendor/esfw)
+add_subdirectory(vendor/PlatformFolders)
 
+
+foreach(target webgpu imgui glfw ...)
+    if (TARGET ${target})
+        set_target_properties(${target} PROPERTIES
+                CXX_STANDARD 23
+                CXX_STANDARD_REQUIRED ON
+                CXX_EXTENSIONS OFF
+        )
+    endif()
+endforeach()
 
 find_library(LIB_slang slang ${CMAKE_CURRENT_SOURCE_DIR}/vendor/slang/lib)
 find_library(LIB_slangGFX gfx ${CMAKE_CURRENT_SOURCE_DIR}/vendor/slang/lib)
+find_library(LIB_nethost nethost ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nethost)
 
-target_link_libraries(CrabEngine PRIVATE
+target_link_libraries(CrabEngine
+        PRIVATE
         glfw
         glfw3webgpu
         nfd
         Jolt
         ${LIB_slang}
         ${LIB_slangGFX}
-        )
+        ${LIB_nethost}
+        efsw-static
+        platform_folders
+)
 
 target_link_libraries(CrabEngine PUBLIC
         webgpu
@@ -87,73 +130,53 @@ target_link_libraries(CrabEngine PUBLIC
         vfspp
 )
 
-target_copy_webgpu_binaries(CrabEngine)
-set_target_properties(CrabEngine PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
-
+# Visual Studio folder structure
 set_target_properties(glfw PROPERTIES FOLDER "CrabEngine/Dependencies/GLFW3")
 set_target_properties(glfw3webgpu PROPERTIES FOLDER "CrabEngine/Dependencies/GLFW3")
 set_target_properties(update_mappings PROPERTIES FOLDER "CrabEngine/Dependencies/GLFW3")
 set_target_properties(imgui PROPERTIES FOLDER "CrabEngine/Dependencies")
 set_target_properties(nfd PROPERTIES FOLDER "CrabEngine/Dependencies")
-set_target_properties(foonathan_string_id PROPERTIES FOLDER "CrabEngine/Dependencies/string_id")
-set_target_properties(foonathan_string_id_example PROPERTIES FOLDER "CrabEngine/Dependencies/string_id")
-set_target_properties(CrabEngine PROPERTIES FOLDER "CrabEngine")
+set_target_properties(foonathan_string_id PROPERTIES FOLDER "CrabEngine/Dependencies")
+set_target_properties(fmt PROPERTIES FOLDER "CrabEngine/Dependencies")
+set_target_properties(efsw PROPERTIES FOLDER "CrabEngine/Dependencies")
+set_target_properties(efsw-static PROPERTIES FOLDER "CrabEngine/Dependencies")
+set_target_properties(Jolt PROPERTIES FOLDER "CrabEngine/Dependencies")
 
 
-# We add an option to enable different settings when developing the CrabEngine than
-# when distributing it.
-option(DEV_MODE "Set up development helper settings" ON)
+# Dotnet detection and propagation
+detect_dotnet()
 
-if(DEV_MODE)
-    # In dev mode, we load resources from the source tree, so that when we
-    # dynamically edit resources (like shaders), these are correctly
-    # versionned.
-    target_compile_definitions(CrabEngine PUBLIC
-            ENGINE_RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources"
-    )
+if (DEV_MODE)
+    target_compile_definitions(CrabEngine PUBLIC ENGINE_RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources")
 else()
-    # In release mode, we just load resources relatively to wherever the
-    # executable is launched from, so that the binary is portable
-    target_compile_definitions(CrabEngine PUBLIC
-            ENGINE_RESOURCE_DIR="./Engine/resources"
-    )
-
-
-
+    target_compile_definitions(CrabEngine PUBLIC ENGINE_RESOURCE_DIR="./Engine/resources")
 endif()
 
-target_compile_definitions(CrabEngine PUBLIC GLM_FORCE_DEPTH_ZERO_TO_ONE)
-target_compile_definitions(CrabEngine PUBLIC GLM_FORCE_LEFT_HANDED)
+# ImGui-specific backend defs
 target_compile_definitions(imgui PRIVATE IMGUI_IMPL_WEBGPU_BACKEND_WGPU)
 
-if (MSVC)
-    # Disable warning C4244: conversion from 'int' to 'short', possible loss of data
-    target_compile_options(CrabEngine PUBLIC /wd4244)
-    # Disable 4100 - unreferenced parameter
-    target_compile_options(CrabEngine PUBLIC /wd4100)
-    # Disable 4201 - nameless struct/union (because of GLM)
-    target_compile_options(CrabEngine PUBLIC /wd4201)   
-
-    target_compile_options(CrabEngine PUBLIC /MP)
-endif (MSVC)
-
-target_include_directories(CrabEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor)
-target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/imgui)
-target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/slang)
-target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/vendor/nativefiledialog-extended/src/include)
-target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_include_directories(CrabEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Nodes)
-target_include_directories(CrabEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Renderer)
-target_include_directories(CrabEngine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/Utility)
-
-
-
-
+# C++ module support
 target_sources(CrabEngine
-  PUBLIC
-    FILE_SET "modules"
-    TYPE CXX_MODULES
-    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
-    FILES ${MODULE_FILES}
+        PUBLIC
+        FILE_SET "modules"
+        TYPE CXX_MODULES
+        BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+        FILES ${MODULE_FILES}
 )
+
+
+add_custom_target(BuildCrabEngineDotNet ALL
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/.nuget
+        COMMAND dotnet pack ${CMAKE_CURRENT_SOURCE_DIR}/script/CrabEngine/CrabEngine.csproj -c Release -o ${CMAKE_CURRENT_SOURCE_DIR}/.nuget
+        COMMENT "Building CrabEngine C# bindings NuGet package"
+)
+
+add_dotnet_project(CrabEngine
+        ${CMAKE_SOURCE_DIR}/vendor/CrabEngine/script/CrabEngine/CrabEngine.csproj
+        $<TARGET_FILE_DIR:CrabEngine>/Dotnet)
+
+add_dependencies(BuildCrabEngineDotNet Build_CrabEngine_Scripts)
+add_dependencies(CrabEngine BuildCrabEngineDotNet)
+
+set_target_properties(BuildCrabEngineDotNet PROPERTIES FOLDER "CrabEngine/Dotnet")
+set_target_properties(Build_CrabEngine_Scripts PROPERTIES FOLDER "CrabEngine/Dotnet")

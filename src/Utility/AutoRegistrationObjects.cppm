@@ -10,6 +10,8 @@ export struct ClassType;
 void AddImporterToImportManager(std::unique_ptr<ResourceImporter> imp);
 void AddFlagToClassType(ClassType& type, uint32_t flag);
 
+// Static initializers for reflection registration
+
 export template<typename T>
 struct AutoRegisterResourceImporter
 {
@@ -31,5 +33,12 @@ struct AutoClassFlagRegister {
         const ClassType& type = T::GetStaticClass();
         ClassType& unconst = const_cast<ClassType&>(type);
         AddFlagToClassType(unconst, flags);
+    }
+};
+
+export template<typename T, typename... Args>
+struct MethodRegister {
+    MethodRegister(const std::string& name, void* method) {
+        const_cast<ClassType&>(T::GetStaticClass()).methodTable[name] = method;
     }
 };

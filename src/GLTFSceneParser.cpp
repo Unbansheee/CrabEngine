@@ -16,21 +16,15 @@ import Engine.Node.MeshInstance3D;
 import Engine.Resource.ArrayMesh;
 import Engine.GFX.MeshVertex;
 import Engine.GFX.UniformDefinitions;
-
-
-/*
-#include "MaterialStandard.h"
-#include "NodeBoxShape3D.h"
-#include "NodeCollisionShape3D.h"
-#include "NodeConvexShape3D.h"
-#include "NodeRigidBody3D.h"
-#include "NodeSphereShape3D.h"
-#include "NodeStaticBody3D.h"
-#include "NodeTrimeshShape3D.h"
-*/
+import Engine.Assert;
+import Engine.Node;
 
 std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std::string& path)
 {
+	std::cerr << "GLTFPARSER: THIS CLASS IS CURRENTLY DEPRECATED. DO NOT USE" << std::endl;
+	return nullptr;
+
+	/**
 	std::unique_ptr<Node3D> root = Node::NewNode<Node3D>();
 	root->SetName(path.substr(path.find_last_of('/') + 1).substr( 0, path.find_last_of('.')));
 
@@ -184,7 +178,7 @@ std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std:
 			NodeSphereShape3D* shape = new NodeSphereShape3D();
 			createdNode.reset(shape);
 		}
-		*/
+
 
 		// Empty Transform Node
 
@@ -245,6 +239,7 @@ std::unique_ptr<Node3D> GLTFSceneParser::ParseGLTF(WGPUDevice device, const std:
 
 
 	return root;
+*/
 }
 
 std::shared_ptr<MeshResource> GLTFSceneParser::ParseMesh(WGPUDevice device, tinygltf::Model& model, tinygltf::Mesh& mesh)

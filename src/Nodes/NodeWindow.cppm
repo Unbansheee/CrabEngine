@@ -14,6 +14,8 @@ import Engine.WGPU;
 import Engine.Node.Camera3D;
 import Engine.Types;
 import Engine.Resource.RuntimeTexture;
+import Engine.Input;
+
 
 export class NodeWindow : public Node
 {
@@ -29,7 +31,6 @@ export class NodeWindow : public Node
 public:
     CRAB_CLASS(NodeWindow, Node)
     CLASS_FLAG(EditorVisible)
-
     
     void EnterTree() override;
     void Update(float dt) override;
@@ -46,21 +47,32 @@ public:
     float GetAspectRatio() const;
 
     ObjectRef<NodeCamera3D> ActiveCamera;
-    
+
+    // Mouse Cursor State
+    void SetMouseVisible(bool visible);
+    bool IsMouseVisible() const;
+
+    // Mouse Cursor Icon
+    void SetMouseCursor(int shape); // e.g. GLFW_ARROW_CURSOR, GLFW_HAND_CURSOR, etc.
+
+    // Mouse Position
+    void SetMousePosition(double x, double y);
+    Vector2 GetMousePosition() const;
+
+    static InputResult PropagateInputToChildren(Node* parent, const InputEvent& event);
 protected:
     void InitializeRenderer();
     void TerminateSurface();
     void CreateIDPassTextures(uint32_t width, uint32_t height);
-    
+
     virtual void RequestResize();
-    virtual void OnKey(int key, int scancode, int action, int mods)
-    {}
-    virtual void OnScroll(double xoffset, double yoffset)
-    {}
-    virtual void OnMouseMove(double xpos, double ypos)
-    {}
-    virtual void OnMouseButton(int button, int action, int mods)
-    {}
+    virtual void OnKey(int key, int scancode, int action, int mods);
+
+    virtual void OnScroll(double xoffset, double yoffset);
+
+    virtual void OnMouseMove(double xpos, double ypos);
+
+    virtual void OnMouseButton(int button, int action, int mods);
 
     wgpu::raii::TextureView GetCurrentTextureView() const;
     wgpu::raii::TextureView GetNextSurfaceTextureView() const;

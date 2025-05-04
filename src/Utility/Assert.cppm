@@ -15,7 +15,6 @@ export namespace Assert {
 
 namespace Internal {
     inline static Assert::AssertHandler handler = nullptr;
-    // Separate initialization function
     inline void initialize_handler() {
         handler = [](const auto& condition, const auto& message, const auto& loc) {
             std::cerr << "Assertion failed!\n"
@@ -43,6 +42,7 @@ export namespace Assert {
         Internal::handler = newHandler;
     }
 
+    // Debug Break with a Message
     void Fail(
         const std::string& message = "",
         const std::source_location& loc = std::source_location::current()
@@ -51,6 +51,7 @@ export namespace Assert {
         Internal::handler("FAIL()", message, loc);
     }
 
+    // For expressions that should only be checked when ENGINE_ENABLE_ASSERTS is defined
     void Check(
         bool condition,
         const std::string& expression = "",

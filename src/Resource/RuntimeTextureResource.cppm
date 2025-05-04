@@ -16,6 +16,6 @@ public:
     void Deserialize(nlohmann::json& archive) override;
     void LoadData() override;
 
-    void LoadFromPixelData(int width, int height, int channels, unsigned char* pixelData);
+    void LoadFromPixelData(int texWith, int texHeight, int channels, unsigned char* pixelData);
     void CreateBlankTexture(wgpu::TextureDescriptor descriptor);
 };

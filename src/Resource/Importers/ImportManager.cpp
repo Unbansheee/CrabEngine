@@ -73,7 +73,7 @@ std::shared_ptr<Resource> ImportManager::ImportSourceFile(const std::filesystem:
 
     auto virtualPath = Filesystem::VirtualPath(path.string());
     auto absolutePath = Filesystem::AbsolutePath(path.string());
-    if (settings->ResourceID != UID::empty()) {
+    if (settings->ResourceID != UID::Empty()) {
         res->id = settings->ResourceID;
     }
     else

@@ -10,6 +10,7 @@ import Engine.Physics.Jolt;
 import Engine.Types;
 import Engine.Resource.Material;
 import Engine.Resource.ResourceManager;
+import Engine.Reflection.Class;
 
 export class NodeCollisionShape3D : public Node3D {
     CRAB_ABSTRACT_CLASS(NodeCollisionShape3D, Node3D)

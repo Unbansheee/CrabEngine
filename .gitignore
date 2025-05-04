@@ -87,7 +87,15 @@ vendor/glfw/src/glfw3.pc
 vendor/glfw/src/glfw3Config.cmake
 vendor/glfw/src/glfw3ConfigVersion.cmake
 
+
 !vendor/webgpu/bin/**/*
+!vendor/slang/bin/*
+!vendor/slang/lib/*
+!vendor/nethost/*
+!vendor/*
+!vendor/**/*
+!resources/**
+
 *.log
 *.vcxproj.*
 *.ifc
@@ -96,3 +104,8 @@ vendor/glfw/src/glfw3ConfigVersion.cmake
 *.d.json
 *.command
 *cmake-build*/
+.nuget
+script/CrabEngine/bin
+script/CrabEngine/obj
+script/Generators/bin
+script/Generators/obj

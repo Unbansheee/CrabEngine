@@ -1,6 +1,8 @@
 ﻿module Engine.Reflection.ClassDB;
 import Engine.Reflection.Class;
 
+
+
 bool ClassType::IsSubclassOf(const ClassType& parent) const
 {
     auto& db = ClassDB::Get();
@@ -35,4 +37,9 @@ bool ClassType::IsSubclassOf(const ClassType& parent) const
 const std::vector<const ClassType*>& ClassDB::GetClasses()
 {
     return allClassTypes;
+}
+
+ClassDB& ClassDB::Get() {
+    static ClassDB instance;
+    return instance;
 }

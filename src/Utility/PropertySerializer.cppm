@@ -12,6 +12,7 @@ import Engine.Object.Ref;
 import Engine.UID;
 import std;
 
+export class Resource;
 
 export struct PropertySerializer
 {
