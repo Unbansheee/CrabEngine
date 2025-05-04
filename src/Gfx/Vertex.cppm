@@ -1,18 +1,15 @@
 ﻿module;
 #pragma once
-//#include <glm/vec2.hpp>
-//#include <glm/vec3.hpp>
-//#include <webgpu/webgpu.hpp>
 
-//#include <webgpu/webgpu.h>
 #include <vector>
 #include <cstdint>
-//#include <glm/vec4.hpp>
 
 export module Engine.GFX.Vertex;
 import Engine.GFX.MeshVertex;
 import Engine.GLM;
 import Engine.WGPU;
+
+// I dont even know if this is used anymore, its from like 9 weeks ago :(
 
 // Helper template to map C++ types to WebGPU formats
 export template <typename T>

@@ -10,6 +10,8 @@ export struct ClassType;
 void AddImporterToImportManager(std::unique_ptr<ResourceImporter> imp);
 void AddFlagToClassType(ClassType& type, uint32_t flag);
 
+// Static initializers for reflection registration
+
 export template<typename T>
 struct AutoRegisterResourceImporter
 {

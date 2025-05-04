@@ -11,7 +11,6 @@ import std;
 import Engine.Reflection.ClassDB;
 
 
-//#include "glm/gtc/quaternion.hpp"
 
 // Serializer
 void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive, int& val)
@@ -62,7 +61,7 @@ void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive,
 }
 
 void PropertySerializer::operator()(PropertyView &prop, nlohmann::json *archive, UID &val) {
-    auto& a = *archive; a[prop.name()] = val.to_string();
+    auto& a = *archive; a[prop.name()] = val.ToString();
 }
 
 void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive, Transform& val)
@@ -90,7 +89,7 @@ void PropertySerializer::operator()(PropertyView& prop, nlohmann::json* archive,
         else {
             properties["import_type"] = "file";
             properties["source_file_path"] = val->GetSourcePath();
-            properties["uid"] = val->GetID().to_string();
+            properties["uid"] = val->GetID().ToString();
             ResourceManager::SaveResource(val);
         }
     }

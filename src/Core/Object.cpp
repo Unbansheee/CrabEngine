@@ -62,7 +62,7 @@ const UID& Object::GetID() const
 void Object::Serialize(nlohmann::json& archive)
 {
     archive["class"] = GetStaticClassFromThis().Name.string();
-    archive["uid"] = id.to_string();
+    archive["uid"] = id.ToString();
     archive["flags"] = ObjectFlags;
     auto& properties = archive["properties"];
 

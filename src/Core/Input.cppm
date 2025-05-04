@@ -5,9 +5,10 @@
 export module Engine.Input;
 
 export enum class InputResult {
-    Ignored,
-    Handled
+    Ignored, // Input not consumed, continue traversing
+    Handled  // Input consumed. Do not continue traversing
 };
+
 
 export struct InputEvent {
     enum class Type { Key, MouseMove, MouseButton, Scroll } type;
@@ -31,6 +32,8 @@ export struct InputEvent {
     };
 };
 
+
+// Interop struct for C#
 #pragma pack(push, 1)
 export struct InputEventInterop {
     int type; // maps to InputEvent::Type
