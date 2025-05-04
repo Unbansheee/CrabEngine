@@ -205,8 +205,8 @@ wgpu::Limits Application::GetRequiredLimits(wgpu::Adapter adapter)
 	requiredLimits.maxUniformBuffersPerShaderStage = 8;
 	requiredLimits.maxUniformBufferBindingSize = 65536;
 	requiredLimits.maxDynamicUniformBuffersPerPipelineLayout = 1;
-	requiredLimits.maxTextureDimension1D = std::max(largestWidth, largestHeight);
-	requiredLimits.maxTextureDimension2D = std::max(largestWidth, largestHeight);
+	requiredLimits.maxTextureDimension1D = 8192;
+	requiredLimits.maxTextureDimension2D = 8192;
 	requiredLimits.maxTextureArrayLayers = 1;
 	requiredLimits.maxSampledTexturesPerShaderStage = 4;
 	requiredLimits.maxSamplersPerShaderStage = 4;

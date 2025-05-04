@@ -303,7 +303,14 @@ Vector2 NodeWindow::GetWindowSize() const
 
 void NodeWindow::CreateSwapChain(uint32_t width, uint32_t height)
 {
+    if (m_surfaceTexture.texture)
+    {
+        wgpuTextureRelease(m_surfaceTexture.texture);
+        m_surfaceTexture.texture = nullptr;
+    }
+    
     m_currentSurfaceView = {};
+    
     wgpu::SurfaceConfiguration desc;
     desc.usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::CopySrc | wgpu::TextureUsage::TextureBinding;
     desc.format = surfaceFormat;
