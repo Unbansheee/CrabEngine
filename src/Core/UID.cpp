@@ -1,4 +1,6 @@
 ﻿module Engine.UID;
+import Engine.Assert;
+
 UID::UID() {
     std::random_device rd;
     auto seed_data = std::array<int, std::mt19937::state_size> {};
@@ -23,7 +25,7 @@ UID::UID(const std::string &string) {
     {
         id = ret.value();
     }
-    else assert(false);
+    else Assert::Fail("Invalid UID String");
 }
 
 bool UID::operator==(const UID &other) const {
@@ -34,7 +36,7 @@ std::string UID::ToString() const {
     return uuids::to_string(id);
 }
 
-UID UID::empty() {
+UID UID::Empty() {
     static UID id = (uuids::uuid());
     return id;
 }
