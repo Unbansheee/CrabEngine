@@ -18,8 +18,7 @@ export class RenderVisitor;
 export class Renderer;
 
 export class Node : public Object {
-protected:
-	Node() {}
+	friend class Renderer;
 
 public:
 	CRAB_CLASS(Node, Object)
@@ -38,8 +37,8 @@ public:
 
 	static void NativeGetName(ThisClass* ctx, wchar_t* outString);
 	BIND_STATIC_METHOD(const wchar_t*, NativeGetName);
-	virtual ~Node() override;
 
+	virtual ~Node() override;
 protected:
 	friend class Application;
 	friend class NodeWindow;
@@ -48,105 +47,119 @@ protected:
 	friend class Object;
 
 	// Runs every frame
-	virtual void Update(float dt) {
+	virtual void Update(float dt) {	}
 
-	}
+	// Draw ImGui content if it is a child of a NodeImGuiContextWindow
+	virtual void DrawGUI() {};
 
-	virtual void DrawGUI()
-	{
-	};
+	// Called when the node enters the SceneTree
+	virtual void EnterTree() {};
 
+	// Called when the node exits the SceneTree
+	virtual void ExitTree() {};
+
+	// Called when all of the child nodes are ready
+	virtual void Ready() {};
+
+	// Called upon initialization
+	virtual void Init() {};
+
+	// Called when traversed by the scene renderer. Allows the pushing of draw commands
+	virtual void Render(Renderer& renderer);
+
+	// Respond to input event. If Handled is returned, the input event will stop traversing the tree and will be counted as consumed
 	virtual InputResult HandleInput(const InputEvent& event) { return InputResult::Ignored; }
 
 public:
+	// Initialize a raw node pointer as a unique_ptr. You generally should not do this, but it is needed in some niche scenarios
 	template<typename T = Node>
 	static std::unique_ptr<T> InitializeNode(T* raw, const std::string& name);
 
+	// Instantiate a new node of type T
 	template<typename T = Node>
-	static std::unique_ptr<T> NewNode(const std::string& name = "Node");;
+	static std::unique_ptr<T> NewNode(const std::string& name = "Node");
 
+	// Instantiate a new node using a reflected ClassType
 	static std::unique_ptr<Node> NewNode(const ClassType& classType, const std::string& name = "Node")
 	{
 		Node* node = static_cast<Node*>(classType.Initializer());
 		return InitializeNode(node, name);
 	};
 
-	//static std::unique_ptr<Node> NewNode(Node* raw, const std::string& name);
-	//static std::unique_ptr<Node> MakeNode()
+	// Duplicate this node and all of its children.
+	// Duplication will copy over any reflected properties not marked as Transient
 	std::unique_ptr<Node> Duplicate();
 
-	// Called when the node enters the SceneTree
-	virtual void EnterTree() {};
-	// Called when the node exits the SceneTree
-	virtual void ExitTree() {};
-	// Called when all of the child nodes are ready
-	virtual void Ready() {};
-	// Called upon initialization
-	virtual void Init() {};
-
-	virtual void Render(Renderer& renderer);
-
+	// TODO: Remove Transform functions from Node and keep it only on Node3D
 	// Returns the Transform data of this Node
 	virtual Transform GetTransform() const;
 
 	// Returns the Transform data of this Node's parent
 	virtual Transform GetParentTransform() const;
 
-	// Recalculate the Model Matrix and update the transforms of all children
+	// Recalculate the Model Matrix and update the transforms of all children. Again this should probably only be on Node3D
 	virtual void UpdateTransform();
 
-	// Walk the tree to the root node, and retrieve its Context
-	//Context& GetContext();
-
+	// Get the SceneTree this node is currently inside (if one exists)
 	SceneTree* GetTree();
 
-	// Walk the tree to find the outermost Node (Generally the SceneRoot)
+	// If we are in a SceneTree, get the root node. Otherwise walk the tree until we find the outermost node
 	Node* GetRootNode();
 
+	// Same as GetRootNode, but automatically casted
 	template<typename T>
-	T* GetRootNode();;
+	T* GetRootNode();
 
-	Node* GetParent() { return Parent.Get(); }
+	// Get the node who owns this node, if one exists
+	Node* GetParent() const { return Parent.Get(); }
 
+	// Walk the tree upwards until we find a Node with the matching type, if one exists.
 	template<typename T>
-	T* GetAncestorOfType();;
+	T* GetAncestorOfType();
 
-	template<typename T>
-	bool IsA()
-	{
-		return dynamic_cast<T*>(this) != nullptr;
-	};
+	// Walks the tree upwards to check if this node has otherNode as an ancestor
+	bool IsDescendantOf(Node* otherNode);
 
-	bool IsDescendantOf(Node* otherNode);;
-	bool IsAncestorOf(Node* otherNode) const;;
+	// Walks the tree downwards to check if we are an ancestor or otherNode
+	bool IsAncestorOf(Node* otherNode) const;
 
 	// Tells the Draw function to skip this node and its children
 	void SetHidden(bool newIsHidden);
 
-	// Is this flagged as Hidden
-	bool IsHidden() { return isHidden; }
+	// Is this flagged as Hidden (will not be rendered, children will not be rendered)
+	bool IsHidden();
 
+	// Is this node currently in a Scene Tree
+	bool IsInTree();
+
+	// Has Ready been called
+	bool IsReady();
+
+	// Removes this node from its parent and returns the owning reference. Not caching the return value will cause this node to be destroyed
 	std::unique_ptr<Node> RemoveFromParent();
+
+	// Removes this node from its current parent and adds it to a new one. This does not check if it is a valid move
+	// IE Reparenting on to a child node could break everything
 	void Reparent(Node* newParent);
 
+	// Allows drawing to the Inspector panel, if one exists and we are running in an editor
 	virtual void DrawInspectorWidget();
 	
 	// Instantiate a node and add it to the list of children
 	template <typename T, typename ... TArgs>
 	T* AddChild(const TArgs&... args);
 
-
+	// Add an existing node to the list of children
 	Node* AddChild(std::unique_ptr<Node> node);
 
 	// Gets a snapshot of the node's children. These pointers could be invalidated at any time
-	// For iteration, prefer to use ForEachChild()
 	template<typename T = Node>
 	std::vector<T*> GetChildrenOfType() const;
 
 	// Gets a snapshot of the node's children. These pointers could be invalidated at any time
-	// For iteration, prefer to use ForEachChild()
 	std::vector<Node*> GetChildren() const;
 
+	// Gets a snapshot of the node's children. These pointers are slower but will be set to null if the object is invalidated
 	std::vector<ObjectRef<Node>> GetChildrenSafe() const;
 
 	template<typename Functor>
@@ -161,36 +174,35 @@ public:
 	template<typename NodeType, typename Functor>
 	void ForEachChildOfType(Functor functor);
 
+	// Retrieve the first child of type T if one exists
 	template<typename T>
 	T* GetChild() const;
 
+	// Set this node's name
 	void SetName(const std::string& name) { Name = name; }
+
+	// Get this Node's name
 	const std::string& GetName() const { return Name; }
 
-	std::string Name = "Node";
-	bool isHidden = false;
+
 
 	virtual void Serialize(nlohmann::json& archive) override;
 	virtual void Deserialize(nlohmann::json& archive) override;
 	
 protected:
-private:
-	std::vector<std::unique_ptr<Node>> Children;
-
-protected:
-	// Parent node. If nullptr, assume this is SceneRoot
-	ObjectRef<Node> Parent;
-
+	// Tree walking for DrawGUI. // TODO: remove and do it in the caller
 	virtual void DrawGUIInternal();
-	
-	bool isInTree = false;
-	bool isReady = false;
+
 private:
-	SceneTree* tree = nullptr;
+	std::string Name = "Node";
+	bool isHidden = false;
+
+	std::vector<std::unique_ptr<Node>> Children; // All owned child nodes
+	ObjectRef<Node> Parent; // Parent node. If nullptr, assume this is node is the SceneRoot
+	bool isInTree = false; // Is currently in a tree
+	bool isReady = false; // Has ready been called
+	SceneTree* tree = nullptr; // Owning Tree
 };
-
-
-
 
 template<typename NodeType, typename Functor>
 void Node::ForEachChildOfType(Functor functor) const {
@@ -225,14 +237,14 @@ std::unique_ptr<T> Node::NewNode(const std::string &name) {
 template<typename T>
 T * Node::GetRootNode() {
 	auto root = GetRootNode();
-	return dynamic_cast<T*>(root);
+	return Object::Cast<T>(root);
 }
 
 template<typename T>
 T * Node::GetAncestorOfType() {
 	if (Parent)
 	{
-		if (T* ancestor = dynamic_cast<T*>(Parent.Get()))
+		if (T* ancestor = Object::Cast<T>(Parent.Get()))
 		{
 			return ancestor;
 		}

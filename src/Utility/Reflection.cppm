@@ -41,11 +41,17 @@ concept IsObjectRef =
     std::is_base_of_v<_ObjectRefBase, T> &&
     std::is_base_of_v<Object, typename T::element_type>;
 
+
+// Represents a variable of a class with a getter and setter
+// When provided with an Object, can set/get the variable on the object
+// This drives the reflection system that handles serialization/deserialization and editor rendering
+// Use the reflection macros to create these in ReflectionMacros.h
 class Property {
 public:
-    // Add optional callback type
+    // Optional callback type
     using PostSetCallback = std::function<void(void* obj, Property& prop)>;
 
+    // Template version for a return type and Object type
     template <typename T, typename Class>
     Property(const std::string& name,
         const std::string& display_name,
@@ -66,20 +72,22 @@ public:
             reflectedObjectType = &(typename T::element_type::GetStaticClass());
         }
 
+        ///////////////////////////////////
         // Setter with callback invocation
+        ///////////////////////////////////
         setter = [member_ptr](void* obj, const ValueVariant& value) {
             Class* target = static_cast<Class*>(obj);
             if constexpr (std::is_base_of_v<_ObjectRefBase, T>) {
                 target->*member_ptr = std::get<ObjectRef<Object>>(value).Cast<T>();
             }
             else if constexpr (IsSharedPtrToResource<T>) {
-
                     auto base_ptr = std::get<std::shared_ptr<Resource>>(value);
                     if (base_ptr == nullptr) {
                         target->*member_ptr = nullptr;
                     }
                     else
                     {
+                        // TODO: May be able to use ClassTypes here
                         auto derived_ptr = std::dynamic_pointer_cast<typename T::element_type>(base_ptr);
                         if (!derived_ptr) {
                             throw std::runtime_error("Type mismatch when assigning resource.");
@@ -92,6 +100,9 @@ public:
             }
         };
 
+        /////////////////////////////
+        /// Getter
+        /////////////////////////////
         getter = ([member_ptr](void* obj) -> ValueVariant {
             if constexpr (std::is_base_of_v<_ObjectRefBase, T>) {
                 return ObjectRef<Object>(static_cast<Class*>(obj)->*member_ptr);
@@ -106,7 +117,8 @@ public:
         });
     }
 
-
+    // Non-templated with a custom getter/setter
+    // Used for C# class properties
     Property(
     const std::string& name,
     const std::string& display_name,
@@ -124,15 +136,18 @@ public:
     post_set_callback(std::move(postSetCallback)) {
     }
 
+    // Get the property value from an object
     template <typename T>
     T get(void* obj) const {
         return std::get<T>(getter(obj));
     }
 
+    // Get the property value from an object as a generic ValueVariant
     ValueVariant getVariant(void* obj) const {
         return getter(obj);
     }
 
+    // Set the property value on an object
     void setVariant(void* obj, ValueVariant value) const {
         setter(obj, value);
         if (post_set_callback) {
@@ -140,7 +155,7 @@ public:
         }
     }
 
-
+    // Set the property value on an object
     template <typename T>
     void set(void* obj, T value) const
     {
@@ -152,6 +167,8 @@ public:
         }
     }
 
+    // TODO: replace these
+    // Visitor implementations for serialization / editor
     template <typename Visitor, typename ObjectClass>
     void visit(Visitor&& vis, ObjectClass* obj) const;
 
@@ -159,11 +176,11 @@ public:
     void visit(Visitor&& vis, nlohmann::json& archive, ObjectClass* obj) const;
 
 
-    std::string displayName;
-    std::string name;
-    std::string ownerClass;
-    uint32_t flags;
-    const ClassType* reflectedObjectType;
+    std::string displayName{};
+    std::string name{};
+    std::string ownerClass{};
+    uint32_t flags{};
+    const ClassType* reflectedObjectType{};
 
 private:
     std::function<ValueVariant(void*)> getter;
@@ -171,29 +188,18 @@ private:
     PostSetCallback post_set_callback;
 };
 
-
-
-/*
-// Concept for Resource-derived types
-export template<typename T>
-concept IsResource = 
-    std::is_base_of_v<Resource, T> && 
-    requires {
-    // Enforce reflection system requirements
-    { T::StaticClass() } -> std::convertible_to<const ClassType&>;
-    };
-*/
-export struct ClassType;
-
+// PropertyView represents a property AND an object the properties are accessed from
 export struct PropertyView {
     const Property& property;  // Reference to property metadata
     ValueVariant& value;  // Reference to the actual value
     void* object;
     const ClassType* objectClass = nullptr;
 
+    // Get Proeprty value
     template <typename T>
     T& get() { return std::get<T>(value); }
 
+    // Set property value
     template<typename T>
     void set(T& val) { property.set(object, val); }
 
@@ -201,7 +207,6 @@ export struct PropertyView {
     const std::string& displayName() const {return property.displayName;}
     uint32_t flags() const { return property.flags; }
 };
-
 
 
 template <typename Visitor, typename ObjectClass>

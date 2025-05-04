@@ -10,7 +10,6 @@ import Engine.Application;
 BaseObjectRegistrationObject::BaseObjectRegistrationObject()
 {
     ClassDB::Get().RegisterClassType(Object::GetStaticClass());
-    Object::RegisterMethods();
 }
 
 Object::~Object() {
@@ -22,6 +21,24 @@ void Object::AddFlag(uint64_t Flag) {
 
 bool Object::HasFlag(uint64_t Flag) {
     return ObjectFlags & Flag;
+}
+
+ScriptInstance * Object::GetScriptInstance() {
+    return scriptInstance.get();
+}
+
+const std::vector<Property> & Object::GetPropertiesFromThis() {
+    if (scriptInstance) {
+        return scriptInstance->ScriptClass->Properties;
+    }
+    return GetClassProperties();
+}
+
+const ClassType & Object::GetStaticClassFromThis() {
+    if (scriptInstance) {
+        return *scriptInstance->ScriptClass;
+    }
+    return GetStaticClass();
 }
 
 const ClassType& Object::GetStaticClass()

@@ -126,7 +126,6 @@ return s;\
 }\
 virtual const ClassType& GetStaticClassFromThis() override { if (scriptInstance) {return *scriptInstance->ScriptClass;} return GetStaticClass(); } \
 [[maybe_unused]] inline static AutoClassRegister AutoRegistrationObject_##Class = AutoClassRegister(GetStaticClass()); \
-[[maybe_unused]] inline static AutoMethodRegister<ThisClass> AutoMethodRegistrationObject_##Class = AutoMethodRegister<ThisClass>();
 
 
 

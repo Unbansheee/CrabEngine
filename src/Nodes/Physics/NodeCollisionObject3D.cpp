@@ -44,7 +44,7 @@ void NodeCollisionObject3D::OnPropertySet(Property &prop) {
 
 void NodeCollisionObject3D::EnterTree() {
     Node3D::EnterTree();
-    if (isReady) {
+    if (IsReady()) {
         RebuildBody();
     }
 }

@@ -18,6 +18,10 @@ import Engine.Resource.ResourceManager;
 #  include <emscripten.h>
 #endif // __EMSCRIPTEN__
 
+
+// Jolt stuff
+// TODO: Move jolt stuff into its own module
+
 using namespace std::string_view_literals;
 // Callback for traces, connect this to your own trace function if you have one
 static void TraceImpl(const char *inFMT, ...)
@@ -45,6 +49,8 @@ static bool AssertFailedImpl(const char *inExpression, const char *inMessage, co
 };
 #endif // JPH_ENABLE_ASSERTS
 
+
+
 Application::Application()
 {
 	WGPUInstanceDescriptor instanceDesc{};
@@ -57,18 +63,14 @@ Application::Application()
 		std::cerr << "Could not initialize GLFW!" << std::endl;
 	}
 
+	// Set up engine directories
 	auto currentDir = Filesystem::GetProgramDirectory();
-	auto rootFS = std::make_unique<vfspp::NativeFileSystem>(currentDir.generic_string());
-	rootFS->Initialize();
-
 	Filesystem::AddFileSystemDirectory("/engine", ENGINE_RESOURCE_DIR);
 	Filesystem::AddFileSystemDirectory("/dotnet", (currentDir /= "Dotnet").generic_string());
 
-
+	// Initialize WGPU
 	std::cout << "Requesting adapter..." << std::endl;
 	wgpu::RequestAdapterOptions adapterOpts = {};
-	//surface = glfwGetWGPUSurface(wgpuInstance, window);
-	//adapterOpts.compatibleSurface = surface;
 	adapterOpts.featureLevel = WGPUFeatureLevel_Core;
 
 	wgpu::Adapter adapter = wgpuInstance.requestAdapter(adapterOpts);
@@ -110,8 +112,15 @@ Application::Application()
 
 	std::cout << "Got device: " << wgpuDevice << std::endl;
 
+
+
+	// Intialize native file dialog
 	NFD::Init();
 
+
+
+
+	// Initialize Jolt physics
 	JPH::RegisterDefaultAllocator();
 	JPH::Trace = TraceImpl;
 	JPH_IF_ENABLE_ASSERTS(JPH::AssertFailed = AssertFailedImpl;)
@@ -120,9 +129,9 @@ Application::Application()
 	tempAllocator = new JPH::TempAllocatorImpl(10 * 1024 * 1024);
 	jobSystem = new JPH::JobSystemThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, maxConcurrentJobs - 1);
 
+	// Initialize C# Script engine. Possible replace Init with RAII
 	scriptEngine.reset(new ScriptEngine());
 	scriptEngine->Init();
-
 
 	sceneTree.SetRoot(Node::NewNode());
 }
@@ -163,8 +172,13 @@ bool Application::ShouldClose() const
 
 void Application::Update()
 {
+	// Tick deltatime
 	dt = deltaTime.Tick((float)glfwGetTime());
+
+	// Update SceneTree
 	sceneTree.Update(dt);
+
+	// Hot reload dll's if needed
 	scriptEngine->ProcessReloadQueue();
 }
 
@@ -177,20 +191,6 @@ wgpu::Limits Application::GetRequiredLimits(wgpu::Adapter adapter)
 {
 	wgpu::Limits supportedLimits;
 	adapter.getLimits(&supportedLimits);
-
-	int monitorCount;
-	GLFWmonitor** monitors = glfwGetMonitors(&monitorCount);
-	int largestWidth = 0;
-	int largestHeight = 0;
-	for (int i = 0; i < monitorCount; i++) {
-		int xpos;
-		int ypos;
-		int width;
-		int height;
-		glfwGetMonitorWorkarea(monitors[i], &xpos, &ypos, &width, &height);
-		largestWidth += width;
-		largestHeight += height;
-	}
 
 	wgpu::Limits requiredLimits = wgpu::Default;
 	requiredLimits.maxVertexAttributes = 6;
@@ -221,3 +221,17 @@ wgpu::Limits Application::GetRequiredLimits(wgpu::Adapter adapter)
 
 	return requiredLimits;
 }
+
+sid::default_database & Application::GetStringDB() {
+	static sid::default_database s_defaultStringDatabase;
+	return s_defaultStringDatabase;
+}
+
+JPH::TempAllocator * Application::GetPhysicsAllocator() const {return tempAllocator;}
+
+JPH::JobSystem * Application::GetJobSystem() const {return jobSystem;}
+
+vfspp::VirtualFileSystemPtr Application::GetFilesystem() {
+	return Filesystem::GetFilesystem();
+}
+

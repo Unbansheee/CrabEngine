@@ -25,17 +25,6 @@ export struct AutoClassRegister {
 };
 
 // Auto-registration helper
-export template<typename T>
-struct AutoMethodRegister {
-    AutoMethodRegister();
-};
-
-template<typename T>
-AutoMethodRegister<T>::AutoMethodRegister() {
-    T::RegisterMethods();
-}
-
-// Auto-registration helper
 export template <typename T>
 struct AutoClassFlagRegister {
     AutoClassFlagRegister(uint32_t flags) {

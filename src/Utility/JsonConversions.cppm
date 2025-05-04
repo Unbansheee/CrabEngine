@@ -1,7 +1,6 @@
 ﻿module;
 #pragma once
 #include <json.hpp>
-//#include <glm/detail/type_quat.hpp>
 
 export module Engine.JsonConversions;
 import Engine.Types;

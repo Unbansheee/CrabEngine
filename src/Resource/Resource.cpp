@@ -2,6 +2,7 @@
 import Engine.Resource.ResourceManager;
 import Engine.Resource.Texture;
 
+// Resource map. Keeps resources alive while they are referenced in C#. When a C# Resource object dies it will be released from here
 std::unordered_map<Resource*, std::shared_ptr<Resource>> g_ResourceLifetimeMap;
 
 void Resource::Serialize(nlohmann::json &archive) { Object::Serialize(archive); }

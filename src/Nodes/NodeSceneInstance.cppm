@@ -69,14 +69,14 @@ void NodeSceneInstance::OnPropertySet(Property &prop) {
     Node3D::OnPropertySet(prop);
 
     if (GET_PROPERTY_NAME(Scene) == prop.name) {
-        if (isInTree && GetTree()->IsInEditor()) {
+        if (IsInTree() && GetTree()->IsInEditor()) {
             if (ChildScene.IsValid()) {
                 ChildScene->RemoveFromParent();
             }
         }
     }
 
-    if (isInTree && GetTree()->IsInEditor()) {
+    if (IsInTree() && GetTree()->IsInEditor()) {
         if (Scene) {
             ChildScene = AddChild(Scene->Instantiate());
             ChildScene->AddFlag(ObjectFlags::Transient);

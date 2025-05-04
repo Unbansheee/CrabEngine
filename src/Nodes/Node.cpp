@@ -144,6 +144,18 @@ void Node::SetHidden(bool newIsHidden)
 	this->isHidden = isHidden;
 }
 
+bool Node::IsHidden() {
+	return isHidden;
+}
+
+bool Node::IsInTree() {
+	return isInTree;
+}
+
+bool Node::IsReady() {
+	return isReady;
+}
+
 std::unique_ptr<Node> Node::RemoveFromParent()
 {
 	if (!Parent) return nullptr;
@@ -168,7 +180,7 @@ std::unique_ptr<Node> Node::RemoveFromParent()
 void Node::Reparent(Node* newParent)
 {
 	if (!Parent) return;
-	//assert(newParent);
+	//TODO Fix this function to check for invalid reparent operations
 
 	auto it = std::find_if(Parent->Children.begin(), Parent->Children.end(), [this](auto& a)
 	{

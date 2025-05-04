@@ -20,8 +20,7 @@ struct ImGuiContext;
 using glm::mat4x4;
 using glm::vec4;
 
-
-
+// Tick Helper
 struct DeltaTicker
 {
 public:
@@ -36,14 +35,21 @@ private:
     float previousTime = 0.0f;
 };
 
+
+
 export class Application
 {
 public:
+    // Get or instantiate the application
     static Application& Get();
 
+    // Load asset references and Begin the scenetree
     void Begin();
+    // Tick the engine's update loop
     void Update();
+    // Has a close been requested
     bool ShouldClose() const;
+    // Request for the application to close
     void Close();
 
     wgpu::Instance GetInstance() const { return wgpuInstance; }
@@ -52,29 +58,23 @@ public:
 
     static wgpu::Limits GetRequiredLimits(wgpu::Adapter adapter);
 
+    // Get the application's scenetree
     SceneTree& GetSceneTree() {return sceneTree;}
-    
-    struct MyUniforms {
-        mat4x4 projectionMatrix;
-        mat4x4 viewMatrix;
-        vec4 color;  // or float color[4]
-        glm::vec3 cameraWorldPosition;
-        float time;
-        float _pad[3];
-    };
 
+    // Get the time passed since the last update
     float DeltaTime() {return dt;};
 
-    static sid::default_database& GetStringDB() {
-        static sid::default_database s_defaultStringDatabase;
-        return s_defaultStringDatabase;
-    }
+    // Get the string database responsible for string_id hashing
+    static sid::default_database& GetStringDB();
 
-    JPH::TempAllocator* GetPhysicsAllocator() const {return tempAllocator;}
-    JPH::JobSystem* GetJobSystem() const {return jobSystem;}
+    // Jolt stuff
+    JPH::TempAllocator* GetPhysicsAllocator() const;
+    JPH::JobSystem* GetJobSystem() const;
 
+    // Get the engine's filesystem. Prefer to use Filesystem:: from Engine.Filesystem instead
     vfspp::VirtualFileSystemPtr GetFilesystem();
 
+    // Get the C# Script Engine instance
     ScriptEngine* GetScriptEngine() {return scriptEngine.get();};
 protected:
     SceneTree sceneTree;
@@ -82,16 +82,19 @@ protected:
     float dt;
     bool bShouldClose = false;
 
+    // Scripting
     std::unique_ptr<ScriptEngine> scriptEngine;
 
+    // Graphics
     wgpu::Instance wgpuInstance = nullptr;
     wgpu::Device wgpuDevice = nullptr;
 
-
+    // Physics
     int maxConcurrentJobs = std::thread::hardware_concurrency();		// How many jobs to run in parallel
     JPH::TempAllocator* tempAllocator;
     JPH::JobSystem* jobSystem;
-    
+
+    // Singleton class, no copy or assignment
     Application(const Application &) = delete;
     Application & operator = (const Application &) = delete;
 private:
@@ -99,8 +102,3 @@ private:
     ~Application();
 };
 
-
-
-vfspp::VirtualFileSystemPtr Application::GetFilesystem() {
-    return Filesystem::GetFilesystem();
-}
