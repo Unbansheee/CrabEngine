@@ -15,7 +15,6 @@ std::unordered_set<std::string> OBJMeshImporter::GetSupportedExtensions() const
 std::shared_ptr<Resource> OBJMeshImporter::Import(const std::filesystem::path& sourcePath,
     const ResourceMetadata& settings)
 {
-    const auto& texSettings = static_cast<const OBJImportSettings&>(settings);
     auto tex = std::make_shared<OBJMeshResource>();
     return tex;
 }

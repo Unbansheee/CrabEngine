@@ -204,9 +204,9 @@ bool ResourceManager::loadGeometryFromObj(const std::filesystem::path &path, std
 
         // Assume triangulated mesh
         for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); ++f) {
-            size_t i0 = shape.mesh.indices[3 * f + 0].vertex_index;
-            size_t i1 = shape.mesh.indices[3 * f + 1].vertex_index;
-            size_t i2 = shape.mesh.indices[3 * f + 2].vertex_index;
+            //size_t i0 = shape.mesh.indices[3 * f + 0].vertex_index;
+            //size_t i1 = shape.mesh.indices[3 * f + 1].vertex_index;
+            //size_t i2 = shape.mesh.indices[3 * f + 2].vertex_index;
 
             // Reverse winding: i0, i1, i2 → i0, i2, i1
             tinyobj::index_t idx0 = shape.mesh.indices[3 * f + 0];

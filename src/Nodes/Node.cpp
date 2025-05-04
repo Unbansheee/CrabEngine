@@ -5,14 +5,10 @@
 module;
 
 module Engine.Node;
-import Engine.SceneTree;
+import Engine.Filesystem;
 
 void Node::DrawInspectorWidget()
 {
-	//for (auto& prop : GetProperties())
-	{
-		//prop.DrawProperty();		
-	}
 }
 
 Node* Node::AddChild(std::unique_ptr<Node> node)
@@ -34,6 +30,34 @@ Node* Node::AddChild(std::unique_ptr<Node> node)
 		
 	UpdateTransform();
 	return n.get();
+}
+
+std::vector<Node *> Node::GetChildren() const {
+	std::vector<Node*> children;
+	for (auto& child : Children)
+	{
+		if (child == nullptr) continue;
+		children.push_back(child.get());
+	}
+	return children;
+}
+
+std::vector<ObjectRef<Node>> Node::GetChildrenSafe() const {
+	std::vector<ObjectRef<Node>> children;
+	for (auto& child : Children)
+	{
+		if (child == nullptr) continue;
+		children.emplace_back(child.get());
+	}
+	return children;
+}
+
+void Node::NativeGetName(ThisClass *ctx, wchar_t *outString) {
+	auto name = ctx->GetName();
+	std::wstring wideClass = Filesystem::StringToWString(name);
+
+	std::wmemcpy(outString, wideClass.c_str(), name.size());
+	outString[name.size()] = L'\0'; // Null-terminate
 }
 
 Node::~Node()
@@ -86,39 +110,6 @@ void Node::UpdateTransform()
 
 SceneTree * Node::GetTree() {return tree;}
 
-/*
-void Node::GatherDrawCommands(std::vector<DrawCommand> &Commands) const {
-	for (auto& child : Children)
-	{
-		if (!child) continue;
-		if (child->IsHidden()) continue;
-		child->GatherDrawCommands(Commands);
-	}
-}
-*/
-
-/*
-std::vector<DrawCommand> Node::CreateDrawCommand(Context& context) const
-{
-	std::vector<DrawCommand> buffer;
-	for (auto& child : Children)
-	{
-		if (!child) continue;
-		if (child->IsHidden()) continue;
-		std::vector<DrawCommand> childBuffer = child->CreateDrawCommand(context);
-		buffer.insert(buffer.end(), childBuffer.begin(), childBuffer.end());
-	}
-	return buffer;
-}
-*/
-
-/*
-Context& Node::GetContext()
-{
-	return *GetRootNode()->OwningContext;
-}
-*/
-
 Node* Node::GetRootNode()
 {
 	if (tree) return tree->GetRoot();
@@ -129,14 +120,24 @@ Node* Node::GetRootNode()
 		return this;
 }
 
-/*
-Application* Node::GetApplication()
-{
-	if (ApplicationContext) return ApplicationContext;
-	if (Parent) return Parent->GetApplication();
-	return nullptr;
+bool Node::IsDescendantOf(Node *otherNode) {
+	if (!otherNode) return false;
+	return (otherNode->IsAncestorOf(this));
 }
-*/
+
+bool Node::IsAncestorOf(Node *otherNode) const {
+	if (!otherNode) return false;
+	Node* parent = otherNode->GetParent();
+	while (parent != nullptr)
+	{
+		if (parent == this)
+		{
+			return true;
+		}
+		parent = parent->GetParent();
+	}
+	return false;
+}
 
 void Node::SetHidden(bool newIsHidden)
 {
@@ -235,21 +236,5 @@ void Node::DrawGUIInternal()
 		Child->DrawGUIInternal();
 	});
 }
-
-/*
-void Node::ProcessInputInternal(const Controller::Input::ControllerContext& PadData, int padIndex)
-{
-	ProcessInput(PadData, padIndex);
-
-	// Depth first walk
-	for (const auto& i : Children)
-	{
-		if (!i) continue;
-		i->ProcessInputInternal(PadData, padIndex);
-	}
-}
-*/
-
-
 
 

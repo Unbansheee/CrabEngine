@@ -22,20 +22,15 @@ struct NoCopy{
     NoCopy(NoCopy&&) = default;
 };
 
-using ClassFlags_ = uint32_t;
+export using ClassFlags_ = uint32_t;
 export namespace ClassFlags {
     constexpr uint32_t None = 0 << 0;
-    constexpr uint32_t EditorVisible = 1 << 1;
-    constexpr uint32_t Abstract = 1 << 2;
-    constexpr uint32_t ScriptClass = 1 << 3;
+    constexpr uint32_t EditorVisible = 1 << 1; // Is spawnable from the editor
+    constexpr uint32_t Abstract = 1 << 2; // Cannot be instantiated
+    constexpr uint32_t ScriptClass = 1 << 3; // Is defined in C#
 }
 
 export using MethodFn = std::function<void(void*, void*[])>;
-
-// Per-method invocation context
-export struct MethodContext {
-    void* methodPtr; // No instance here
-};
 
 export typedef void(__stdcall* NativeMethod)(void* context, void** args);
 

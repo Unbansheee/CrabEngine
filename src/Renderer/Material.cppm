@@ -48,6 +48,7 @@ export struct MaterialSettings
     bool bDepthWrite = true;
 };
 
+// Represents a shader with parameters. Shader is compiled from slang, with its uniform locations parsed out
 export class MaterialResource : public Resource
 {
     CRAB_CLASS(MaterialResource, Resource)
@@ -56,9 +57,24 @@ export class MaterialResource : public Resource
         ADD_PROPERTY("ShaderModuleName", ShaderModuleName);
     END_PROPERTIES
 
-    ~MaterialResource() override = default;
+    friend class Renderer;
+    friend class MaterialEditor;
+
+
+public:
+    // ModuleName is the shader file name, NOT PATH
     MaterialResource(const std::string& moduleName, const MaterialSettings& settings = MaterialSettings());
 
+    MaterialResource() : Resource() {};
+
+    MaterialResource(wgpu::Device device, const std::string& moduleName, MaterialSettings settings = MaterialSettings()) : m_device(device), m_settings(settings)
+    {
+        LoadFromShaderPath(device, moduleName, false, settings);
+    }
+    ~MaterialResource() override = default;
+
+
+protected:
     enum ENamedBindGroup
     {
         OBJECT = 0,
@@ -85,10 +101,10 @@ protected:
         OPAQUE,
         UI
     };
-    
-public:
-    void RecompileShader();
 
+    static inline std::shared_ptr<TextureResource> MaterialResourceThumbnail = nullptr;
+
+    wgpu::raii::PipelineLayout m_pipelineLayout;
     wgpu::Device m_device = nullptr;
     wgpu::raii::RenderPipeline m_pipeline{};
     wgpu::raii::ShaderModule m_shaderModule;
@@ -110,48 +126,40 @@ public:
     std::unordered_map<uint32_t, bool> m_dirtyGroups;
     std::unordered_map<uint32_t, wgpu::raii::BindGroupLayout> m_bindGroupLayouts;
     void UpdateBindGroups();
+    void CreateBuffer(const std::string& bufferName, uint32_t size, bool isDynamic);
+    void InitializeProperties();
+    void LoadFromShaderPath(wgpu::Device device, const std::string& moduleName, bool bForceRecompile, MaterialSettings settings = MaterialSettings());
+    virtual wgpu::raii::RenderPipeline CreateRenderPipeline();
 
+public:
+    // Force recompile shader module and reconstruct bindings
+    void RecompileShader();
+
+    // Resource thumbnail
     wgpu::raii::TextureView GetThumbnail() override;
-    // NEW
 
+    // Does uniform exist for this material
     bool HasUniform(const std::string& parameter) {return m_uniformMetadata.contains(parameter);}
-    std::vector<uint8_t> GetUniformData(const std::string& name);
 
-    template<typename T>
-    void SetUniform(const std::string& uniformName, T& data) {
-        if constexpr(std::is_base_of_v<T, std::shared_ptr<TextureResource>>) {
-            SetTexture(uniformName, data);
-        }
-        else if constexpr (std::is_base_of_v<T, wgpu::raii::Sampler>) {
-            SetSampler(uniformName, data);
-        }
-        else {
-            SetUniformData(uniformName, (void*)&data, sizeof(T));
-        }
-    };
+    // Reads uniform data from the cpu copy of the buffer.
+    std::vector<uint8_t> GetUniformData(const std::string& uniformName);
 
-
-    void SetUniformData(const std::string& uniformName, void* data, uint32_t size, uint32_t offset = 0);
-    void SetTexture(const std::string& uniformName, const std::shared_ptr<TextureResource>& texture);
-    void SetSampler(const std::string& uniformName, wgpu::raii::Sampler sampler);
-
-    std::shared_ptr<TextureResource> GetTexture(const std::string& uniformName);
-
+    // Reads out a uniform buffer from the GPU as bytes
     std::vector<uint8_t> ReadBufferData(const wgpu::raii::Buffer& buffer, uint32_t size);
 
-    wgpu::raii::PipelineLayout m_pipelineLayout;
+    // Sets specified uniform with a Texture, Struct or Sampler
+    template<typename T>
+    void SetUniform(const std::string& uniformName, T& data);;
 
-    void CreateBuffer(const std::string& name, uint32_t size, bool isDynamic);
+    // Set uniform with struct data
+    void SetUniformData(const std::string& uniformName, void* data, uint32_t size, uint32_t offset = 0);
+    // Set texture uniform
+    void SetTexture(const std::string& uniformName, const std::shared_ptr<TextureResource>& texture);
+    // Set sampler uniform
+    void SetSampler(const std::string& uniformName, wgpu::raii::Sampler sampler);
 
-    void LoadData() override;
-    MaterialResource() : Resource() {};
-    
-    MaterialResource(wgpu::Device device, const std::string& moduleName, MaterialSettings settings = MaterialSettings()) : m_device(device), m_settings(settings)
-    {
-        LoadFromShaderPath(device, moduleName, false, settings);
-    }
-
-    void LoadFromShaderPath(wgpu::Device device, const std::string& moduleName, bool bForceRecompile, MaterialSettings settings = MaterialSettings());
+    // Gets the texture in use for a specified uniform
+    std::shared_ptr<TextureResource> GetTexture(const std::string& uniformName);
 
     virtual void Initialize()
     {
@@ -159,18 +167,25 @@ public:
         m_pipeline = CreateRenderPipeline();
     }
 
-    virtual void OnPropertySet(Property& prop) override;
-
-    void InitializeProperties();
-
-    wgpu::raii::RenderPipeline GetPipeline() const { return m_pipeline; }
-    virtual wgpu::raii::RenderPipeline CreateRenderPipeline();
-
     virtual void Apply(wgpu::RenderPassEncoder renderPass);
+    wgpu::raii::RenderPipeline GetPipeline() const { return m_pipeline; }
 
     void Serialize(nlohmann::json &archive) override;
     void Deserialize(nlohmann::json &archive) override;
 
-    static inline std::shared_ptr<TextureResource> MaterialResourceThumbnail = nullptr;
+
 };
+
+template<typename T>
+void MaterialResource::SetUniform(const std::string &uniformName, T &data) {
+    if constexpr(std::is_base_of_v<T, std::shared_ptr<TextureResource>>) {
+        SetTexture(uniformName, data);
+    }
+    else if constexpr (std::is_base_of_v<T, wgpu::raii::Sampler>) {
+        SetSampler(uniformName, data);
+    }
+    else {
+        SetUniformData(uniformName, (void*)&data, sizeof(T));
+    }
+}
 

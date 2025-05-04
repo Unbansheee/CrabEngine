@@ -1,6 +1,7 @@
 ﻿module Engine.StringID;
 import Engine.Application;
 import std;
+import Engine.Filesystem;
 
 string_id MakeStringID(const std::string& str)
 {
@@ -15,10 +16,6 @@ string_id MakeStringID(const char* str)
 
 string_id MakeStringID(const std::wstring& str)
 {
-    //setup converter
-    using convert_type = std::codecvt_utf8<wchar_t>;
-    std::wstring_convert<convert_type, wchar_t> converter;
-    std::string converted_str = converter.to_bytes( str );
-
+    std::string converted_str = Filesystem::WStringToString( str );
     return string_id{converted_str.c_str(), Application::GetStringDB()};
 }

@@ -5,8 +5,6 @@
 
 module;
 
-#include <filesystem>
-
 #ifdef _WIN32
 #include <windows.h>
 #elif __APPLE__
@@ -17,6 +15,12 @@ module;
 #elif
 #include <unistd.h>
 #endif
+
+
+export module Engine.Filesystem;
+import Engine.Assert;
+import vfspp;
+
 // https://stackoverflow.com/questions/50889647/best-way-to-get-exe-folder-path/51023983#51023983
 std::filesystem::path _GetExeDirectory() {
 #ifdef _WIN32
@@ -40,9 +44,6 @@ std::filesystem::path _GetExeDirectory() {
     return std::filesystem::path(szPath).parent_path();
 }
 
-export module Engine.Filesystem;
-import Engine.Assert;
-import vfspp;
 
 export class Filesystem {
     friend class Application;

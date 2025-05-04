@@ -69,10 +69,7 @@ void NodeImGUIContextWindow::EnterTree()
 void NodeImGUIContextWindow::Update(float dt)
 {
     if (GetTree()->IsInEditor()) return;
-    //auto next = GetCurrentTextureView();
-    //if (next == nullptr) return;
 
-    auto& io = ImGui::GetIO();
     ImGui_ImplWGPU_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();

@@ -119,7 +119,6 @@ public static class ScriptHost
         string instanceTypeName = Marshal.PtrToStringUni((IntPtr)typeName);
         string fnName = Marshal.PtrToStringUni((IntPtr)functionName);
 
-        Console.WriteLine($"Trying to register function {fnName} on Class {instanceTypeName}");
         var type = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(a => a.GetTypes())
             .FirstOrDefault(t => t.FullName == instanceTypeName);
@@ -141,7 +140,7 @@ public static class ScriptHost
             var del = Marshal.GetDelegateForFunctionPointer(fn, field.FieldType);
             field.SetValue(null, del);
 
-            Console.WriteLine($"Bound native method '{fnName}' to field '{field.Name}'");
+            Console.WriteLine($"Bound native method '{fnName}' to field '{instanceTypeName}.{field.Name}'");
         }
     }
     

@@ -14,6 +14,8 @@ set(CRAB_ENGINE_DLLS
         CACHE INTERNAL "CrabEngine DLLs to copy"
 )
 
+set(CMAKE_EXPERIMENTAL_CXX_MODULE_CMAKE_API ON)
+
 include(${CRAB_ENGINE_SOURCE_DIR}/cmake/CrabEngineHelpers.cmake)
 include(${CRAB_ENGINE_SOURCE_DIR}/cmake/AddDotnetSupport.cmake)
 
@@ -54,12 +56,13 @@ target_link_options(CrabEngine INTERFACE
 
 target_compile_options(CrabEngine PRIVATE
         $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -pedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4 /MP /wd4244 /wd4100 /wd4201>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4 /MP /wd4244 /wd4100 /wd4201 /wd5103 /bigobj /Z7>
 )
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_options(CrabEngine PRIVATE -fmodules-ts -fmodule-header)
 endif()
+
 
 # Include paths
 target_include_directories(CrabEngine

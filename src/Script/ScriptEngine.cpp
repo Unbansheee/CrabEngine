@@ -87,9 +87,8 @@ void ScriptEngine::Init() {
         if (!classType->HasFlag(ClassFlags::ScriptClass)) {
             for (auto& [name, func] : classType->methodTable) {
                 std::string className = classType->Name.string();
-                std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-                std::wstring wideClass = converter.from_bytes(className);
-                std::wstring wideFn = converter.from_bytes(name);
+                std::wstring wideClass = Filesystem::StringToWString(className);
+                std::wstring wideFn = Filesystem::StringToWString(name);
                 CallManaged<void>(L"CrabEngine.ScriptHost", L"RegisterNativeFunction", (L"CrabEngine." + wideClass).c_str(), wideFn.c_str(), func);
             }
         }
@@ -98,7 +97,7 @@ void ScriptEngine::Init() {
     // TODO: Manage memory on this
     DLLListener* listener = new DLLListener(this);
     fileWatcher = std::make_unique<efsw::FileWatcher>();
-    efsw::WatchID watchID = fileWatcher->addWatch( Filesystem::AbsolutePath("/dotnet/"), listener, true );
+    fileWatcher->addWatch( Filesystem::AbsolutePath("/dotnet/"), listener, true );
     fileWatcher->watch();
 }
 
@@ -159,8 +158,7 @@ void ScriptEngine::ReloadModule(const std::wstring &assembly) {
 
 std::unique_ptr<ScriptInstance> ScriptEngine::CreateScriptInstance(Object *instanceOwner, const ClassType *type) {
     std::string name = type->Name.string();
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    std::wstring wide = converter.from_bytes(name);
+    std::wstring wide = Filesystem::StringToWString(name);
 
     auto ManagedHandle = *(CallManaged<void*>(L"CrabEngine.ScriptHost", L"CreateScriptInstance", (void*)instanceOwner, wide.c_str()));
     auto interop = CallManaged<ScriptInterop>(L"CrabEngine.InteropBootstrap", L"GetInterop").Result.value();
@@ -292,7 +290,6 @@ ScriptModule::ScriptModule(ScriptEngine *scriptEngine, const std::wstring &assem
         }
 
         for (int j = 0; j < script_info[i].PropertyCount; j++) {
-            auto& prop = script_info[i].Properties[j];
             auto createdProp = engine->CreateScriptProperty(script_info[i].Properties[j]);
             if (createdProp.has_value()) {
                 createdProp->ownerClass = className;

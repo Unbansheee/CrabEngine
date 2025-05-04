@@ -95,7 +95,7 @@ std::vector<DrawBatch> Renderer::BuildBatches(const std::vector<DrawCommand> com
             }
 
         drawnNodes.push_back(cmd.sender);
-        uint32_t drawID = drawnNodes.size() - 1;
+        uint32_t drawID = static_cast<uint32_t>(drawnNodes.size()) - 1;
 
         currentBatch->drawItems.push_back({
             cmd.vertexBuffer,

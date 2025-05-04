@@ -48,6 +48,8 @@ constexpr UniformMetadata::BufferField::FieldType MapScalarTypeToBufferReflectio
         case TypeReflection::UInt16:
             return UniformMetadata::BufferField::FieldType::UINT16;
     }
+
+    return UniformMetadata::BufferField::UNDEFINED;
 }
 
 ShaderCompiler::ShaderCompiler(const std::string &shader_name, bool bForceRecompile, SlangTargetCompileFlag target) {
@@ -82,7 +84,7 @@ ShaderCompiler::ShaderCompiler(const std::string &shader_name, bool bForceRecomp
     std::vector<slang::CompilerOptionEntry> options;
 
     sessionDesc.compilerOptionEntries = options.data();
-    sessionDesc.compilerOptionEntryCount = options.size();
+    sessionDesc.compilerOptionEntryCount = static_cast<uint32_t>(options.size());
 
     globalSession->createSession(sessionDesc, session.writeRef());
     Assert::Check(session != nullptr, "session != nullptr", "Error creating Shader Compiler session");
@@ -103,7 +105,7 @@ ShaderCompiler::ShaderCompiler(const std::string &shader_name, bool bForceRecomp
 
     ComPtr<slang::IComponentType> composedProgram; {
         ComPtr<slang::IBlob> diagnosticBlob;
-        SlangResult result = session->createCompositeComponentType(
+        session->createCompositeComponentType(
             componentTypes.data(),
             componentTypes.size(),
             composedProgram.writeRef(),
@@ -129,7 +131,7 @@ ShaderCompiler::ShaderCompiler(const std::string &shader_name, bool bForceRecomp
         shaderCodeDesc.chain.next = nullptr;
         shaderCodeDesc.chain.sType = wgpu::SType::ShaderSourceSPIRV;
         shaderCodeDesc.code = static_cast<uint32_t const *>(spirv->getBufferPointer());
-        shaderCodeDesc.codeSize = spirv->getBufferSize() / sizeof(uint32_t);;
+        shaderCodeDesc.codeSize = static_cast<uint32_t>(spirv->getBufferSize()) / sizeof(uint32_t);;
         shaderDesc.nextInChain = (WGPUChainedStruct *) &shaderCodeDesc.chain;
         CompiledShader.compiledShaderModule = device.createShaderModule(shaderDesc);
     } else if (target == SlangTargetCompileFlag::WGSL) {
@@ -176,22 +178,23 @@ std::vector<UniformMetadata> ShaderCompiler::GetUniformMetadata() {
     return CompiledShader.compiledMetadata;
 }
 
+// TODO: Cleanup strings
 std::vector<const char *> ShaderCompiler::GetShaderDirectories() {
     std::vector<const char *> result;
     for (auto path: shaderSources) {
         auto absPath = Filesystem::AbsolutePath(path);
-
-        char *str = new char[absPath.size() + 1];
-        strcpy(str, absPath.c_str());
+        char* str = new char[absPath.size() + 1];
+        strcpy_s(str, absPath.size() + 1, absPath.c_str());
         result.push_back(str);
 
         std::filesystem::path p = absPath;
         auto it = std::filesystem::recursive_directory_iterator(p);
         for (auto dir: it) {
             if (dir.is_directory()) {
-                char *str = new char[dir.path().string().size() + 1];
-                strcpy(str, dir.path().string().c_str());
-                result.push_back(str);
+                std::string pathStr = dir.path().string();
+                char* pathstr = new char[pathStr.size() + 1];
+                strcpy_s(pathstr, pathStr.size() + 1, pathStr.c_str());
+                result.push_back(pathstr);
             }
         }
     }
@@ -203,7 +206,7 @@ BindingLayouts ShaderCompiler::ComposeBindingData(ComPtr<slang::IComponentType> 
     slang::ProgramLayout *programLayout = program->getLayout(0);
     ShaderObjectLayoutBuilder builder;
 
-    for (int i = 0; i < programLayout->getParameterCount(); i++) {
+    for (uint32_t i = 0; i < programLayout->getParameterCount(); i++) {
         auto p = programLayout->getParameterByIndex(i);
 
         auto entries = ParseShaderParameter(p);
@@ -223,20 +226,19 @@ std::vector<UniformMetadata> ShaderCompiler::ParseShaderParameter(slang::Variabl
     auto group = p->getOffset(ParameterCategory::SubElementRegisterSpace);
     auto location = p->getType()->getKind() == slang::TypeReflection::Kind::ParameterBlock ? 0 : p->getBindingIndex();
 
-    auto entries = ParseShaderVar(typeLayout, group, location);
-    auto isPC = p->getTypeLayout()->getBindingRangeType(0) == slang::BindingType::PushConstant;
-    auto isSerialzed = false;
-    for (int i = 0; i < p->getVariable()->getUserAttributeCount(); i++ ) {
+    auto entries = ParseShaderVar(typeLayout, static_cast<int>(group), location);
+    auto isSerialized = false;
+    for (uint32_t i = 0; i < p->getVariable()->getUserAttributeCount(); i++ ) {
         auto attribute = p->getVariable()->getUserAttributeByIndex(i);
         std::string name = attribute->getName();
         if (name == "SerializedField") {
-            isSerialzed = true;
+            isSerialized = true;
             break;
         }
     }
 
     for (auto& entry : entries) {
-        entry.IsSerialized = isSerialzed;
+        entry.IsSerialized = isSerialized;
     }
 
     if (entries.size() == 1) {
@@ -268,16 +270,13 @@ UniformMetadata ShaderCompiler::ParseResource(slang::TypeLayoutReflection *typeL
     auto bindingType = typeLayout->getBindingRangeType(bindingGroup);
     entry.IsPushConstant = bindingType == slang::BindingType::PushConstant;
 
-    slang::TypeReflection::Kind k;
-    slang::TypeLayoutReflection *l;
-
     switch (kind) {
         case slang::TypeReflection::Kind::ConstantBuffer: {
             entry.BindingType = WGPUBindingType::Buffer;
             if (typeLayout->getElementTypeLayout()->getKind() == slang::TypeReflection::Kind::ParameterBlock) {
                 return ParseParameterBlock(typeLayout->getElementTypeLayout(), group, slot).front();
             }
-            entry.SizeInBytes = typeLayout->getElementTypeLayout()->getSize();
+            entry.SizeInBytes = static_cast<uint32_t>(typeLayout->getElementTypeLayout()->getSize());
             entry.BufferFields = ParseBufferSubfields(typeLayout);
         }
         break;
@@ -334,7 +333,7 @@ std::vector<UniformMetadata> ShaderCompiler::ParseParameterBlock(slang::TypeLayo
     if (elementTypeLayout->getSize() > 0) {
         UniformMetadata subBuf;
         subBuf.Name = paramBlock->getName();
-        subBuf.SizeInBytes = elementTypeLayout->getSize();
+        subBuf.SizeInBytes = static_cast<uint32_t>(elementTypeLayout->getSize());
         subBuf.BindingType = WGPUBindingType::Buffer;
         subBuf.Visibility = wgpu::ShaderStage::Fragment | wgpu::ShaderStage::Vertex;
         subBuf.Group = group;
@@ -347,8 +346,6 @@ std::vector<UniformMetadata> ShaderCompiler::ParseParameterBlock(slang::TypeLayo
     for (int subObjectRangeIndex = 0; subObjectRangeIndex < subObjectRangeCount;
          ++subObjectRangeIndex) {
         auto bindingRangeIndex = subObjectRangeIndex;
-        //elementTypeLayout->getSubObjectRangeBindingRangeIndex(subObjectRangeIndex);
-        auto bindingType = elementTypeLayout->getBindingRangeType(bindingRangeIndex);
         auto leaf = elementTypeLayout->getBindingRangeLeafTypeLayout(bindingRangeIndex);
         auto nextVar = elementTypeLayout->getBindingRangeLeafVariable(bindingRangeIndex);
 
@@ -373,7 +370,7 @@ ShaderCompiler::ParseBufferSubfields(slang::TypeLayoutReflection *typeLayout) {
         bufferFields = typeLayout->getElementTypeLayout()->getFieldCount();
     }
 
-    for (int i = 0; i < bufferFields; i++) {
+    for (uint32_t i = 0; i < bufferFields; i++) {
         UniformMetadata::BufferField &Subfield = fields.emplace_back();
         VariableLayoutReflection *field = nullptr;
         if (typeLayout->getKind() == TypeReflection::Kind::Struct) {
@@ -381,9 +378,9 @@ ShaderCompiler::ParseBufferSubfields(slang::TypeLayoutReflection *typeLayout) {
         } else {
             field = typeLayout->getElementTypeLayout()->getFieldByIndex(i);
         }
-        Subfield.Offset = field->getOffset();
+        Subfield.Offset = static_cast<uint32_t>(field->getOffset());
         Subfield.Name = field->getName();
-        Subfield.SizeInBytes = field->getTypeLayout()->getSize();
+        Subfield.SizeInBytes = static_cast<uint32_t>(field->getTypeLayout()->getSize());
 
         auto kind = field->getType()->getKind();
 
@@ -394,7 +391,6 @@ ShaderCompiler::ParseBufferSubfields(slang::TypeLayoutReflection *typeLayout) {
 
         if (kind == TypeReflection::Kind::Struct) {
             Subfield.Type = UniformMetadata::BufferField::STRUCT;
-            auto f = field->getTypeLayout()->getFieldCount();
             Subfield.Subfields = ParseBufferSubfields(field->getTypeLayout());
         }
 
@@ -464,6 +460,11 @@ BindingLayouts ShaderObjectLayoutBuilder::CreatePipelineLayout() {
     return out;
 }
 
+std::unordered_map<std::string, ShaderCompiler::CompiledShaderModule> & ShaderCompiler::GetShaderCache() {
+    static std::unordered_map<std::string, CompiledShaderModule> s_cache;
+    return s_cache;
+}
+
 std::unordered_map<uint32_t, wgpu::raii::BindGroupLayout> ShaderObjectLayoutBuilder::CreateBindGroupLayouts() {
     auto device = Application::Get().GetDevice();
     std::unordered_map<uint32_t, wgpu::raii::BindGroupLayout> layouts;
@@ -474,4 +475,152 @@ std::unordered_map<uint32_t, wgpu::raii::BindGroupLayout> ShaderObjectLayoutBuil
         layouts.insert({(uint32_t) e.first, device.createBindGroupLayout(desc)});
     }
     return layouts;
+}
+
+
+WGPUTextureSampleType ShaderCompiler::MapSlangToTextureSampleFormat(slang::TypeReflection::ScalarType fmt) {
+     switch (fmt) {
+          case slang::TypeReflection::None:
+          case slang::TypeReflection::Void:
+               return WGPUTextureSampleType_Undefined;
+          case slang::TypeReflection::Bool:
+               return WGPUTextureSampleType_Uint;
+          case slang::TypeReflection::Int32:
+               return WGPUTextureSampleType_Sint;
+          case slang::TypeReflection::UInt32:
+               return WGPUTextureSampleType_Uint;
+          case slang::TypeReflection::Int64:
+               return WGPUTextureSampleType_Sint;
+          case slang::TypeReflection::UInt64:
+               return WGPUTextureSampleType_Uint;
+          case slang::TypeReflection::Float16:
+               return WGPUTextureSampleType_Float;
+          case slang::TypeReflection::Float32:
+               return WGPUTextureSampleType_Float;
+          case slang::TypeReflection::Float64:
+               return WGPUTextureSampleType_Float;
+          case slang::TypeReflection::Int8:
+               return WGPUTextureSampleType_Sint;
+          case slang::TypeReflection::UInt8:
+               return WGPUTextureSampleType_Uint;
+          case slang::TypeReflection::Int16:
+               return WGPUTextureSampleType_Sint;
+          case slang::TypeReflection::UInt16:
+               return WGPUTextureSampleType_Uint;
+     }
+
+    return WGPUTextureSampleType_Undefined;
+}
+WGPUTextureFormat ShaderCompiler::MapSlangToTextureFormat(slang::TypeReflection::ScalarType fmt, int elemCount) {
+     switch (fmt) {
+          case slang::TypeReflection::Int32:
+               if (elemCount == 1 || elemCount == 0) return WGPUTextureFormat_R32Sint;
+               if (elemCount == 2) return WGPUTextureFormat_RG32Sint;
+               if (elemCount == 4) return WGPUTextureFormat_RGBA32Sint;
+               break;
+
+          case slang::TypeReflection::UInt32:
+               if (elemCount == 1 || elemCount == 0) return WGPUTextureFormat_R32Uint;
+               if (elemCount == 2) return WGPUTextureFormat_RG32Uint;
+               if (elemCount == 4) return WGPUTextureFormat_RGBA32Uint;
+               break;
+
+          case slang::TypeReflection::Float16:
+               if (elemCount == 1 || elemCount == 0) return WGPUTextureFormat_R16Float;
+               if (elemCount == 2) return WGPUTextureFormat_RG16Float;
+               if (elemCount == 4) return WGPUTextureFormat_RGBA16Float;
+               break;
+
+          case slang::TypeReflection::Float32:
+               if (elemCount == 1 || elemCount == 0) return WGPUTextureFormat_R32Float;
+               if (elemCount == 2) return WGPUTextureFormat_RG32Float;
+               if (elemCount == 4) return WGPUTextureFormat_RGBA32Float;
+               break;
+
+          case slang::TypeReflection::Int8:
+               if (elemCount == 1 || elemCount == 0) return WGPUTextureFormat_R8Sint;
+               if (elemCount == 2) return WGPUTextureFormat_RG8Sint;
+               if (elemCount == 4) return WGPUTextureFormat_RGBA8Sint;
+               break;
+
+          case slang::TypeReflection::UInt8:
+               if (elemCount == 1 || elemCount == 0) return WGPUTextureFormat_R8Uint;
+               if (elemCount == 2) return WGPUTextureFormat_RG8Uint;
+               if (elemCount == 4) return WGPUTextureFormat_RGBA8Uint;
+               break;
+
+          case slang::TypeReflection::Int16:
+               if (elemCount == 1 || elemCount == 0) return WGPUTextureFormat_R16Sint;
+               if (elemCount == 2) return WGPUTextureFormat_RG16Sint;
+               if (elemCount == 4) return WGPUTextureFormat_RGBA16Sint;
+               break;
+
+          case slang::TypeReflection::UInt16:
+               if (elemCount == 1 || elemCount == 0) return WGPUTextureFormat_R16Uint;
+               if (elemCount == 2) return WGPUTextureFormat_RG16Uint;
+               if (elemCount == 4) return WGPUTextureFormat_RGBA16Uint;
+               break;
+
+          case slang::TypeReflection::Int64:
+          case slang::TypeReflection::UInt64:
+          case slang::TypeReflection::Float64:
+          case slang::TypeReflection::Bool:
+          case slang::TypeReflection::Void:
+          case slang::TypeReflection::None:
+          default:
+               Assert::Fail("Invalid Texture Format for type: " + fmt);
+              return WGPUTextureFormat_Undefined;
+     }
+
+     Assert::Fail("Invalid Texture Format for type: " + fmt);
+     return WGPUTextureFormat_Undefined;
+}
+
+void ShaderObjectLayoutBuilder::AddBindingsFrom(UniformMetadata* entry, slang::TypeLayoutReflection *typeLayout) {
+
+     if (entry->IsPushConstant) {
+          auto elemSize = entry->SizeInBytes;
+          pushConstant = PushConstantData{
+               (uint32_t)elemSize,
+               entry->Visibility
+          };
+     }
+
+     wgpu::BindGroupLayoutEntry e;
+     e.binding = entry->Location;
+     e.visibility = entry->Visibility;
+     switch (entry->BindingType) {
+          default:
+               Assert::Fail("Not Implemented");
+          case Buffer:
+               WGPUBufferBindingLayout constBufferBinding;
+               constBufferBinding.type = WGPUBufferBindingType_Uniform;
+               constBufferBinding.minBindingSize = entry->SizeInBytes;
+               constBufferBinding.hasDynamicOffset = false;
+               e.buffer = constBufferBinding;
+               break;
+          case StorageTexture:
+               WGPUStorageTextureBindingLayout storageTextureBinding;
+               storageTextureBinding.format = entry->Format;
+               storageTextureBinding.viewDimension = entry->Dimension;
+               storageTextureBinding.access = entry->StorageTextureAccess;
+               e.storageTexture = storageTextureBinding;
+               break;
+
+          case Texture:
+               WGPUTextureBindingLayout textureBinding;
+               //auto texfmt = typeLayout->getBindingRangeImageFormat(typeLayout->getBindingRangeCount());
+               textureBinding.sampleType = entry->SampleType;
+               textureBinding.multisampled = 0;//typeLayout->getResourceShape() & SlangResourceShape::SLANG_TEXTURE_2D_MULTISAMPLE || typeLayout->getResourceShape() & SlangResourceShape::SLANG_TEXTURE_MULTISAMPLE_FLAG ? WGPUOptionalBool_True : WGPUOptionalBool_False;
+               textureBinding.viewDimension = entry->Dimension;
+               e.texture = textureBinding;
+               break;
+
+          case Sampler:
+               WGPUSamplerBindingLayout samplerBinding;
+               samplerBinding.type = entry->SamplerBindingType;
+               e.sampler = samplerBinding;
+     }
+
+     entries[entry->Group].push_back(e);
 }
