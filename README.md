@@ -16,7 +16,7 @@ Crab Engine is a hobby C++ game engine, created to explore various avenues of so
 - C++20 Modules
 
 ## Usage
-Visit [Crab Application](https://github.com/Unbansheee/CrabApplication) to see a working implementation, including C# scripts.
+#### Visit [Crab Application](https://github.com/Unbansheee/CrabApplication) to see an app built on Crab Engine, including C# scripting examples.
 
 ### Include via CMake
 In your project's `CMakeLists.txt`:
